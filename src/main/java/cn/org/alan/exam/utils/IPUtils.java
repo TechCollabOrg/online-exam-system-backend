@@ -6,6 +6,10 @@ import org.lionsoul.ip2region.xdb.Searcher;
 import org.springframework.stereotype.Component;
 
 import javax.servlet.http.HttpServletRequest;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
@@ -13,9 +17,33 @@ public class IPUtils {
 
     private static final Logger log = LogManager.getLogger(IPUtils.class);
 
-    private static final String DB_PATH = "src/main/resources/ipdata/ip2region.xdb";
+    private static final String DB_PATH;
+    
+    static {
+        String tempPath = null;
+        try {
+            // 从 classpath 读取 IP 数据库文件
+            InputStream inputStream = IPUtils.class.getClassLoader().getResourceAsStream("ipdata/ip2region.xdb");
+            if (inputStream != null) {
+                // 复制到临时文件
+                Path tempFile = Files.createTempFile("ip2region", ".xdb");
+                Files.copy(inputStream, tempFile, StandardCopyOption.REPLACE_EXISTING);
+                tempPath = tempFile.toString();
+                inputStream.close();
+                log.info("IP 数据库加载成功: {}", tempPath);
+            } else {
+                log.warn("IP 数据库文件未找到，IP 归属地查询功能将不可用");
+            }
+        } catch (Exception e) {
+            log.error("初始化 IP 数据库失败: {}", e.getMessage());
+        }
+        DB_PATH = tempPath;
+    }
 
     private static final ThreadLocal<Searcher> searcherThreadLocal = ThreadLocal.withInitial(() -> {
+        if (DB_PATH == null) {
+            return null;
+        }
         try {
             return Searcher.newWithFileOnly(DB_PATH);
         } catch (Exception e) {

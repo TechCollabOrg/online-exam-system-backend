@@ -48,3 +48,4 @@ mvnw.cmd
 **/target/
 **/out/
 .DS_Store
+/deploy/
