@@ -13,19 +13,19 @@ import java.util.Arrays;
 import java.util.Objects;
 
 /**
- * mybatisPlus公共字段填充处理器
+ * MyBatis-Plus 元对象处理器：在 <strong>插入</strong> 时按实体<strong>属性名</strong>（非表列名）自动填充
+ * {@code userId}（当前登录用户）、{@code createTime}（服务器时间）；字段已有值则不覆盖。
+ * <p>类名 {@code FiledFullHandler} 为历史拼写，与配置类 {@link cn.org.alan.exam.config.MybatisPlusConfig} 中 Bean 引用一致。</p>
  *
- * @Author WeiJin
- * @Version 1.0
- * @Date 2024/3/31 10:00
+ * @author WeiJin
  */
 @Component
 @Slf4j
 public class FiledFullHandler implements MetaObjectHandler {
     /**
-     * 添加数据拦截
+     * INSERT 语句填充：反射遍历实体声明字段，匹配规则则 {@link #strictInsertFill}。
      *
-     * @param metaObject
+     * @param metaObject 当前持久化对象元数据
      */
     @Override
     public void insertFill(MetaObject metaObject) {
@@ -48,9 +48,9 @@ public class FiledFullHandler implements MetaObjectHandler {
     }
 
     /**
-     * 更新数据拦截
+     * UPDATE 全局填充：当前项目未实现（如 {@code updateTime}），留空。
      *
-     * @param metaObject
+     * @param metaObject 当前持久化对象元数据
      */
     @Override
     public void updateFill(MetaObject metaObject) {

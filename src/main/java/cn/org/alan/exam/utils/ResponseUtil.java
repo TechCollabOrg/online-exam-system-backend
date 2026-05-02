@@ -16,11 +16,9 @@ import java.io.PrintWriter;
 
 
 /**
- * 响应体封装工具类
+ * 将 {@link Result} 序列化为 JSON 并写入 {@link HttpServletResponse}，用于过滤器或异常处理中无法通过 Controller 返回体的场景。
  *
- * @Author WeiJin
- * @Version 1.0
- * @Date 2024/3/25 18:42
+ * @author WeiJin
  */
 @Component
 public class ResponseUtil {
@@ -28,6 +26,12 @@ public class ResponseUtil {
     @Resource
     private ObjectMapper objectMapper;
 
+    /**
+     * 以 HTTP 200 写入 JSON 响应体（UTF-8，{@code application/json}）。
+     *
+     * @param response Servlet 响应对象
+     * @param result   统一业务包装结果
+     */
     @SneakyThrows({JsonProcessingException.class, IOException.class})
     public void response(HttpServletResponse response, Result result) {
         String s = objectMapper.writeValueAsString(result);
@@ -39,6 +43,13 @@ public class ResponseUtil {
         writer.close();
     }
 
+    /**
+     * 写入 JSON 响应体并指定 HTTP 状态码（如 401、403），便于与安全过滤器配合。
+     *
+     * @param response Servlet 响应对象
+     * @param result   统一业务包装结果
+     * @param status   HTTP 状态码
+     */
     @SneakyThrows({JsonProcessingException.class, IOException.class})
     public void response(HttpServletResponse response, Result result, Integer status) {
         String s = objectMapper.writeValueAsString(result);

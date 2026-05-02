@@ -6,9 +6,10 @@ import lombok.Data;
 import java.util.List;
 
 /**
- * @Author Alan
- * @Version
- * @Date 2024/4/25 2:36 PM
+ * 错题本中单题详情（题干、选项、解析等完整展示）。
+ *
+ * @author Alan
+ * @since 2024/4/25
  */
 @Data
 public class BookOneQuVO {

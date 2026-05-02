@@ -5,11 +5,10 @@ import lombok.Data;
 import java.util.List;
 
 /**
- * 重刷错题请求体
+ * 错题本中再次作答某题时提交的答案与题目标识。
  *
- * @Author Alan
- * @Version
- * @Date 2024/4/25 2:39 PM
+ * @author Alan
+ * @since 2024/4/25
  */
 @Data
 public class ReUserBookForm {

@@ -10,9 +10,10 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
+ * 课堂讨论主题：标题、内容、可见班级、发布教师等。
+ *
  * @author WeiJin
- * @version 1.0
- * @since 2025/4/3 9:26
+ * @since 2025/4/3
  */
 @Data
 @ApiModel("讨论实体类")

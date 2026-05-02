@@ -8,9 +8,9 @@ import org.springframework.stereotype.Service;
 
 
 /**
- * @Author Alan
- * @Version
- * @Date 2024/4/7 11:19 PM
+ * 试卷与题目关联 {@link cn.org.alan.exam.model.entity.ExamQuestion}（组卷、排序、分值类型）的基础 CRUD。
+ *
+ * @author Alan
  */
 @Service
 public class ExamQuestionServiceImpl extends ServiceImpl<ExamQuestionMapper, ExamQuestion> implements IExamQuestionService {

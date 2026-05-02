@@ -16,13 +16,10 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.annotation.Resource;
 import java.util.List;
 
-
 /**
- * 统计管理
+ * 看板统计：班级人数、考试场次、总览计数与个人日活曲线。
  *
- * @Author Alan
- * @Version 1.0
- * @Date 2024/3/25 11:22 AM
+ * @author Alan
  */
 @Api(tags = "统计数据相关接口")
 @RestController
@@ -32,11 +29,7 @@ public class StatController {
     @Resource
     private IStatService statService;
 
-    /**
-     * 各班级人数统计
-     *
-     * @return
-     */
+    /** GET 各班学生人数分布。 */
     @ApiOperation("各班级人数统计")
     @GetMapping("/student")
     @PreAuthorize("hasAnyAuthority('role_teacher','role_admin')")
@@ -44,11 +37,7 @@ public class StatController {
         return statService.getStudentGradeCount();
     }
 
-    /**
-     * 各班试卷统计
-     *
-     * @return
-     */
+    /** GET 各班关联考试场次统计。 */
     @ApiOperation("各班试卷统计")
     @GetMapping("/exam")
     @PreAuthorize("hasAnyAuthority('role_teacher','role_admin')")
@@ -56,11 +45,7 @@ public class StatController {
         return statService.getExamGradeCount();
     }
 
-    /**
-     * 统计所有班级、试卷、试题数量
-     *
-     * @return 统计结果
-     */
+    /** GET 班级/试卷/试题总数总览（角色分支见 Service）。 */
     @ApiOperation("统计所有班级、试卷、试题数量")
     @GetMapping("/allCounts")
     @PreAuthorize("hasAnyAuthority('role_teacher','role_admin')")
@@ -68,11 +53,7 @@ public class StatController {
         return statService.getAllCount();
     }
 
-    /**
-     * 获取用户登录时间统计
-     *
-     * @return
-     */
+    /** GET 当前用户日在线/登录序列（教师管理员与学生均可调，数据口径按用户区分）。 */
     @ApiOperation("获取用户登录时间统计")
     @GetMapping("/daily")
     @PreAuthorize("hasAnyAuthority('role_teacher','role_admin','role_student')")

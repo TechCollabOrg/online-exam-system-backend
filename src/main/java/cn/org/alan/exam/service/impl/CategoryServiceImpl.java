@@ -16,14 +16,14 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * 分类服务实现类
+ * 题库/资源多级分类：增删改与树形列表（父子关系），删除前校验是否存在子节点。
  *
  * @author Moxuec
- * @since 2025-04-09
  */
 @Service
 public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> implements ICategoryService {
 
+    /** 新增分类节点并写入创建时间。 */
     @Override
     public Result<String> addCategory(Category category) {
         category.setCreateTime(new Date());
@@ -31,6 +31,7 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
         return Result.success("添加分类成功");
     }
 
+    /** 按路径变量指定主键更新分类。 */
     @Override
     public Result<String> updateCategory(Category category, Integer id) {
         category.setId(id);
@@ -38,6 +39,7 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
         return Result.success("修改分类成功");
     }
 
+    /** 删除分类：若仍存在子分类则拒绝（题库占用校验尚未实现，见代码注释）。 */
     @Override
     public Result<String> deleteCategory(Integer id) {
         // 检查是否有子分类
@@ -55,6 +57,7 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
         return Result.success("删除分类成功");
     }
 
+    /** 自顶向下递归构建完整分类树（根 {@code parentId=0}）。 */
     @Override
     public Result<List<CategoryVO>> getCategoryTree() {
         // 获取所有分类
@@ -66,6 +69,7 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
         return Result.success("获取分类树成功", result);
     }
 
+    /** 仅返回一级分类（{@code parentId=0}），按 {@code sort} 升序。 */
     @Override
     public Result<List<CategoryVO>> getFirstLevelCategories() {
         LambdaQueryWrapper<Category> wrapper = new LambdaQueryWrapper<>();
@@ -78,6 +82,7 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
         return Result.success("获取一级分类成功", result);
     }
 
+    /** 查询某父节点下的直接子分类列表。 */
     @Override
     public Result<List<CategoryVO>> getChildCategories(Integer parentId) {
         LambdaQueryWrapper<Category> wrapper = new LambdaQueryWrapper<>();
@@ -91,11 +96,7 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
     }
     
     /**
-     * 构建分类树
-     *
-     * @param categories 所有分类
-     * @param parentId 父ID
-     * @return 分类树
+     * 深度优先组装树：对每个匹配 {@code parentId} 的节点递归填充 {@code children}。
      */
     private List<CategoryVO> buildCategoryTree(List<Category> categories, Integer parentId) {
         List<CategoryVO> result = new ArrayList<>();
@@ -111,12 +112,7 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
         return result;
     }
     
-    /**
-     * 将实体转换为VO
-     *
-     * @param category 分类实体
-     * @return 分类VO
-     */
+    /** 实体浅拷贝为 {@link CategoryVO}。 */
     private CategoryVO convertToVO(Category category) {
         CategoryVO vo = new CategoryVO();
         BeanUtils.copyProperties(category, vo);

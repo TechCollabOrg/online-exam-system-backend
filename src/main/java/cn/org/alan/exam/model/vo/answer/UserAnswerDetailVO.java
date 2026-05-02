@@ -3,11 +3,10 @@ package cn.org.alan.exam.model.vo.answer;
 import lombok.Data;
 
 /**
- * 用户作答信息
+ * 阅卷侧查看某考生在某题上的作答全文与附件标识。
  *
- * @Author WeiJin
- * @Version 1.0
- * @Date 2024/4/29 10:29
+ * @author WeiJin
+ * @since 2024/4/29
  */
 @Data
 public class UserAnswerDetailVO {

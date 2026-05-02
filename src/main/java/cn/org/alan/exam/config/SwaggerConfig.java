@@ -18,17 +18,19 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 说明：
- * Swagger配置
+ * Springfox Swagger2：仅扫描标注了 {@link ApiOperation} 的控制器方法生成文档；
+ * 全局注入可选 Header {@code Authorization}，便于在线调试携带 JWT。
  *
- * @Author Alan
- * @Version 1.0
- * @Date 2025/3/18 7:30 PM
+ * @author Alan
  */
 @Configuration
-// 开启Swagger
 @EnableSwagger2
 public class SwaggerConfig {
+    /**
+     * 构建 API 分组 {@link Docket}：Swagger 2 协议、绑定标题信息、全局 Token 参数。
+     *
+     * @return Swagger 文档入口 Bean
+     */
     @Bean
     public Docket api() {
         return new Docket(DocumentationType.SWAGGER_2)
@@ -41,8 +43,9 @@ public class SwaggerConfig {
     }
 
     /**
-     * 配置文档信息
-     * @return
+     * 文档首页展示的标题、描述与版本号。
+     *
+     * @return {@link ApiInfo}
      */
     private ApiInfo apiInfo() {
         return new ApiInfoBuilder()
@@ -52,6 +55,11 @@ public class SwaggerConfig {
                 .build();
     }
 
+    /**
+     * 全局请求头参数列表（当前仅 Authorization），各接口文档页均可填入 Bearer Token。
+     *
+     * @return 全局参数
+     */
     private List<Parameter> parameters() {
         Parameter tokentPar = new ParameterBuilder()
                 .name("Authorization")

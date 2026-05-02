@@ -8,9 +8,10 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import java.util.List;
 
 /**
+ * 讨论回复：新增、删除、按讨论拉取回复列表（支持排序）。
+ *
  * @author WeiJin
- * @version 1.0
- * @since 2025/4/4 14:05
+ * @since 2025/4/4
  */
 public interface IReplyService extends IService<Reply> {
 

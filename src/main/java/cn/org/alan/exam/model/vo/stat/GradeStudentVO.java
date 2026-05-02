@@ -3,9 +3,10 @@ package cn.org.alan.exam.model.vo.stat;
 import lombok.Data;
 
 /**
- * @ Author JinXi
- * @ Version 1.0
- * @ Date 2024/5/12 14:38
+ * 统计接口返回：某班级学生人数等聚合。
+ *
+ * @author JinXi
+ * @since 2024/5/12
  */
 @Data
 public class GradeStudentVO {

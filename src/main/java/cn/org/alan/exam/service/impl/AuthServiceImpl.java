@@ -49,11 +49,10 @@ import java.util.regex.Pattern;
 
 
 /**
- * 权限管理服务实现类
+ * 认证注册登录：验证码图片、用户名密码校验、JWT + Redis 会话、BCrypt 密码、游客注册；
+ * 含心跳/在线时长写入 Redis、登录日志落库等辅助逻辑。
  *
- * @Author Alan
- * @Version
- * @Date 2024/3/28 1:33 PM
+ * @author Alan
  */
 @Service
 public class AuthServiceImpl implements IAuthService {
@@ -82,11 +81,8 @@ public class AuthServiceImpl implements IAuthService {
     private ILogService logService;
 
     /**
-     * 登录
-     *
-     * @param request
-     * @param loginForm 入参
-     * @return 响应
+     * 用户名密码登录：可选图形验证码前置校验；密码经客户端 AES 解密后与 BCrypt 比对；
+     * 签发 JWT、写入 Redis（sessionId→token）、填充 SecurityContext，并记录登录日志。
      */
     @SneakyThrows(JsonProcessingException.class)
     @Override
@@ -159,9 +155,7 @@ public class AuthServiceImpl implements IAuthService {
 
 
     /**
-     * 获取设备名称
-     * @param userAgent
-     * @return
+     * 从 HTTP {@code User-Agent} 头括号段截取简要设备/平台片段，用于日志展示。
      */
     public static String extractDeviceType(String userAgent) {
         // 定义正则表达式模式
@@ -176,10 +170,7 @@ public class AuthServiceImpl implements IAuthService {
     }
 
     /**
-     * 注销
-     *
-     * @param request request对象，需要清除session里面的内容
-     * @return
+     * 登出：剥离 Bearer Token、删除 Redis 中会话 token、失效 HttpSession，并写登出日志。
      */
     @Override
     public Result<String> logout(HttpServletRequest request) {
@@ -204,10 +195,7 @@ public class AuthServiceImpl implements IAuthService {
     }
 
     /**
-     * 获取图形验证码
-     *
-     * @param request  request对象，获取sessionId
-     * @param response response对象，响应图片
+     * 生成 Hutool 线段验证码图片写入响应流；正确答案存入 Redis（key 含 sessionId，短期有效）。
      */
     @SneakyThrows(IOException.class)
     @Override
@@ -229,11 +217,7 @@ public class AuthServiceImpl implements IAuthService {
     }
 
     /**
-     * 验证验证码
-     *
-     * @param request request对象获取sessionId
-     * @param code    用户输入的验证码
-     * @return
+     * 校验图形验证码：通过后删除验证码键并写入 {@code isVerifyCode+sessionId}，供登录/注册阶段校验。
      */
     @Override
     public Result<String> verifyCode(HttpServletRequest request, String code) {
@@ -253,11 +237,7 @@ public class AuthServiceImpl implements IAuthService {
     }
 
     /**
-     * 注册用户
-     *
-     * @param request  request对象，用于获取sessionId
-     * @param userForm 用户信息
-     * @return
+     * 学生注册：须先通过验证码校验；两次密码一致后 BCrypt 入库，默认角色为学生（{@code roleId=1}）。
      */
     @Override
     public Result<String> register(HttpServletRequest request, UserForm userForm) {
@@ -280,9 +260,7 @@ public class AuthServiceImpl implements IAuthService {
     }
 
     /**
-     * 用户发送心跳，更新最后活跃时间。
-     *
-     * @return
+     * 学生心跳：维护 Redis 上次活跃时间，用于统计在线时长并写入 {@link UserDailyLoginDuration}（间隔超过阈值累加）。
      */
     @Override
     public Result<String> sendHeartbeat(HttpServletRequest request) {

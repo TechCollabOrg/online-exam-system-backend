@@ -20,10 +20,10 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * 公告服务实现类
+ * 公告发布：支持全员公开（管理员）与指定班级可见；维护 {@code notice_grade} 关联；
+ * 含更新时公开范围切换、分页及按角色过滤可见列表。
  *
  * @author Alan
- * @since 2024-03-21
  */
 @Service
 public class NoticeServiceImpl extends ServiceImpl<NoticeMapper, Notice> implements INoticeService {
@@ -39,9 +39,7 @@ public class NoticeServiceImpl extends ServiceImpl<NoticeMapper, Notice> impleme
     private UserMapper userMapper;
 
     /**
-     * 新建公告
-     * @param noticeForm
-     * @return
+     * 新建公告：管理员强制公开；教师可选择班级定向发布（{@code isPublic=0} 时必须选择班级 ID 列表）。
      */
     @Override
     @Transactional
@@ -83,11 +81,7 @@ public class NoticeServiceImpl extends ServiceImpl<NoticeMapper, Notice> impleme
         return Result.success("添加公告成功");
     }
 
-    /**
-     * 删除公告
-     * @param ids
-     * @return
-     */
+    /** 批量删除公告主表记录并清理公告-班级关联。 */
     @Override
     @Transactional
     public Result<String> deleteNotice(String ids) {
@@ -102,10 +96,7 @@ public class NoticeServiceImpl extends ServiceImpl<NoticeMapper, Notice> impleme
     }
 
     /**
-     * 更新公告
-     * @param noticeId
-     * @param noticeForm
-     * @return
+     * 更新公告内容与可见范围：处理公开/非公开切换时同步增删 {@code notice_grade} 行。
      */
     @Override
     @Transactional
@@ -142,11 +133,7 @@ public class NoticeServiceImpl extends ServiceImpl<NoticeMapper, Notice> impleme
     }
 
     /**
-     * 教师管理员获取公告
-     * @param pageNum
-     * @param pageSize
-     * @param title
-     * @return
+     * 教师/管理员侧公告分页：按标题筛选，并为每条记录挂载可见班级 ID 列表。
      */
     @Override
     public Result<IPage<NoticeVO>> getNotice(Integer pageNum, Integer pageSize, String title) {
@@ -165,10 +152,7 @@ public class NoticeServiceImpl extends ServiceImpl<NoticeMapper, Notice> impleme
     }
 
     /**
-     * 学生获取公告
-     * @param pageNum
-     * @param pageSize
-     * @return
+     * 学生侧公告：聚合本班关联公告、本班任课教师非公开公告及管理员全员公告（Mapper 内拼装可见集）。
      */
     @Override
     public Result<IPage<NoticeVO>> getNewNotice(Integer pageNum, Integer pageSize) {

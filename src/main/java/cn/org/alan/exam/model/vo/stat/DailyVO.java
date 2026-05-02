@@ -6,9 +6,10 @@ import lombok.Data;
 import java.time.LocalDate;
 
 /**
- * @Author Alan
- * @Version
- * @Date 2024/5/29 8:10 AM
+ * 用户按日的在线时长曲线点（日期与时长）。
+ *
+ * @author Alan
+ * @since 2024/5/29
  */
 @Data
 public class DailyVO {

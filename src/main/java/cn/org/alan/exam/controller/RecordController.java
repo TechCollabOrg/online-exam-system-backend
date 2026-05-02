@@ -21,11 +21,9 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 /**
- * 考试记录
+ * 正式考试与刷题的历史记录查询（分页与详情）。
  *
- * @Author Alan
- * @Version
- * @Date 2024/3/25 11:22 AM
+ * @author Alan
  */
 @Api(tags = "考试记录相关接口")
 @RestController
@@ -34,15 +32,7 @@ public class RecordController {
     @Resource
     private IExerciseRecordService exerciseRecordService;
 
-    /**
-     * 分页查询已考试试卷
-     *
-     * @param pageNum  页码
-     * @param pageSize 每页记录数
-     * @param examName 考试名称
-     * @param isASC    是否升序排列，true为升序，false为降序，默认为false
-     * @return 查询结果
-     */
+    /** GET 已参加考试分页（角色决定数据范围）。 */
     @ApiOperation("分页查询已考试试卷")
     @GetMapping("/exam/paging")
     @PreAuthorize("hasAnyAuthority('role_teacher','role_admin','role_student')")
@@ -53,12 +43,7 @@ public class RecordController {
         return exerciseRecordService.getExamRecordPage(pageNum, pageSize, examName, isASC);
     }
 
-    /**
-     * 查询试卷详情
-     *
-     * @param examId
-     * @return
-     */
+    /** GET 单场考试答题明细；{@code userId} 可选，默认当前用户。 */
     @ApiOperation("查询试卷详情")
     @GetMapping("/exam/detail")
     @PreAuthorize("hasAnyAuthority('role_teacher','role_admin','role_student')")
@@ -67,13 +52,7 @@ public class RecordController {
         return exerciseRecordService.getExamRecordDetail(examId,userId);
     }
 
-    /**
-     * 分页查询已考试刷题
-     *
-     * @param pageNum
-     * @param pageSize
-     * @return
-     */
+    /** GET 已练习题库分页；{@code repoName} 模糊筛选。 */
     @ApiOperation("分页查询已考试刷题")
     @GetMapping("/exercise/paging")
     @PreAuthorize("hasAnyAuthority('role_teacher','role_admin','role_student')")
@@ -84,10 +63,7 @@ public class RecordController {
     }
 
     /**
-     * 查询刷题详情
-     *
-     * @param exerciseId
-     * @return
+     * GET 某题库刷题详情；请求参数名为 {@code repoId}，对应 Service 的题库 ID。
      */
     @ApiOperation("查询刷题详情")
     @GetMapping("/exercise/detail")

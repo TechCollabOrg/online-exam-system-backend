@@ -5,9 +5,10 @@ import lombok.Data;
 import javax.validation.constraints.NotBlank;
 
 /**
- * @Author Alan
- * @Version
- * @Date 2024/3/28 1:49 PM
+ * 创建或编辑班级：名称、编码、关联教师等。
+ *
+ * @author Alan
+ * @since 2024/3/28
  */
 @Data
 public class GradeForm {

@@ -16,41 +16,34 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * JwWT工具类
+ * 基于 Auth0 JWT（HS256）的令牌签发与校验：载荷含序列化用户信息字符串与权限列表；
+ * 支持在剩余有效期低于 {@code jwt.refreshThreshold} 时自动续签为新 Token。
  *
  * @author WeiJin
- * @version 1.0
  */
-
 @Component
 @Slf4j
 @SuppressWarnings("all")
 public class JwtUtil {
 
-    /**
-     * jwt密钥
-     */
+    /** 对称签名密钥（配置文件 {@code jwt.secret}）。 */
     @Value("${jwt.secret}")
     private String secret;
 
-    /**
-     * jwt过期时间
-     */
+    /** 令牌有效期（毫秒），自签发时刻起算。 */
     @Value("${jwt.expiration}")
     private long expiration;
 
-    /**
-     * 续签阈值，单位为毫秒
-     */
+    /** 剩余寿命低于该毫秒数时 {@link #verifyAndRefreshToken(String)} 会签发新 Token。 */
     @Value("${jwt.refreshThreshold}")
     private long refreshThreshold;
 
     /**
-     * 创建jwt
+     * 签发 JWT：自定义声明 {@code userInfo}（一般为 JSON 字符串）、{@code authList}（角色/权限名列表）。
      *
-     * @param userInfo 用户信息
-     * @param authList 权限列表
-     * @return 返回Token
+     * @param userInfo 用户信息载荷
+     * @param authList Spring Security 可用的权限字符串列表
+     * @return 带 Bearer 前缀外置于 Header 的原始 JWT 串
      */
     public String createJwt(String userInfo, List<String> authList) {
         Date issDate = new Date();// 签发时间
@@ -104,10 +97,10 @@ public class JwtUtil {
     }
 
     /**
-     * 判断是否需要续签
+     * 若距离过期时间不足 {@link #refreshThreshold} 则返回 true，触发重新签发。
      *
-     * @param jwt
-     * @return
+     * @param jwt 已解码的令牌
+     * @return 是否需要续签
      */
     private boolean shouldRefresh(DecodedJWT jwt) {
         Date expirationDate = jwt.getExpiresAt();
@@ -117,10 +110,10 @@ public class JwtUtil {
     }
 
     /**
-     * 校验token
+     * 仅校验签名与有效期，不做续签。
      *
-     * @param token
-     * @return
+     * @param token JWT 字符串
+     * @return 合法为 true，否则 false
      */
     public boolean verifyToken(String token) {
         // 构建jwt校验器
@@ -136,10 +129,10 @@ public class JwtUtil {
     }
 
     /**
-     * 根据token获取用户信息
+     * 校验通过后读取声明 {@code userInfo}（调用方负责反序列化为业务对象）。
      *
-     * @param token
-     * @return
+     * @param token JWT
+     * @return 用户信息 JSON 字符串；校验失败返回 {@code null}
      */
     public String getUser(String token) {
         // 构建jwt校验器
@@ -154,10 +147,10 @@ public class JwtUtil {
     }
 
     /**
-     * 根据token获取权限
+     * 校验通过后读取声明 {@code authList}。
      *
-     * @param token
-     * @return
+     * @param token JWT
+     * @return 权限字符串列表；校验失败返回 {@code null}
      */
     public List<String> getAuthList(String token) {
         // 构建jwt校验器

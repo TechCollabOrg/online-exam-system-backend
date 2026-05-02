@@ -7,12 +7,9 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.stereotype.Service;
 
 /**
- * <p>
- *  服务实现类
- * </p>
+ * 用户获证记录 {@link cn.org.alan.exam.model.entity.CertificateUser}（证书编号、关联考试）的基础服务。
  *
  * @author WeiJin
- * @since 2024-03-21
  */
 @Service
 public class CertificateUserServiceImpl extends ServiceImpl<CertificateUserMapper, CertificateUser> implements ICertificateUserService {

@@ -4,9 +4,10 @@ import lombok.Data;
 
 
 /**
- * @Author WeiJin
- * @Version 1.0
- * @Date 2024/4/22 9:23
+ * 单场考试中某题的得分率、选项分布等统计分析。
+ *
+ * @author WeiJin
+ * @since 2024/4/22
  */
 
 @Data

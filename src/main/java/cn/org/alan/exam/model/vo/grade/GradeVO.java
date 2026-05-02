@@ -4,9 +4,10 @@ package cn.org.alan.exam.model.vo.grade;
 import lombok.Data;
 
 /**
- * @Author Alan
- * @Version
- * @Date 2024/3/28 8:06 PM
+ * 班级分页/下拉：名称、编码、人数及任课教师摘要。
+ *
+ * @author Alan
+ * @since 2024/3/28
  */
 @Data
 public class GradeVO {

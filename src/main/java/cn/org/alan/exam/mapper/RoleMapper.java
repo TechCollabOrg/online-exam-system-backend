@@ -6,7 +6,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import java.util.List;
 
 /**
- * 角色表 Mapper 接口
+ * 角色表 Mapper：按角色 ID 查询角色编码列表（供权限拼装等）。
  *
  * @author WeiJin
  * @since 2024-03-21

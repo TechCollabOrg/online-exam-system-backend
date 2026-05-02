@@ -4,7 +4,264 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="9f91ae12-c926-451e-b026-1b3559a4a2f9" name="Changes" comment="修复日志没有记录问题" />
+    <list default="true" id="9f91ae12-c926-451e-b026-1b3559a4a2f9" name="Changes" comment="修复日志没有记录问题">
+      <change beforePath="$PROJECT_DIR$/.idea/jarRepositories.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/jarRepositories.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/common/aop/LogAsPect.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/common/aop/LogAsPect.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/common/exception/ServiceRuntimeException.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/common/exception/ServiceRuntimeException.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/common/group/AnswerGroup.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/common/group/AnswerGroup.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/common/group/CertificateGroup.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/common/group/CertificateGroup.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/common/group/QuestionGroup.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/common/group/QuestionGroup.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/common/group/UserGroup.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/common/group/UserGroup.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/common/handler/FiledFullHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/common/handler/FiledFullHandler.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/common/handler/GlobalExceptionHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/common/handler/GlobalExceptionHandler.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/common/result/Result.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/common/result/Result.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/config/CorsConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/config/CorsConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/config/MybatisPlusConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/config/MybatisPlusConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/config/RedisConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/config/RedisConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/config/SecurityConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/config/SecurityConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/config/SwaggerConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/config/SwaggerConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/config/WebsocketConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/config/WebsocketConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/controller/AnswerController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/controller/AnswerController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/controller/AuthController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/controller/AuthController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/controller/CategoryController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/controller/CategoryController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/controller/CertificateController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/controller/CertificateController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/controller/DiscussionController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/controller/DiscussionController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/controller/ExamController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/controller/ExamController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/controller/ExerciseController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/controller/ExerciseController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/controller/FileController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/controller/FileController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/controller/GradeController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/controller/GradeController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/controller/LikeController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/controller/LikeController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/controller/LogController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/controller/LogController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/controller/NoticeController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/controller/NoticeController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/controller/QuestionController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/controller/QuestionController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/controller/RecordController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/controller/RecordController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/controller/ReplyController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/controller/ReplyController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/controller/RepoController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/controller/RepoController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/controller/ScoreController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/controller/ScoreController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/controller/StatController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/controller/StatController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/controller/UserBookController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/controller/UserBookController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/controller/UserController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/controller/UserController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/converter/CertificateConverter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/converter/CertificateConverter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/converter/DiscussionConverter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/converter/DiscussionConverter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/converter/ExamConverter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/converter/ExamConverter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/converter/ExamQuAnswerConverter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/converter/ExamQuAnswerConverter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/converter/ExerciseConverter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/converter/ExerciseConverter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/converter/GradeConverter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/converter/GradeConverter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/converter/LikeConverter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/converter/LikeConverter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/converter/NoticeConverter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/converter/NoticeConverter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/converter/QuestionConverter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/converter/QuestionConverter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/converter/RecordConverter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/converter/RecordConverter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/converter/ReplyConverter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/converter/ReplyConverter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/converter/RepoConverter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/converter/RepoConverter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/converter/UserBookConverter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/converter/UserBookConverter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/converter/UserConverter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/converter/UserConverter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/filter/VerifyTokenFilter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/filter/VerifyTokenFilter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/mapper/CategoryMapper.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/mapper/CategoryMapper.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/mapper/CertificateMapper.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/mapper/CertificateMapper.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/mapper/CertificateUserMapper.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/mapper/CertificateUserMapper.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/mapper/DiscussionMapper.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/mapper/DiscussionMapper.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/mapper/ExamGradeMapper.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/mapper/ExamGradeMapper.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/mapper/ExamMapper.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/mapper/ExamMapper.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/mapper/ExamQuAnswerMapper.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/mapper/ExamQuAnswerMapper.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/mapper/ExamQuestionMapper.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/mapper/ExamQuestionMapper.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/mapper/ExamRepoMapper.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/mapper/ExamRepoMapper.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/mapper/ExerciseRecordMapper.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/mapper/ExerciseRecordMapper.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/mapper/GradeExerciseMapper.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/mapper/GradeExerciseMapper.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/mapper/GradeMapper.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/mapper/GradeMapper.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/mapper/LikeMapper.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/mapper/LikeMapper.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/mapper/LogMapper.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/mapper/LogMapper.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/mapper/ManualScoreMapper.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/mapper/ManualScoreMapper.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/mapper/NoticeGradeMapper.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/mapper/NoticeGradeMapper.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/mapper/NoticeMapper.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/mapper/NoticeMapper.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/mapper/OptionMapper.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/mapper/OptionMapper.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/mapper/QuestionMapper.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/mapper/QuestionMapper.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/mapper/ReplyMapper.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/mapper/ReplyMapper.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/mapper/RepoMapper.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/mapper/RepoMapper.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/mapper/RoleMapper.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/mapper/RoleMapper.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/mapper/StatMapper.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/mapper/StatMapper.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/mapper/UserBookMapper.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/mapper/UserBookMapper.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/mapper/UserDailyLoginDurationMapper.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/mapper/UserDailyLoginDurationMapper.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/mapper/UserExamsScoreMapper.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/mapper/UserExamsScoreMapper.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/mapper/UserExerciseRecordMapper.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/mapper/UserExerciseRecordMapper.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/mapper/UserGradeMapper.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/mapper/UserGradeMapper.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/mapper/UserMapper.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/mapper/UserMapper.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/entity/Category.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/entity/Category.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/entity/Certificate.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/entity/Certificate.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/entity/CertificateUser.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/entity/CertificateUser.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/entity/Discussion.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/entity/Discussion.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/entity/Exam.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/entity/Exam.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/entity/ExamGrade.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/entity/ExamGrade.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/entity/ExamQuAnswer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/entity/ExamQuAnswer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/entity/ExamQuestion.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/entity/ExamQuestion.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/entity/ExamRepo.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/entity/ExamRepo.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/entity/ExerciseRecord.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/entity/ExerciseRecord.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/entity/Grade.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/entity/Grade.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/entity/GradeExercise.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/entity/GradeExercise.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/entity/Like.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/entity/Like.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/entity/Log.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/entity/Log.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/entity/ManualScore.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/entity/ManualScore.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/entity/Notice.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/entity/Notice.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/entity/NoticeGrade.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/entity/NoticeGrade.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/entity/Option.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/entity/Option.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/entity/Question.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/entity/Question.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/entity/RedisData.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/entity/RedisData.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/entity/Reply.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/entity/Reply.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/entity/Repo.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/entity/Repo.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/entity/Role.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/entity/Role.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/entity/User.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/entity/User.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/entity/UserBook.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/entity/UserBook.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/entity/UserDailyLoginDuration.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/entity/UserDailyLoginDuration.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/entity/UserExamsScore.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/entity/UserExamsScore.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/entity/UserExerciseRecord.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/entity/UserExerciseRecord.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/entity/UserGrade.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/entity/UserGrade.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/form/answer/CorrectAnswerFrom.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/form/answer/CorrectAnswerFrom.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/form/auth/LoginForm.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/form/auth/LoginForm.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/form/count/ClassCountResult.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/form/count/ClassCountResult.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/form/cretificate/CertificateForm.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/form/cretificate/CertificateForm.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/form/discussion/DiscussionForm.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/form/discussion/DiscussionForm.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/form/discussion/DiscussionReplyForm.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/form/discussion/DiscussionReplyForm.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/form/discussion/DiscussionTopicForm.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/form/discussion/DiscussionTopicForm.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/form/exam/ExamAddForm.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/form/exam/ExamAddForm.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/form/exam/ExamQuAnswerFrom.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/form/exam/ExamQuAnswerFrom.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/form/exam/ExamUpdateForm.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/form/exam/ExamUpdateForm.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/form/exam_qu_answer/ExamQuAnswerAddForm.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/form/exam_qu_answer/ExamQuAnswerAddForm.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/form/exercise/ExerciseFillAnswerFrom.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/form/exercise/ExerciseFillAnswerFrom.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/form/grade/GradeForm.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/form/grade/GradeForm.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/form/like/LikeForm.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/form/like/LikeForm.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/form/notice/NoticeForm.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/form/notice/NoticeForm.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/form/question/QuestionExcelFrom.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/form/question/QuestionExcelFrom.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/form/question/QuestionFrom.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/form/question/QuestionFrom.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/form/reply/ReplyForm.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/form/reply/ReplyForm.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/form/user/UserForm.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/form/user/UserForm.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/form/userbook/ReUserBookForm.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/form/userbook/ReUserBookForm.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/answer/AnswerExamVO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/answer/AnswerExamVO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/answer/UncorrectedUserVO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/answer/UncorrectedUserVO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/answer/UserAnswerDetailVO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/answer/UserAnswerDetailVO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/category/CategoryVO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/category/CategoryVO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/certificate/MyCertificateVO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/certificate/MyCertificateVO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/discussion/DiscussionDetailVo.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/discussion/DiscussionDetailVo.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/discussion/PageDiscussionVo.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/discussion/PageDiscussionVo.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/exam/ExamDetailRespVO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/exam/ExamDetailRespVO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/exam/ExamDetailVO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/exam/ExamDetailVO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/exam/ExamGradeListVO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/exam/ExamGradeListVO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/exam/ExamGradeVO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/exam/ExamGradeVO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/exam/ExamQuAnswerExtVO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/exam/ExamQuAnswerExtVO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/exam/ExamQuCollectVO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/exam/ExamQuCollectVO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/exam/ExamQuDetailVO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/exam/ExamQuDetailVO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/exam/ExamQuestionListVO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/exam/ExamQuestionListVO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/exam/ExamQuestionVO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/exam/ExamQuestionVO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/exam/ExamVO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/exam/ExamVO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/exam/OptionVO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/exam/OptionVO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/exercise/AnswerInfoVO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/exercise/AnswerInfoVO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/exercise/ExerciseRepoVO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/exercise/ExerciseRepoVO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/exercise/QuestionSheetVO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/exercise/QuestionSheetVO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/grade/GradeVO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/grade/GradeVO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/notice/NoticeVO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/notice/NoticeVO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/question/QuestionScoreVO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/question/QuestionScoreVO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/question/QuestionVO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/question/QuestionVO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/record/ExamRecordDetailVO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/record/ExamRecordDetailVO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/record/ExamRecordVO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/record/ExamRecordVO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/record/ExerciseRecordDetailVO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/record/ExerciseRecordDetailVO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/record/ExerciseRecordVO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/record/ExerciseRecordVO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/reply/ReplyVo.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/reply/ReplyVo.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/repo/RepoListVO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/repo/RepoListVO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/repo/RepoVO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/repo/RepoVO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/score/ExportScoreVO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/score/ExportScoreVO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/score/GradeScoreVO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/score/GradeScoreVO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/score/QuestionAnalyseVO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/score/QuestionAnalyseVO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/score/UserScoreVO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/score/UserScoreVO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/stat/AllStatsVO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/stat/AllStatsVO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/stat/DailyVO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/stat/DailyVO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/stat/GradeExamVO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/stat/GradeExamVO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/stat/GradeStudentVO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/stat/GradeStudentVO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/user/UserVO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/user/UserVO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/userbook/AddBookAnswerVO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/userbook/AddBookAnswerVO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/userbook/BookOneQuVO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/userbook/BookOneQuVO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/userbook/ReUserExamBookVO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/userbook/ReUserExamBookVO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/userbook/UserExamBookVO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/userbook/UserExamBookVO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/userbook/UserPageBookVO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/model/vo/userbook/UserPageBookVO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/IAuthService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/IAuthService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/IAutoScoringService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/IAutoScoringService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/ICategoryService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/ICategoryService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/ICertificateService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/ICertificateService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/ICertificateUserService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/ICertificateUserService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/IDiscussionService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/IDiscussionService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/IExamQuAnswerService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/IExamQuAnswerService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/IExamQuestionService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/IExamQuestionService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/IExamRepoService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/IExamRepoService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/IExamService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/IExamService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/IExerciseRecordService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/IExerciseRecordService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/IFileService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/IFileService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/IGradeExerciseService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/IGradeExerciseService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/IGradeService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/IGradeService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/ILikeService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/ILikeService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/ILogService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/ILogService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/IManualScoreService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/IManualScoreService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/INoticeGradeService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/INoticeGradeService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/INoticeService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/INoticeService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/IOptionService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/IOptionService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/IQuestionService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/IQuestionService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/IReplyService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/IReplyService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/IRepoService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/IRepoService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/IRoleService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/IRoleService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/IStatService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/IStatService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/IUserBookService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/IUserBookService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/IUserDailyLoginDurationService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/IUserDailyLoginDurationService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/IUserExamsScoreService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/IUserExamsScoreService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/IUserExerciseRecordService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/IUserExerciseRecordService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/IUserService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/IUserService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/impl/AuthServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/impl/AuthServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/impl/AutoScoringServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/impl/AutoScoringServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/impl/CategoryServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/impl/CategoryServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/impl/CertificateServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/impl/CertificateServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/impl/CertificateUserServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/impl/CertificateUserServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/impl/DiscussionServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/impl/DiscussionServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/impl/ExamQuAnswerServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/impl/ExamQuAnswerServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/impl/ExamQuestionServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/impl/ExamQuestionServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/impl/ExamRepoServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/impl/ExamRepoServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/impl/ExamServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/impl/ExamServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/impl/ExerciseRecordServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/impl/ExerciseRecordServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/impl/FileServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/impl/FileServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/impl/GradeExerciseServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/impl/GradeExerciseServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/impl/GradeServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/impl/GradeServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/impl/LikeServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/impl/LikeServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/impl/LogServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/impl/LogServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/impl/ManualScoreServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/impl/ManualScoreServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/impl/NoticeGradeServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/impl/NoticeGradeServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/impl/NoticeServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/impl/NoticeServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/impl/OptionServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/impl/OptionServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/impl/QuestionServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/impl/QuestionServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/impl/ReplyServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/impl/ReplyServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/impl/RepoServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/impl/RepoServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/impl/RoleServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/impl/RoleServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/impl/StatServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/impl/StatServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/impl/UserBookServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/impl/UserBookServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/impl/UserDailyLoginDurationServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/impl/UserDailyLoginDurationServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/impl/UserExamsScoreServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/impl/UserExamsScoreServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/impl/UserExerciseRecordServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/impl/UserExerciseRecordServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/impl/UserServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/service/impl/UserServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/task/ExamTask.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/task/ExamTask.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/utils/ClassTokenGenerator.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/utils/ClassTokenGenerator.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/utils/CryptoUtils.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/utils/CryptoUtils.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/utils/DateTimeUtil.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/utils/DateTimeUtil.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/utils/IPUtils.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/utils/IPUtils.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/utils/JwtUtil.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/utils/JwtUtil.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/utils/ResponseUtil.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/utils/ResponseUtil.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/utils/SecretUtils.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/utils/SecretUtils.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/utils/SecurityUtil.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/utils/SecurityUtil.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/utils/agent/AIChat.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/utils/agent/AIChat.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/utils/agent/Assistant.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/utils/agent/Assistant.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/utils/agent/Constants.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/utils/agent/Constants.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/utils/agent/impl/CozeUtil.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/utils/agent/impl/CozeUtil.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/utils/agent/impl/DifyUtil.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/utils/agent/impl/DifyUtil.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/utils/agent/impl/LLMUtil.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/utils/agent/impl/LLMUtil.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/utils/excel/ExcelUtils.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/utils/excel/ExcelUtils.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/utils/file/FileService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/utils/file/FileService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/utils/security/SysUserDetails.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/utils/security/SysUserDetails.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/websocket/WebsocketHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/org/alan/exam/websocket/WebsocketHandler.java" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -12,16 +269,20 @@
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+    <option name="ROOT_SYNC" value="SYNC" />
   </component>
   <component name="MavenImportPreferences">
     <option name="generalSettings">
       <MavenGeneralSettings>
         <option name="localRepository" value="/Library/maven/mvn_repo" />
-        <option name="useMavenConfig" value="true" />
         <option name="userSettingsFile" value="/Library/maven/conf/settings.xml" />
       </MavenGeneralSettings>
     </option>
   </component>
+  <component name="ProjectColorInfo">{
+  &quot;customColor&quot;: &quot;&quot;,
+  &quot;associatedIndex&quot;: 6
+}</component>
   <component name="ProjectId" id="2wJRQPZKnTi5P5NMtvMiLuUfKDT" />
   <component name="ProjectLevelVcsManager">
     <ConfirmationsSetting value="2" id="Add" />
@@ -30,24 +291,34 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;RequestMappingsPanelOrder0&quot;: &quot;0&quot;,
-    &quot;RequestMappingsPanelOrder1&quot;: &quot;1&quot;,
-    &quot;RequestMappingsPanelWidth0&quot;: &quot;75&quot;,
-    &quot;RequestMappingsPanelWidth1&quot;: &quot;75&quot;,
-    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
-    &quot;last_opened_file_path&quot;: &quot;/Users/alan/Downloads/aa/online-exam-system-backend/src/main/java/cn/org/alan/exam/converter&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;project.structure.last.edited&quot;: &quot;Project&quot;,
-    &quot;project.structure.proportion&quot;: &quot;0.0&quot;,
-    &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
-    &quot;spring.configuration.checksum&quot;: &quot;654816f85dfe2115674e7115c7d1ea51&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "RequestMappingsPanelOrder0": "0",
+    "RequestMappingsPanelOrder1": "1",
+    "RequestMappingsPanelWidth0": "75",
+    "RequestMappingsPanelWidth1": "75",
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "WebServerToolWindowFactoryState": "false",
+    "codeWithMe.voiceChat.enabledByDefault": "false",
+    "dart.analysis.tool.window.visible": "false",
+    "git-widget-placeholder": "docs/function-comments",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "/Users/alan/Downloads/aa/online-exam-system-backend/src/main/java/cn/org/alan/exam/converter",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "project.structure.last.edited": "Project",
+    "project.structure.proportion": "0.0",
+    "project.structure.side.proportion": "0.2",
+    "settings.editor.selected.configurable": "preferences.pluginManager",
+    "spring.configuration.checksum": "654816f85dfe2115674e7115c7d1ea51",
+    "vue.rearranger.settings.migration": "true"
   }
-}</component>
+}]]></component>
   <component name="ReactorSettings">
     <option name="notificationShown" value="true" />
   </component>
@@ -75,6 +346,14 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-jdk-9823dce3aa75-bf35d07a577b-intellij.indexing.shared.core-IU-252.25557.131" />
+        <option value="bundled-js-predefined-d6986cc7102b-b598e85cdad2-JavaScript-IU-252.25557.131" />
+      </set>
+    </attachedChunks>
   </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
@@ -107,6 +386,8 @@
       <workItem from="1749657393739" duration="130000" />
       <workItem from="1749658195328" duration="321000" />
       <workItem from="1750591035013" duration="111000" />
+      <workItem from="1777715163485" duration="331000" />
+      <workItem from="1777715509356" duration="2861000" />
     </task>
     <task id="LOCAL-00001" summary="添加新功能：讨论功能，Ai阅卷、题库添加分类管理、成绩分析添加查看用户试卷、添加考试可以直接选题和抽题">
       <created>1745760494820</created>
@@ -172,7 +453,19 @@
       <map>
         <entry key="MAIN">
           <value>
-            <State />
+            <State>
+              <option name="FILTERS">
+                <map>
+                  <entry key="roots">
+                    <value>
+                      <list>
+                        <option value="$PROJECT_DIR$" />
+                      </list>
+                    </value>
+                  </entry>
+                </map>
+              </option>
+            </State>
           </value>
         </entry>
       </map>

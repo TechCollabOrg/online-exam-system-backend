@@ -8,7 +8,7 @@ import lombok.Data;
 import java.io.Serializable;
 
 /**
- * 刷题记录实体类
+ * 单次刷题/练习中对一道题的作答明细（客观选项、主观文本、是否正确等）。
  *
  * @author WeiJin
  * @since 2024-03-21

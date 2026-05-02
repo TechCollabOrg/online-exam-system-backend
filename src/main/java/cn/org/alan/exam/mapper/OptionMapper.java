@@ -6,7 +6,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import java.util.List;
 
 /**
- * 选项表 Mapper 接口
+ * 试题选项表 Mapper：批量插入、按试题 ID 查询选项列表。
  *
  * @author WeiJin
  * @since 2024-03-21
@@ -16,7 +16,7 @@ public interface OptionMapper extends BaseMapper<Option> {
     /**
      * 批量添加选项
      *
-     * @param options 选型列表
+     * @param options 选项列表
      * @return 影响数据库内容的记录数
      */
     Integer insertBatch(List<Option> options);

@@ -4,7 +4,7 @@ import cn.org.alan.exam.model.entity.ExamRepo;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
 /**
- * 试卷题库关联表 Mapper 接口
+ * 试卷抽题所用题库关联表 Mapper，当前仅用 BaseMapper。
  *
  * @author WeiJin
  * @since 2024-03-21

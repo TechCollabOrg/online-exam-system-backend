@@ -8,11 +8,10 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 /**
- * 教师与班级关联表 Mapper 接口
+ * 教师与班级关联表 Mapper：班级教师列表、教师退出班级、教师任教班级 ID 列表。
  *
- * @Author Alan
- * @Version
- * @Date 2025/3/14 7:07 PM
+ * @author Alan
+ * @since 2025/3/14
  */
 public interface UserGradeMapper extends BaseMapper<UserGrade> {
 

@@ -16,7 +16,7 @@ import javax.validation.constraints.NotNull;
 import java.io.Serializable;
 
 /**
- * 选项实体类
+ * 客观题选项：内容、是否标准答案、排序等。
  *
  * @author WeiJin
  * @since 2024-03-21

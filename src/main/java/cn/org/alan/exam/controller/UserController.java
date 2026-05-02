@@ -17,11 +17,9 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 /**
- * 用户管理
+ * 登录后用户档案与后台用户运维：个人信息、密码、分页、导入、头像及学生加入班级。
  *
- * @Author WeiJin
- * @Version 1.0
- * @Date 2024/3/25 15:50
+ * @author WeiJin
  */
 @Api(tags = "用户管理相关接口")
 @RestController
@@ -31,11 +29,7 @@ public class UserController {
     @Resource
     private IUserService iUserService;
 
-    /**
-     * 获取用户个人信息
-     *
-     * @return
-     */
+    /** GET 当前登录用户基本信息（脱敏）。 */
     @ApiOperation("获取用户个人信息")
     @GetMapping("/info")
     @PreAuthorize("hasAnyAuthority('role_student','role_teacher','role_admin')")
@@ -44,12 +38,7 @@ public class UserController {
     }
 
 
-    /**
-     * 创建用户，教师只能创建学生，管理员可以创建教师和学生
-     *
-     * @param userForm
-     * @return
-     */
+    /** POST 后台创建账号；校验分组 {@link UserGroup.CreateUserGroup}。 */
     @ApiOperation("创建用户")
     @PostMapping
     @PreAuthorize("hasAnyAuthority('role_teacher','role_admin')")
@@ -57,12 +46,7 @@ public class UserController {
         return iUserService.createUser(userForm);
     }
 
-    /**
-     * 用户修改密码
-     *
-     * @param userForm
-     * @return
-     */
+    /** PUT 修改本人密码；成功后踢下线需重新登录。 */
     @ApiOperation("用户修改密码")
     @PutMapping
     @PreAuthorize("hasAnyAuthority('role_student','role_teacher','role_admin')")
@@ -70,12 +54,7 @@ public class UserController {
         return iUserService.updatePassword(userForm);
     }
 
-    /**
-     * 批量删除用户
-     *
-     * @param ids 删除用户ID
-     * @return
-     */
+    /** DELETE 批量删除；路径 {@code ids} 多为逗号分隔（与 Service 约定一致）。 */
     @ApiOperation("批量删除用户")
     @DeleteMapping("/{ids}")
     @PreAuthorize("hasAnyAuthority('role_teacher','role_admin')")
@@ -83,12 +62,7 @@ public class UserController {
         return iUserService.deleteBatchByIds(ids);
     }
 
-    /**
-     * Excel导入用户数据
-     *
-     * @param file EXCEL文件
-     * @return
-     */
+    /** POST multipart 上传 Excel 批量导入用户。 */
     @ApiOperation("Excel导入用户数据")
     @PostMapping("/import")
     @PreAuthorize("hasAnyAuthority('role_teacher','role_admin')")
@@ -97,12 +71,7 @@ public class UserController {
     }
 
 
-    /**
-     * 用户加入班级，只有学生才能加入班级
-     *
-     * @param code 班级代码
-     * @return
-     */
+    /** PUT 学生凭班级口令加入班级。 */
     @ApiOperation("用户加入班级")
     @PutMapping("/grade/join")
     @PreAuthorize("hasAnyAuthority('role_student')")
@@ -110,15 +79,7 @@ public class UserController {
         return iUserService.joinGrade(code);
     }
 
-    /**
-     * 教师和管理员 用户管理 分页获取用户信息
-     *
-     * @param pageNum  页码
-     * @param pageSize 每页大小
-     * @param gradeId  班级ID
-     * @param realName 真实姓名
-     * @return
-     */
+    /** GET 用户管理分页（教师限定所带班级学生）。 */
     @ApiOperation("分页获取用户信息")
     @GetMapping("/paging")
     @PreAuthorize("hasAnyAuthority('role_teacher','role_admin')")
@@ -129,12 +90,7 @@ public class UserController {
         return iUserService.pagingUser(pageNum, pageSize, gradeId, realName);
     }
 
-    /**
-     * 用户上传头像
-     *
-     * @param file 头像文件
-     * @return 返回头像地址
-     */
+    /** PUT multipart 上传头像并更新用户表 URL。 */
     @ApiOperation("用户上传头像")
     @PutMapping("/uploadAvatar")
     @PreAuthorize("hasAnyAuthority('role_student','role_teacher','role_admin')")

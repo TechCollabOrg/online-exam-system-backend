@@ -11,7 +11,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import java.util.List;
 
 /**
- * 题库管理服务接口
+ * 题库：创建与维护、分页检索、刷题场景下列表与分类筛选。
  *
  * @author WeiJin
  * @since 2024-03-21

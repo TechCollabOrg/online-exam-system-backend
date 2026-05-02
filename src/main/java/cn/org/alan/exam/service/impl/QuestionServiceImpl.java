@@ -31,10 +31,10 @@ import java.io.IOException;
 import java.util.*;
 
 /**
- * 试题管理实现类
+ * 试题全生命周期：录入与选项联动、分页检索、Excel 批量导入、图片题干上传及逻辑删除；
+ * 权限上区分教师自有题库与管理员。
  *
  * @author WeiJin
- * @since 2024-03-21
  */
 @Service
 public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> implements IQuestionService {
@@ -48,6 +48,7 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
     @Resource
     private ExerciseRecordMapper exerciseRecordMapper;
 
+    /** 新增单题并写入选项：简答题仅允许一条参考答案选项；客观题批量插入选项。 */
     @Override
     @Transactional
     public Result<String> addSingleQuestion(QuestionFrom questionFrom) {
@@ -77,6 +78,7 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
 
     }
 
+    /** 批量删除试题：先清关联刷题记录与选项，再删题干（与 Mapper 入参语义一致）。 */
     @Override
     @Transactional
     public Result<String> deleteBatchByIds(String ids) {
@@ -92,6 +94,7 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
         return Result.success("批量删除试题成功");
     }
 
+    /** 试题分页：按当前用户角色过滤教师题库；支持标题、题型、所属题库筛选。 */
     @Override
     public Result<IPage<QuestionVO>> pagingQuestion(Integer pageNum, Integer pageSize, String title, Integer type, Integer repoId) {
         IPage<QuestionVO> page = new Page<>(pageNum, pageSize);
@@ -103,12 +106,14 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
         return Result.success("分页查询试题成功", page);
     }
 
+    /** 单题详情（含选项等由 Mapper 组装为 {@link QuestionVO}）。 */
     @Override
     public Result<QuestionVO> querySingle(Integer id) {
         QuestionVO result = questionMapper.selectSingle(id);
         return Result.success("根据试题id获取单题详情成功", result);
     }
 
+    /** 更新题干及所属选项行（逐条 {@code updateById}）。 */
     @Override
     @Transactional
     public Result<String> updateQuestion(QuestionFrom questionFrom) {
@@ -123,6 +128,9 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
         return Result.success("修改试题成功");
     }
 
+    /**
+     * 将 Excel 模板试题导入指定题库 {@code id}：逐题插入并批量插入选项，简答题选项默认标记为正确。
+     */
     @SneakyThrows(Exception.class)
     @Override
     @Transactional

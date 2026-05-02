@@ -9,9 +9,10 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 /**
- * @Author Alan
- * @Version
- * @Date 2024/4/1 3:42 PM
+ * 考试编辑页回显：规则、抽题、阅卷设置等完整配置。
+ *
+ * @author Alan
+ * @since 2024/4/1
  */
 @Data
 public class ExamDetailVO {

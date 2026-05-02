@@ -7,9 +7,10 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
+ * 讨论回复列表展示：作者、内容、点赞数、排序字段等。
+ *
  * @author WeiJin
- * @version 1.0
- * @since 2025/4/4 14:29
+ * @since 2025/4/4
  */
 @Data
 public class ReplyVo {

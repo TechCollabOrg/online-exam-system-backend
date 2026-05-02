@@ -10,7 +10,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import javax.servlet.http.HttpServletResponse;
 
 /**
- * 成绩管理服务接口
+ * 考试成绩：班级成绩统计分页、单场得分明细、导出、缺考/待阅卷用户分页。
  *
  * @author WeiJin
  * @since 2024-03-21

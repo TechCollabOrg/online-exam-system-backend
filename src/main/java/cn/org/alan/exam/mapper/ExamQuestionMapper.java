@@ -7,11 +7,10 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 试卷试题关联表 Mapper 接口
+ * 试卷与试题关联表 Mapper：组卷写入题目、按卷查询题型、查询待答简答题等。
  *
- * @Author Alan
- * @Version
- * @Date 2024/4/7 3:49 PM
+ * @author Alan
+ * @since 2024/4/7
  */
 public interface ExamQuestionMapper extends BaseMapper<ExamQuestion> {
 

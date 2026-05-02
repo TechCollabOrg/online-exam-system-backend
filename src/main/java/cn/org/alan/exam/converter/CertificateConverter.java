@@ -8,14 +8,17 @@ import org.mapstruct.Mappings;
 import org.springframework.stereotype.Component;
 
 /**
- * @ Author JinXi
- * @ Version 1.0
- * @ Date 2024/5/11 14:40
+ * 证书表单与 {@link Certificate} 实体映射（显式声明证书名称字段对齐）。
+ *
+ * @author JinXi
  */
 @Component
 @Mapper(componentModel="spring")
 public interface CertificateConverter {
 
+    /**
+     * 创建/更新证书时的表单拷贝到实体。
+     */
     @Mappings({
             @Mapping(target = "certificateName",source = "certificateName")
     })

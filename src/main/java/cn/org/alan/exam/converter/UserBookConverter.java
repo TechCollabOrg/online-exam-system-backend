@@ -9,14 +9,15 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 
 /**
- * @Author Alan
- * @Version 1.0
- * @Date 2024/3/29 15:51
+ * 错题本 {@link UserBook} 与「考试-错题」关联展示 VO 的映射。
+ *
+ * @author Alan
  */
 @Component
 @Mapper(componentModel = "spring")
 public interface UserBookConverter {
 
+    /** 批量错题实体转前端列表 VO。 */
     List<ReUserExamBookVO> listEntityToVo(List<UserBook> list);
 
 }

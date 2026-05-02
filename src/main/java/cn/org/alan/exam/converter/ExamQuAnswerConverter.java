@@ -7,14 +7,17 @@ import org.mapstruct.Mapping;
 import org.springframework.stereotype.Component;
 
 /**
- * @Author Alan
- * @Version
- * @Date 2024/5/6 10:54 AM
+ * 考试中单题作答提交 {@link ExamQuAnswerAddForm} 与 {@link ExamQuAnswer} 映射。
+ *
+ * @author Alan
  */
 @Component
 @Mapper(componentModel = "spring")
 public interface ExamQuAnswerConverter {
 
+    /**
+     * 前端提交 {@code quId} 对齐持久层 {@code questionId}。
+     */
     @Mapping(target = "questionId", source = "quId")
     ExamQuAnswer formToEntity(ExamQuAnswerAddForm examQuAnswerAddForm);
 

@@ -9,7 +9,7 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
- * 班级刷题关联实体类
+ * 班级与可练习题库（刷题任务）的关联。
  *
  * @author WeiJin
  * @since 2024-03-21

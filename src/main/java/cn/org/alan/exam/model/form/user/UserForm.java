@@ -10,9 +10,10 @@ import java.time.LocalDateTime;
 
 
 /**
- * @Author WeiJin
- * @Version 1.0
- * @Date 2024/3/29 15:17
+ * 用户创建、导入或后台编辑时的表单字段集合。
+ *
+ * @author WeiJin
+ * @since 2024/3/29
  */
 @Data
 public class UserForm {

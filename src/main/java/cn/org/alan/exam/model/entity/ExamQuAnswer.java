@@ -10,7 +10,7 @@ import lombok.Data;
 import java.io.Serializable;
 
 /**
- * 考试试题答案关联实体类
+ * 用户在某场考试中对某一题的作答：选项 ID、主观文本、得分与 AI 辅助分等。
  *
  * @author WeiJin
  * @since 2024-03-21

@@ -27,10 +27,9 @@ import java.util.stream.Collectors;
 
 
 /**
- * 证书服务实现类
+ * 证书模板维护（教师侧 CRUD）与用户持证分页查询；写入操作失败抛 {@link ServiceRuntimeException}。
  *
  * @author Jinxin
- * @since 2024-03-21
  */
 @Service
 public class CertificateServiceImpl extends ServiceImpl<CertificateMapper, Certificate> implements ICertificateService {
@@ -40,6 +39,7 @@ public class CertificateServiceImpl extends ServiceImpl<CertificateMapper, Certi
     @Resource
     private CertificateConverter certificateConverter;
 
+    /** 新增证书模板（表单经 {@link CertificateConverter} 转实体）。 */
     @Override
     @Transactional
     public Result<String> addCertificate(CertificateForm certificateForm) {
@@ -52,6 +52,7 @@ public class CertificateServiceImpl extends ServiceImpl<CertificateMapper, Certi
         throw new ServiceRuntimeException("添加证书失败");
     }
 
+    /** 分页查询当前教师创建的证书，支持名称与认证单位模糊条件。 */
     @Override
     public Result<IPage<Certificate>> pagingCertificate(Integer pageNum, Integer pageSize, String certificateName, String certificationUnit) {
         IPage<Certificate> page = new Page<>(pageNum, pageSize);
@@ -61,6 +62,7 @@ public class CertificateServiceImpl extends ServiceImpl<CertificateMapper, Certi
     }
 
 
+    /** 按主键更新证书信息。 */
     @Override
     @Transactional
     public Result<String> updateCertificate(CertificateForm certificateForm) {
@@ -74,6 +76,7 @@ public class CertificateServiceImpl extends ServiceImpl<CertificateMapper, Certi
 
     }
 
+    /** 按主键删除证书模板。 */
     @Override
     @Transactional
     public Result<String> deleteCertificate(Integer id) {
@@ -85,6 +88,7 @@ public class CertificateServiceImpl extends ServiceImpl<CertificateMapper, Certi
 
     }
 
+    /** 学生/用户查看本人已获证书分页，可按关联考试名称筛选。 */
     @Override
     public Result<IPage<MyCertificateVO>> getMyCertificatePaging(Integer pageNum, Integer pageSize, String examName) {
         Page<MyCertificateVO> myCertificateVOPage = new Page<>();

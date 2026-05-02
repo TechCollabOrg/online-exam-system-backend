@@ -5,12 +5,10 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
 
 /**
- * 说明：
- * 日志表Mapper
+ * 操作日志表 Mapper，使用 BaseMapper 通用 CRUD。
  *
- * @Author Alan
- * @Version 1.0
- * @Date 2025/4/4 2:55 PM
+ * @author Alan
+ * @since 2025/4/4
  */
 @Mapper
 public interface LogMapper extends BaseMapper<Log> {

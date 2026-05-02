@@ -9,11 +9,10 @@ import javax.servlet.http.HttpServletResponse;
 
 
 /**
- * 权限管理接口
+ * 认证与会话：登录、注销、验证码、修改密码等（非 Spring Security 角色配置）。
  *
- * @Author Alan
- * @Version
- * @Date 2024/3/28 1:33 PM
+ * @author Alan
+ * @since 2024/3/28
  */
 public interface IAuthService {
 

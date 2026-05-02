@@ -17,9 +17,9 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.annotation.Resource;
 
 /**
+ * 讨论帖：创建、删除、楼主视角分页、详情及按班级分页列表。
+ *
  * @author WeiJin
- * @version 1.0
- * @since 2025/4/3 9:41
  */
 @Service
 public class DiscussionServiceImpl extends ServiceImpl<DiscussionMapper, Discussion> implements IDiscussionService {
@@ -29,6 +29,7 @@ public class DiscussionServiceImpl extends ServiceImpl<DiscussionMapper, Discuss
     @Resource
     private ReplyMapper replyMapper;
 
+    /** 发帖：表单转实体并写入当前用户为发布人。 */
     @Override
     public Discussion createDiscussion(DiscussionForm discussionForm) {
         // 入参转为实体
@@ -45,6 +46,9 @@ public class DiscussionServiceImpl extends ServiceImpl<DiscussionMapper, Discuss
     }
 
 
+    /**
+     * 删除讨论帖（存在性校验）；事务内执行，调用方需另行清理回复与点赞（若业务未在此处级联）。
+     */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public int deleteDiscussion(Integer id) {
@@ -64,6 +68,7 @@ public class DiscussionServiceImpl extends ServiceImpl<DiscussionMapper, Discuss
         throw new RuntimeException("删除讨论失败");
     }
 
+    /** 当前用户发布的讨论分页，可按标题、班级筛选。 */
     @Override
     public Page<PageDiscussionVo> getOwnerDiscussions(String title, Integer gradeId, Integer currentPage, Integer size) {
         Page<PageDiscussionVo> page = new Page<>(currentPage, size);
@@ -71,11 +76,13 @@ public class DiscussionServiceImpl extends ServiceImpl<DiscussionMapper, Discuss
     }
 
 
+    /** 讨论详情（含回复统计等由 Mapper 组装）。 */
     @Override
     public DiscussionDetailVo getDiscussionDetail(Integer id) {
         return baseMapper.selectDetail(id);
     }
 
+    /** 当前用户所在班级的讨论列表分页。 */
     @Override
     public Page<PageDiscussionVo> pageDiscussionByGrade(String title, Integer currentPage, Integer size) {
         Page<PageDiscussionVo> page = new Page<>(currentPage, size);

@@ -6,9 +6,10 @@ import lombok.Data;
 import javax.validation.constraints.NotBlank;
 
 /**
- * @Author Alan
- * @Version
- * @Date 2024/4/15 1:37 PM
+ * 教师批改主观题时单题得分与扣分说明。
+ *
+ * @author Alan
+ * @since 2024/4/15
  */
 @Data
 public class CorrectAnswerFrom {

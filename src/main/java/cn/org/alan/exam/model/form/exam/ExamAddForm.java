@@ -6,11 +6,10 @@ import javax.validation.constraints.*;
 import java.time.LocalDateTime;
 
 /**
- * 试卷添加请求体
+ * 新建考试：基本信息、抽题策略、开放时间与班级范围等。
  *
- * @Author Alan
- * @Version
- * @Date 2024/4/5 11:15 PM
+ * @author Alan
+ * @since 2024/4/5
  */
 @Data
 public class ExamAddForm {

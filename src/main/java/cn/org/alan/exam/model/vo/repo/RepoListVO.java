@@ -3,9 +3,10 @@ package cn.org.alan.exam.model.vo.repo;
 import lombok.Data;
 
 /**
- * @Author WeiJin
- * @Version 1.0
- * @Date 2024/6/3 21:38
+ * 下拉或筛选用的题库简要项（id、标题等）。
+ *
+ * @author WeiJin
+ * @since 2024/6/3
  */
 @Data
 public class RepoListVO {

@@ -4,9 +4,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
 /**
- * @Author 赵浩森
- * @Version
- * @Date 2024/4/13 10:44
+ * 阅卷待打分列表中的题目项：分值、学生作答摘录等。
+ *
+ * @author 赵浩森
+ * @since 2024/4/13
  */
 @Data
 public class QuestionScoreVO {

@@ -8,9 +8,10 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 /**
- * @Author Alan
- * @Version
- * @Date 2024/4/1 3:18 PM
+ * 考试列表/卡片：标题、时间、状态、总分与各题型分值占比展示。
+ *
+ * @author Alan
+ * @since 2024/4/1
  */
 @Data
 public class ExamVO {

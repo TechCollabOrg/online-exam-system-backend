@@ -9,9 +9,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * @Author WeiJin
- * @Version 1.0
- * @Date 2024/4/8 10:21
+ * Excel 批量导入试题时单行映射字段。
+ *
+ * @author WeiJin
+ * @since 2024/4/8
  */
 @Data
 public class QuestionExcelFrom {

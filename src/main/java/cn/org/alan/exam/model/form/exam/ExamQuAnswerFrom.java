@@ -5,9 +5,10 @@ import lombok.Data;
 import javax.validation.constraints.NotBlank;
 
 /**
- * @Author Alan
- * @Version
- * @Date 2024/4/7 11:54 PM
+ * 整场考试交卷时聚合的多题作答明细项。
+ *
+ * @author Alan
+ * @since 2024/4/7
  */
 @Data
 public class ExamQuAnswerFrom {

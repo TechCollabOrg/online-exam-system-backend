@@ -6,11 +6,10 @@ import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 
 /**
- * 讨论入参
+ * 教师创建讨论主题：标题、内容、可见班级等。
  *
  * @author WeiJin
- * @version 1.0
- * @since 2025/4/3 9:32
+ * @since 2025/4/3
  */
 @Data
 public class DiscussionForm {

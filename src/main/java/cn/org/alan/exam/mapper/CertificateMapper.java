@@ -11,7 +11,7 @@ import java.util.List;
 
 
 /**
- * 证书 Mapper 接口
+ * 证书模板表 Mapper：教师/管理员分页维护、学生「我的证书」分页查询。
  *
  * @author JinXin
  * @since 2024-03-21

@@ -19,10 +19,10 @@ import javax.annotation.Resource;
 import java.util.List;
 
 /**
- * 统计管理服务实现类
+ * 管理端/教师端看板数据：各班级学生数、考试场数、总览计数及当前用户日活曲线。
+ * 教师（角色码 2）仅统计其加入的班级；管理员（3）看全量或按 SQL 内逻辑过滤。
  *
  * @author WeiJin
- * @since 2024-03-21
  */
 @Service
 public class StatServiceImpl extends ServiceImpl<ExamGradeMapper, ExamGrade> implements IStatService {
@@ -40,6 +40,7 @@ public class StatServiceImpl extends ServiceImpl<ExamGradeMapper, ExamGrade> imp
     @Resource
     private UserGradeMapper userGradeMapper;
 
+    /** 按角色返回各班在读学生数量列表；教师未加入班级时抛业务异常。 */
     @Override
     public Result<List<GradeStudentVO>> getStudentGradeCount() {
         //获取班级
@@ -58,6 +59,7 @@ public class StatServiceImpl extends ServiceImpl<ExamGradeMapper, ExamGrade> imp
         return Result.success("查询成功", gradeStudentVOs);
     }
 
+    /** 按角色统计各班关联考试场次（维度与 {@link #getStudentGradeCount()} 一致）。 */
     @Override
     public Result<List<GradeExamVO>> getExamGradeCount() {
         //获取班级
@@ -76,6 +78,9 @@ public class StatServiceImpl extends ServiceImpl<ExamGradeMapper, ExamGrade> imp
         return Result.success("查询成功", gradeExamVOs);
     }
 
+    /**
+     * 总览：管理员统计全站班级/考试/试题；教师仅统计本人相关（班级数通过 userGrade、考试与试题带 userId 条件）。
+     */
     @Override
     public Result<AllStatsVO> getAllCount() {
         AllStatsVO allStatsVO = new AllStatsVO();
@@ -104,6 +109,7 @@ public class StatServiceImpl extends ServiceImpl<ExamGradeMapper, ExamGrade> imp
         return Result.success("查询成功", allStatsVO);
     }
 
+    /** 当前登录用户近期每日登录/活跃时长序列（Mapper 自定义 SQL）。 */
     @Override
     public Result<List<DailyVO>> getDaily() {
         List<DailyVO> daily = userDailyLoginDurationMapper.getDaily(SecurityUtil.getUserId());

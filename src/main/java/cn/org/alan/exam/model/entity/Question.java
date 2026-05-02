@@ -10,7 +10,7 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
- * 试题实体类
+ * 题目主表：类型、分值、所属题库、题干与解析等。
  *
  * @author WeiJin
  * @since 2024-03-21

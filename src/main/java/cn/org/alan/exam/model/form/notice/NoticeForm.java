@@ -6,9 +6,10 @@ import lombok.Data;
 import javax.validation.constraints.NotBlank;
 
 /**
- * @Author Alan
- * @Version
- * @Date 2024/3/28 10:44 PM
+ * 发布公告或更新公告标题、正文、可见范围等。
+ *
+ * @author Alan
+ * @since 2024/3/28
  */
 @Data
 public class NoticeForm {

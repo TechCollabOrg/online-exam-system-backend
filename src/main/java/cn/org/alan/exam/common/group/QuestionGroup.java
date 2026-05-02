@@ -1,14 +1,14 @@
 package cn.org.alan.exam.common.group;
 
 /**
- * 说明：
- * validation试题分组
+ * 试题表单校验分组。
  *
- * @Author WeiJin
- * @Version 1.0
- * @Date 2024/4/1 11:22
+ * @author WeiJin
+ * @since 2024/4/1
  */
 public interface QuestionGroup {
+
+    /** 新增试题时的字段校验分组。 */
     interface QuestionAddGroup extends QuestionGroup {
     }
 }

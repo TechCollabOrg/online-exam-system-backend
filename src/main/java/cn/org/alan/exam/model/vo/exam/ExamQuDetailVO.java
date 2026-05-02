@@ -6,9 +6,10 @@ import lombok.Data;
 import java.util.List;
 
 /**
- * @Author Alan
- * @Version
- * @Date 2024/4/1 3:39 PM
+ * 进入考试后单题完整内容：题干、选项、已选状态、标记等。
+ *
+ * @author Alan
+ * @since 2024/4/1
  */
 @Data
 public class ExamQuDetailVO {

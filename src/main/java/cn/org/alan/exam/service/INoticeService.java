@@ -8,7 +8,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 /**
- * 公告服务接口
+ * 公告：发布与修改、可见范围、教师/学生端列表与最新公告。
  *
  * @author Alan
  * @since 2024-03-21

@@ -13,12 +13,9 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 /**
- * 说明：
- * 文件处理Controller
+ * 通用图片上传（如富文本、业务图片），与头像接口共用存储适配器。
  *
- * @Author Alan
- * @Version 1.0
- * @Date 2025/4/6 3:23 PM
+ * @author Alan
  */
 @RestController
 @Api(tags = "文件服务接口")
@@ -26,12 +23,8 @@ import org.springframework.web.multipart.MultipartFile;
 public class FileController {
     @Autowired
     private IFileService fileService;
-    /**
-     * 上传图片
-     *
-     * @param file 文件
-     * @return 返回头像地址
-     */
+
+    /** POST multipart 上传图片并返回可访问 URL。 */
     @ApiOperation("上传图片")
     @PostMapping("/image")
     @PreAuthorize("hasAnyAuthority('role_student','role_teacher','role_admin')")

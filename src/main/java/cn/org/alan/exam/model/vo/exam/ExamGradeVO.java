@@ -3,9 +3,10 @@ package cn.org.alan.exam.model.vo.exam;
 import lombok.Data;
 
 /**
- * @Author Alan
- * @Version
- * @Date 2024/4/8 10:07 AM
+ * 考试与绑定班级的简要关系（班级 id、名称等）。
+ *
+ * @author Alan
+ * @since 2024/4/8
  */
 @Data
 public class ExamGradeVO {

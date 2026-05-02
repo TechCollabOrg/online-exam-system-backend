@@ -10,7 +10,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import java.util.List;
 
 /**
- * 班级服务类
+ * 班级：创建与编辑、分页查询、学生加入/退出、教师任课关联。
  *
  * @author Alan
  * @since 2024-03-21

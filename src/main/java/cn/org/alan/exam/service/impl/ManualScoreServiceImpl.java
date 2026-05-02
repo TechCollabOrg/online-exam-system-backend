@@ -25,10 +25,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 
 /**
- * 答卷管理服务实现类
+ * 简答题/主观题人工阅卷：查看考生作答明细、批量打分写 {@link ManualScore}、累加总分并标记已阅卷，
+ * 及格且考试绑定证书时写入 {@link CertificateUser}；教师侧待阅试卷分页与待阅学生分页。
  *
  * @author WeiJin
- * @since 2024-03-21
  */
 @Service
 public class ManualScoreServiceImpl extends ServiceImpl<ManualScoreMapper, ManualScore> implements IManualScoreService {
@@ -46,19 +46,16 @@ public class ManualScoreServiceImpl extends ServiceImpl<ManualScoreMapper, Manua
     @Resource
     private CertificateUserMapper certificateUserMapper;
 
-    /**
-     * 试卷查询信息
-     *
-     * @param userId
-     * @param examId
-     * @return
-     */
+    /** 教师查看指定学员在某场考试中的主观题作答明细列表。 */
     @Override
     public Result<List<UserAnswerDetailVO>> getDetail(Integer userId, Integer examId) {
         List<UserAnswerDetailVO> list = examQuAnswerMapper.selectUserAnswer(userId, examId);
         return Result.success("查询成功", list);
     }
 
+    /**
+     * 批量提交批改分数：插入 manual_score、更新 user_exams_score 总分与 whetherMark，并按及格线发证书。
+     */
     @Override
     @Transactional
     public Result<String> correct(List<CorrectAnswerFrom> correctAnswerFroms) {
@@ -119,6 +116,7 @@ public class ManualScoreServiceImpl extends ServiceImpl<ManualScoreMapper, Manua
         return Result.success("批改成功");
     }
 
+    /** 当前教师创建的、包含待阅主观题的考试分页，补充班级应考人数、实考人数、已阅份数。 */
     @Override
     public Result<IPage<AnswerExamVO>> examPage(Integer pageNum, Integer pageSize, String examName) {
 
@@ -144,8 +142,8 @@ public class ManualScoreServiceImpl extends ServiceImpl<ManualScoreMapper, Manua
 
     }
 
+    /** 某场考试下仍未完成阅卷（whetherMark 未置完成）的考生分页，支持姓名模糊。 */
     @Override
-
     public Result<IPage<UncorrectedUserVO>> stuExamPage(Integer pageNum, Integer pageSize, Integer examId, String realName) {
         IPage<UncorrectedUserVO> page = new Page<>(pageNum, pageSize);
         page = userExamsScoreMapper.uncorrectedUser(page, examId, realName);

@@ -14,10 +14,9 @@ import javax.annotation.Resource;
 import java.util.List;
 
 /**
- * 分类管理控制器
+ * 题库多级分类的增删改查与树形读取。
  *
  * @author Moxuec
- * @since 2025-04-09
  */
 @Api(tags = "题库分类管理相关接口")
 @RestController
@@ -27,12 +26,7 @@ public class CategoryController {
     @Resource
     private ICategoryService categoryService;
 
-    /**
-     * 添加分类
-     *
-     * @param category 分类信息
-     * @return 结果
-     */
+    /** POST 新增分类。 */
     @PostMapping
     @ApiOperation("添加分类")
     @PreAuthorize("hasAnyAuthority('role_teacher','role_admin')")
@@ -40,13 +34,7 @@ public class CategoryController {
         return categoryService.addCategory(category);
     }
 
-    /**
-     * 修改分类
-     *
-     * @param category 分类信息
-     * @param id 分类ID
-     * @return 结果
-     */
+    /** PUT 更新分类。 */
     @PutMapping("/{id}")
     @ApiOperation("修改分类")
     @PreAuthorize("hasAnyAuthority('role_teacher','role_admin')")
@@ -54,12 +42,7 @@ public class CategoryController {
         return categoryService.updateCategory(category, id);
     }
 
-    /**
-     * 删除分类
-     *
-     * @param id 分类ID
-     * @return 结果
-     */
+    /** DELETE 删除分类（有子节点时 Service 侧拒绝）。 */
     @DeleteMapping("/{id}")
     @ApiOperation("删除分类")
     @PreAuthorize("hasAnyAuthority('role_teacher','role_admin')")
@@ -67,11 +50,7 @@ public class CategoryController {
         return categoryService.deleteCategory(id);
     }
 
-    /**
-     * 获取分类树
-     *
-     * @return 分类树
-     */
+    /** GET 完整分类树。 */
     @GetMapping("/tree")
     @ApiOperation("获取分类树")
     @PreAuthorize("hasAnyAuthority('role_student','role_teacher','role_admin')")
@@ -79,11 +58,7 @@ public class CategoryController {
         return categoryService.getCategoryTree();
     }
 
-    /**
-     * 获取一级分类
-     *
-     * @return 一级分类列表
-     */
+    /** GET 一级分类列表。 */
     @GetMapping("/first-level")
     @ApiOperation("获取一级分类")
     @PreAuthorize("hasAnyAuthority('role_student','role_teacher','role_admin')")
@@ -91,12 +66,7 @@ public class CategoryController {
         return categoryService.getFirstLevelCategories();
     }
 
-    /**
-     * 获取子分类
-     *
-     * @param parentId 父分类ID
-     * @return 子分类列表
-     */
+    /** GET 指定父节点下的子分类。 */
     @GetMapping("/children/{parentId}")
     @ApiOperation("获取子分类")
     @PreAuthorize("hasAnyAuthority('role_student','role_teacher','role_admin')")

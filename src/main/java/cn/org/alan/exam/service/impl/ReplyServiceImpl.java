@@ -20,9 +20,9 @@ import java.util.List;
 import java.util.Objects;
 
 /**
+ * 讨论回复：新增、删除（楼主或本人）、楼内列表查询及按讨论批量删除（配合删帖）。
+ *
  * @author WeiJin
- * @version 1.0
- * @since 2025/4/4 14:13
  */
 @Service
 public class ReplyServiceImpl extends ServiceImpl<ReplyMapper, Reply> implements IReplyService {
@@ -34,6 +34,7 @@ public class ReplyServiceImpl extends ServiceImpl<ReplyMapper, Reply> implements
     @Resource
     private ILikeService likeService;
 
+    /** 发表评论：无父级时 {@code parentId} 置为 -1，写入当前用户。 */
     @Override
     public Reply addReply(ReplyForm replyForm) {
         // 类型转换
@@ -51,6 +52,9 @@ public class ReplyServiceImpl extends ServiceImpl<ReplyMapper, Reply> implements
         throw new RuntimeException("回复失败");
     }
 
+    /**
+     * 删除单条回复：仅回复作者或讨论发布者可删；同步移除该回复上的点赞。
+     */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Integer deleteReply(Integer id) {
@@ -84,11 +88,13 @@ public class ReplyServiceImpl extends ServiceImpl<ReplyMapper, Reply> implements
         throw new RuntimeException("删除回复失败");
     }
 
+    /** 某讨论下回复列表，{@code orderBy} 由 Mapper 解释排序方式，带当前用户点赞态。 */
     @Override
     public List<ReplyVo> queryReplyByDiscussionId(Integer orderBy, Integer discussionId) {
         return baseMapper.selectReplies(discussionId, SecurityUtil.getUserId(), orderBy);
     }
 
+    /** 删除讨论下全部回复及关联点赞（返回影响行数近似值）。 */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public int deleteByDiscussionId(Integer discussionId) {

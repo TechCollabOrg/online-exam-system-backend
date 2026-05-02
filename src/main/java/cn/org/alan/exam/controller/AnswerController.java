@@ -18,11 +18,9 @@ import javax.annotation.Resource;
 import java.util.List;
 
 /**
- * 答卷管理
+ * 主观题阅卷：查看考生作答、批量打分、待阅试卷与待阅考生分页。
  *
- * @Author WeiJin
- * @Version
- * @Date 2024/3/25 11:20 AM
+ * @author WeiJin
  */
 @Api(tags = "答卷管理接口")
 @RestController
@@ -32,11 +30,7 @@ public class AnswerController {
     @Resource
     private IManualScoreService manualScoreService;
 
-    /**
-     * 试卷查询信息
-     *
-     * @return
-     */
+    /** GET 指定用户在某场考试的主观题作答明细。 */
     @ApiOperation("试卷查询信息")
     @GetMapping("/detail")
     @PreAuthorize("hasAnyAuthority('role_teacher','role_admin')")
@@ -45,11 +39,7 @@ public class AnswerController {
         return manualScoreService.getDetail(userId, examId);
     }
 
-    /**
-     * 批改试卷
-     *
-     * @return
-     */
+    /** PUT 批量提交简答题分数；Body 校验分组 {@link AnswerGroup.CorrectGroup}。 */
     @ApiOperation("批改试卷")
     @PutMapping("/correct")
     @PreAuthorize("hasAnyAuthority('role_teacher','role_admin')")
@@ -57,11 +47,7 @@ public class AnswerController {
         return manualScoreService.correct(correctAnswerFroms);
     }
 
-    /**
-     * 分页查找待阅卷考试
-     *
-     * @return
-     */
+    /** GET 教师待阅卷的考试分页。 */
     @ApiOperation("分页查找待阅卷考试")
     @GetMapping("/exam/page")
     @PreAuthorize("hasAnyAuthority('role_teacher','role_admin')")
@@ -71,14 +57,7 @@ public class AnswerController {
         return manualScoreService.examPage(pageNum, pageSize, examName);
     }
 
-    /**
-     * 查询待批阅的用户
-     *
-     * @param pageNum  页码
-     * @param pageSize 每页大小
-     * @param examId   考试ID
-     * @return
-     */
+    /** GET 某场考试下仍未完成阅卷的考生分页。 */
     @ApiOperation("查询待批阅的用户")
     @GetMapping("/exam/stu")
     @PreAuthorize("hasAnyAuthority('role_teacher','role_admin')")

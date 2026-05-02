@@ -8,6 +8,8 @@ import org.apache.ibatis.annotations.Mapper;
 import java.util.List;
 
 /**
+ * 讨论回复表 Mapper：按讨论查询回复（支持排序）、查询某条回复的子评论。
+ *
  * @author WeiJin
  * @version 1.0
  * @since 2025/4/4 13:21

@@ -11,17 +11,18 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
- * 说明：
+ * 操作/学习日志：写入 {@link Log} 表并按当前登录用户分页查询。
  *
- * @Author Alan
- * @Version 1.0
- * @Date 2025/4/4 11:41 AM
+ * @author Alan
  */
 @Service
 public class LogServiceImpl implements ILogService {
     @Autowired
     private LogMapper logMapper;
 
+    /**
+     * 插入一条日志，失败抛 {@link ServiceRuntimeException}。
+     */
     @Override
     public Log add(Log log) {
         int insert = logMapper.insert(log);
@@ -31,6 +32,9 @@ public class LogServiceImpl implements ILogService {
         throw new ServiceRuntimeException("添加日志失败");
     }
 
+    /**
+     * 分页查询当前登录用户的日志，按创建时间倒序。
+     */
     @Override
     public Page<Log> getPage(Integer pageNum, Integer pageSize) {
         Integer userId = SecurityUtil.getUserId();

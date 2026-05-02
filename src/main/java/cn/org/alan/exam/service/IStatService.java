@@ -11,7 +11,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import java.util.List;
 
 /**
- * 统计管理服务接口
+ * 运维统计：各班人数、考试场次等聚合（按教师/管理员数据范围过滤）。
  *
  * @author WeiJin
  * @since 2024-03-21

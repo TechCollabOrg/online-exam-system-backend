@@ -7,12 +7,9 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.stereotype.Service;
 
 /**
- * <p>
- *  服务实现类
- * </p>
+ * 系统角色字典 {@link cn.org.alan.exam.model.entity.Role} 的基础 CRUD 封装。
  *
  * @author WeiJin
- * @since 2024-03-21
  */
 @Service
 public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements IRoleService {

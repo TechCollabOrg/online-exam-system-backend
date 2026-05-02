@@ -10,7 +10,7 @@ import lombok.Data;
 import java.io.Serializable;
 
 /**
- * 考试题库关联实体类
+ * 考试抽题所用的题库来源（一场考试可绑定多个题库）。
  *
  * @author WeiJin
  * @since 2024-03-21

@@ -5,9 +5,10 @@ import lombok.Data;
 import javax.validation.constraints.NotBlank;
 
 /**
- * @Author Alan
- * @Version
- * @Date 2024/5/6 11:27 AM
+ * 考试过程中暂存或提交单题答案的入参结构。
+ *
+ * @author Alan
+ * @since 2024/5/6
  */
 @Data
 public class ExamQuAnswerAddForm {

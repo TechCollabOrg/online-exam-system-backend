@@ -11,7 +11,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import java.util.List;
 
 /**
- * 试卷分数表 Mapper 接口
+ * 用户考试成绩表 Mapper：班级成绩统计分页、成绩分页、导出列表、缺考/未阅卷用户分页。
  *
  * @author WeiJin
  * @since 2024-03-21

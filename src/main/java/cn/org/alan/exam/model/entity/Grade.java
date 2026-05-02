@@ -8,7 +8,7 @@ import lombok.Data;
 import java.io.Serializable;
 
 /**
- * 班级实体类
+ * 教学班级：名称、编码、所属教师等。
  *
  * @author WeiJin
  * @since 2024-03-21

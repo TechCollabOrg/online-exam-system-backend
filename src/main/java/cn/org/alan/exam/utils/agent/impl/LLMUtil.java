@@ -42,14 +42,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 大语言模型实现AIChat
- * 目前只可以直接与大模型进行对话，
- * 目前java版本是8不能使用embedding模型和向量数据库，
- * 如果确实使用这个功能，需要升级java17
+ * {@link AIChat} 的 LLM 直连实现：通过 LangChain4j 装配 {@link OpenAiChatModel} 与 {@link Assistant}，
+ * 将 {@link Constants#systemMessage 系统提示词} 与用户输入拼接后调用模型。
+ * <p>
+ * 配置 {@code online-exam.chat-platform.type=llm} 时生效。向量检索/Milvus 相关代码已注释，若需 RAG 需 JDK 17+ 与环境就绪后再启用。
  *
  * @author 赵浩森
- * @since 2025/4/14 15:55
- * @version 1.0
+ * @since 2025/4/14
  */
 @Service
 @ConditionalOnProperty(name = "online-exam.chat-platform.type", havingValue = "llm")
@@ -85,33 +84,25 @@ public class LLMUtil implements AIChat {
     @Value("${milvus.password}")
     private String milvusPassword;
 
+    /** 系统人设 + 用户消息拼接为单次 prompt，经 {@link Assistant#answer} 返回文本。 */
     @Override
-    // 获取聊天响应的方法
     public String getChatResponse(String msg) {
-        // 创建一个助手（Assistant）
         Assistant assistant = createAssistant();
-
-        // 创建系统消息，通常用于定义助手的行为或角色
         ChatMessage systemMessage = new SystemMessage(Constants.systemMessage);
-
-        // 创建用户消息，表示用户输入的内容
         ChatMessage userMessage = new UserMessage(msg);
-
-        // 构建提示词
         String input = systemMessage.text() + "\n" + userMessage.text();
-        // 调用助手的 `answer` 方法生成回复，并返回结果
         return assistant.answer(input);
     }
 
-    // 创建助手（Assistant）的方法
+    /** 构建兼容 OpenAI API 的聊天模型，并生成 LangChain4j {@link Assistant} 代理（未启用 RAG 时为纯对话）。 */
     private Assistant createAssistant() {
 
-        // 初始化 OpenAI 的聊天语言模型（LLM），并配置相关参数
-        OpenAiChatModel llm = OpenAiChatModel.builder().apiKey(llmApiKey) // 设置 OpenAI API 密钥
-                .modelName(llmModelName) // 设置使用的模型名称
-                .baseUrl(llmBaseUrl) // 设置 OpenAI API 的基础 URL
-                .temperature(Constants.temperature) // 设置生成文本的随机性
-                .maxTokens(Constants.maxToken) // 设置生成文本的最大 token 数
+        OpenAiChatModel llm = OpenAiChatModel.builder()
+                .apiKey(llmApiKey)
+                .modelName(llmModelName)
+                .baseUrl(llmBaseUrl)
+                .temperature(Constants.temperature)
+                .maxTokens(Constants.maxToken)
                 .build();
 
         // 初始化嵌入模型（确保维度与模型匹配）
@@ -155,10 +146,8 @@ public class LLMUtil implements AIChat {
         // 初始化聊天记忆（Chat Memory），用于保存最近的对话历史
         ChatMemory chatMemory = MessageWindowChatMemory.withMaxMessages(Constants.withMaxMessages);*/
 
-        // 使用 AiServices 构建助手实例，并设置相关组件
-        return AiServices.builder(Assistant.class).chatLanguageModel(llm) // 设置聊天语言模型
-//                .contentRetriever(contentRetriever) // 设置内容检索器
-//                .chatMemory(chatMemory) // 设置聊天记忆
+        return AiServices.builder(Assistant.class)
+                .chatLanguageModel(llm)
                 .build();
     }
 

@@ -7,9 +7,10 @@ import lombok.Data;
 import java.util.List;
 
 /**
- * @Author Alan
- * @Version
- * @Date 2024/4/10 9:54 AM
+ * 选题组卷时勾选的多道题目汇总项。
+ *
+ * @author Alan
+ * @since 2024/4/10
  */
 @Data
 public class ExamQuCollectVO {

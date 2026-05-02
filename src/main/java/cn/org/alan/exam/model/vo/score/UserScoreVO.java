@@ -6,9 +6,10 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 /**
- * @Author WeiJin
- * @Version 1.0
- * @Date 2024/4/15 13:38
+ * 成绩列表中单名学生的得分、排名与阅卷状态等。
+ *
+ * @author WeiJin
+ * @since 2024/4/15
  */
 @Data
 public class UserScoreVO {

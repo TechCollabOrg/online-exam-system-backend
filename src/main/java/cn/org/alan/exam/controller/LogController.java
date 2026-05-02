@@ -13,11 +13,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * 说明：
+ * 登录等行为日志分页（当前用户维度，见 Service）。
  *
- * @Author Alan
- * @Version 1.0
- * @Date 2025/4/4 11:37 AM
+ * @author Alan
  */
 @RestController
 @Api(tags = "日志记录接口")
@@ -26,9 +24,10 @@ public class LogController {
     @Autowired
     private ILogService logService;
 
+    /** GET 分页查询当前用户相关日志。 */
     @GetMapping
     @ApiOperation("分页查询日志")
-    Result getLogPage(@RequestParam(value = "pageNum", required = false, defaultValue = "1") Integer pageNum,
+    public Result<Page<Log>> getLogPage(@RequestParam(value = "pageNum", required = false, defaultValue = "1") Integer pageNum,
                       @RequestParam(value = "pageSize", required = false, defaultValue = "10") Integer pageSize){
         Page<Log> page = logService.getPage(pageNum, pageSize);
         return Result.success("分页查询日志成功",page);

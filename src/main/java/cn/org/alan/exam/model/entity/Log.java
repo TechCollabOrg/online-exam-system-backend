@@ -10,11 +10,10 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 /**
- * 说明：
+ * 登录等操作日志：用户、时间、IP、User-Agent 等审计字段。
  *
- * @Author Alan
- * @Version 1.0
- * @Date 2025/4/4 2:50 PM
+ * @author Alan
+ * @since 2025/4/4
  */
 @Data
 @ApiModel("日志")

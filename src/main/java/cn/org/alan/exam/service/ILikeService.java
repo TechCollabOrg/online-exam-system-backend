@@ -6,9 +6,10 @@ import cn.org.alan.exam.model.form.like.LikeForm;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 /**
+ * 讨论/回复点赞：点赞、取消、查询当前用户是否已赞。
+ *
  * @author WeiJin
- * @version 1.0
- * @since 2025/4/16 22:21
+ * @since 2025/4/16
  */
 public interface ILikeService extends IService<Like> {
 

@@ -8,7 +8,7 @@ import java.util.Date;
 import java.util.List;
 
 /**
- * 分类VO
+ * 题库分类树节点：名称、父 id、排序及子节点列表。
  *
  * @author Moxuec
  * @since 2025-04-09

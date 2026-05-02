@@ -23,10 +23,9 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * 班级服务实现类
+ * 班级 CRUD、口令生成、教师加入班级关系维护及班级分页查询（教师仅能管理所加入班级）。
  *
  * @author Alan
- * @since 2024-03-21
  */
 @Service
 public class GradeServiceImpl extends ServiceImpl<GradeMapper, Grade> implements IGradeService {
@@ -39,6 +38,7 @@ public class GradeServiceImpl extends ServiceImpl<GradeMapper, Grade> implements
     @Resource
     private UserGradeMapper userGradeMapper;
 
+    /** 创建班级并生成随机口令 {@code code} 写入库。 */
     @Override
     @Transactional
     public Result<String> addGrade(GradeForm gradeForm) {
@@ -54,6 +54,7 @@ public class GradeServiceImpl extends ServiceImpl<GradeMapper, Grade> implements
         return Result.success("新建班级成功");
     }
 
+    /** 更新班级名称（按主键）。 */
     @Override
     @Transactional
     public Result<String> updateGrade(Integer id, GradeForm gradeForm) {
@@ -70,6 +71,9 @@ public class GradeServiceImpl extends ServiceImpl<GradeMapper, Grade> implements
         return Result.success("修改班级成功");
     }
 
+    /**
+     * 逻辑删除班级并清理教师-班级关联（调用 {@code userGradeMapper.deleteById}，语义依 Mapper 实现）。
+     */
     @Override
     @Transactional
     public Result<String> deleteGrade(Integer gradeId) {
@@ -83,6 +87,7 @@ public class GradeServiceImpl extends ServiceImpl<GradeMapper, Grade> implements
         return Result.success("删除成功");
     }
 
+    /** 班级分页：教师仅能看到其 {@link UserGrade} 关联的班级 ID 集合内数据。 */
     @Override
     public Result<IPage<GradeVO>> getPaging(Integer pageNum, Integer pageSize, String gradeName) {
         Page<GradeVO> page = new Page<>(pageNum, pageSize);
@@ -99,6 +104,7 @@ public class GradeServiceImpl extends ServiceImpl<GradeMapper, Grade> implements
         return Result.success("查询成功", page);
     }
 
+    /** 批量将用户移出班级（清空或解除用户侧班级字段，具体见 Mapper）。 */
     @Override
     public Result<String> removeUserGrade(String ids) {
         // 字符串转换为列表
@@ -113,6 +119,7 @@ public class GradeServiceImpl extends ServiceImpl<GradeMapper, Grade> implements
         return Result.success("批量用户移除班级成功");
     }
 
+    /** 下拉/管理用班级全量列表：教师限定在所加入班级。 */
     @Override
     public Result<List<GradeVO>> getAllGrade() {
         // 获取角色代码和用户ID
@@ -130,6 +137,7 @@ public class GradeServiceImpl extends ServiceImpl<GradeMapper, Grade> implements
         return Result.success("查询成功", grades);
     }
 
+    /** 当前教师凭班级口令加入任教关系 {@link UserGrade}。 */
     @Override
     public Result teacherJoinClass(String code) {
         // 获取班级信息 用户ID
@@ -147,6 +155,7 @@ public class GradeServiceImpl extends ServiceImpl<GradeMapper, Grade> implements
         throw new ServiceRuntimeException("教师加入班级失败");
     }
 
+    /** 当前教师退出指定班级的任教关联。 */
     @Override
     public Result teacherExitClass(String gradeId) {
         // 获取用户ID
@@ -159,6 +168,7 @@ public class GradeServiceImpl extends ServiceImpl<GradeMapper, Grade> implements
         throw new ServiceRuntimeException("教师退出班级失败");
     }
 
+    /** 学生退出当前所在班级（依据 Security 上下文中的 gradeId）。 */
     @Override
     public Result userExitGrade() {
         // 获取班级和用户ID

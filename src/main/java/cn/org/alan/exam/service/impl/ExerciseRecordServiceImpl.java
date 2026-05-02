@@ -29,10 +29,10 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * 考试记录服务实现类
+ * 练习模块：按题库与题型拉取答题卡、提交单题答案并记录对错、练习统计分页、考试与练习答题明细回放；
+ * 管理员/教师/学生查询范围由角色码分支控制。
  *
  * @author WeiJin
- * @since 2024-03-21
  */
 @Service
 public class ExerciseRecordServiceImpl extends ServiceImpl<ExerciseRecordMapper, ExerciseRecord>
@@ -61,13 +61,16 @@ public class ExerciseRecordServiceImpl extends ServiceImpl<ExerciseRecordMapper,
     @Resource
     private ExerciseRecordMapper exerciseRecordMapper;
 
-
+    /** 某题库下指定题型的刷题答题卡列表（Mapper 按用户过滤已练状态等）。 */
     @Override
     public Result<List<QuestionSheetVO>> getQuestionSheet(Integer repoId, Integer quType) {
         List<QuestionSheetVO> list = questionMapper.selectQuestionSheet(repoId, quType, SecurityUtil.getUserId());
         return Result.success("获取获取试题答题卡列表成功", list);
     }
 
+    /**
+     * 正式考试记录分页：管理员全站、教师仅自建试卷、学生仅本人。
+     */
     @Override
     public Result<IPage<ExamRecordVO>> getExamRecordPage(Integer pageNum, Integer pageSize, String examName, Boolean isASC) {
         // 创建page对象
@@ -92,6 +95,9 @@ public class ExerciseRecordServiceImpl extends ServiceImpl<ExerciseRecordMapper,
         return Result.success("分页查询已考试试卷成功", examPage);
     }
 
+    /**
+     * 某场考试答题回放明细：{@code userId} 为空则取当前用户；组装选项、正误、本人答案等。
+     */
     @Override
     public Result<List<ExamRecordDetailVO>> getExamRecordDetail(Integer examId, Integer userId) {
         if(userId==null){
@@ -246,6 +252,7 @@ public class ExerciseRecordServiceImpl extends ServiceImpl<ExerciseRecordMapper,
         return Result.success("查询考试的信息成功", examRecordDetailVOS);
     }
 
+    /** 当前用户已练习过的题库分页（实体仍为 {@link Repo} 分页再转 VO）。 */
     @Override
     public Result<IPage<ExerciseRecordVO>> getExerciseRecordPage(Integer pageNum, Integer pageSize ,String repoName) {
         // 创建page对象
@@ -258,6 +265,9 @@ public class ExerciseRecordServiceImpl extends ServiceImpl<ExerciseRecordMapper,
         return Result.success("查询成功", exerciseRecordVOPage);
     }
 
+    /**
+     * 刷题详情：参数 {@code exerciseId} 实为题库 ID，遍历库内试题并结合 {@link ExerciseRecord} 展示作答与正误。
+     */
     @Override
     public Result<List<ExerciseRecordDetailVO>> getExerciseRecordDetail(Integer exerciseId) {
         // 1、题干 2、选项 3、自己的答案 4、正确的答案 5、是否正确 6、试题分析
@@ -385,6 +395,9 @@ public class ExerciseRecordServiceImpl extends ServiceImpl<ExerciseRecordMapper,
         return Result.success("查询刷题详情成功", exerciseRecordDetailVOS);
     }
 
+    /**
+     * 提交刷题答案：客观题比对选项集合判分；首答插入 {@link ExerciseRecord} 并维护 {@link UserExerciseRecord} 计数，重复作答则更新。
+     */
     @Override
     @Transactional
     public Result<QuestionVO> fillAnswer(ExerciseFillAnswerFrom exerciseFillAnswerFrom) {
@@ -476,12 +489,16 @@ public class ExerciseRecordServiceImpl extends ServiceImpl<ExerciseRecordMapper,
         return flag ? Result.success("回答正确", questionVO) : Result.success("回答错误", questionVO);
     }
 
+    /** 查询单题详情（含选项等，供刷题页展示）。 */
     @Override
     public Result<QuestionVO> getSingle(Integer id) {
         QuestionVO questionVO = questionMapper.selectDetail(id);
         return Result.success("查询单题成功", questionVO);
     }
 
+    /**
+     * 某题库某题的用户作答摘要：合并题干信息与上次作答内容及是否正确。
+     */
     @Override
     public Result<AnswerInfoVO> getAnswerInfo(Integer repoId, Integer quId) {
         QuestionVO questionVO = questionMapper.selectSingle(quId);

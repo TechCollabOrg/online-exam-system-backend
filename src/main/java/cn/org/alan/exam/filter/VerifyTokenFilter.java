@@ -23,11 +23,15 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
- * Token校验过滤器
+ * JWT 校验过滤器：每个请求最多执行一次（{@link OncePerRequestFilter}）。
+ * <p>
+ * 流程概要：读取请求头 {@code Authorization}（支持 Bearer 前缀）→ 与 Redis 中当前会话绑定的 token 比对 →
+ * 调用 {@link JwtUtil#verifyAndRefreshToken(String)} 校验并可能在临近过期时续签 → 将 JWT 中的用户与权限
+ * 反序列化后写入 {@link SecurityContextHolder}，供 {@code @PreAuthorize} 等方法级鉴权使用。
+ * 若 token 缺失、与 Redis 不一致或校验失败，则放行交由后续链路处理（当前实现未直接返回 401 JSON）。
+ * </p>
  *
- * @Author WeiJin
- * @Version 1.0
- * @Date 2024/3/25 19:50
+ * @author WeiJin
  */
 @Slf4j
 @Component
@@ -46,6 +50,13 @@ public class VerifyTokenFilter extends OncePerRequestFilter {
     @Resource
     private ObjectMapper objectMapper;
 
+    /**
+     * 单次请求内的过滤逻辑：解析并校验 Token，构建 {@link SysUserDetails} 与权限列表后注入安全上下文，最后放行 FilterChain。
+     *
+     * @param request     当前 HTTP 请求（含 Header、Session）
+     * @param response    响应；若 Token 续签成功可能写入 {@code Authorization} 响应头
+     * @param filterChain 后续过滤器链
+     */
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {

@@ -10,7 +10,7 @@ import org.apache.ibatis.annotations.Param;
 import java.util.List;
 
 /**
- * 试卷试题回答情况表 Mapper 接口
+ * 考试中用户对各题的作答结果 Mapper：单题解析、主观题阅卷明细、待评分题目列表。
  *
  * @author WeiJin
  * @since 2024-03-21
@@ -36,7 +36,10 @@ public interface ExamQuAnswerMapper extends BaseMapper<ExamQuAnswer> {
     List<UserAnswerDetailVO> selectUserAnswer(Integer userId, Integer examId);
 
     /**
-     * 获取待评分的题目信息
+     * 某场考试中指定考生尚未完成阅卷打分的题目列表。
+     *
+     * @param examId 考试 ID
+     * @param userId 考生用户 ID
      */
     List<QuestionScoreVO> getQuestionsForGrading(Integer examId, Integer userId);
 }

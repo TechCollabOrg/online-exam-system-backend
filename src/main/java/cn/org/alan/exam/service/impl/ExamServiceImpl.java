@@ -35,8 +35,10 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * 考试服务实现类
+ * 考试核心业务：创建/编辑试卷与抽题组卷、班级开考授权、学生开考与答题缓存、交卷判分（客观题）、
+ * 主观题与证书联动、成绩与答题记录查询、考试状态与时间窗口校验等（实现方法较多，均围绕 {@link Exam} 及关联表）。
  *
+ * @author Alan
  */
 @Service
 public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IExamService {
@@ -74,6 +76,10 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
     @Resource
     private IAutoScoringService autoScoringService;
 
+    /**
+     * 创建一场考试：写 {@link Exam}、绑定班级 {@code exam_grade}、关联题库 {@link ExamRepo}；
+     * 根据 {@code addQuype} 走手动选题（保持题型内顺序）或从题库随机抽题并写入 {@link ExamQuestion}。
+     */
     @Override
     @Transactional
     public Result<String> createExam(ExamAddForm examAddForm) {
@@ -245,10 +251,10 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
     }
 
     /**
-     * 获取试卷总分
+     * 按各类题型「数量×单题分值」汇总满分；字段为空时可能抛出 {@link ServiceRuntimeException}。
      *
-     * @param exam 试卷对象
-     * @return
+     * @param exam 试卷实体（含各题型数量与分值）
+     * @return 试卷总分
      */
     public Integer getGrossScore(Exam exam) {
         Integer grossScore = 0;
@@ -263,6 +269,9 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
         return grossScore;
     }
 
+    /**
+     * 更新试卷基本信息：总分沿用库中现有试卷计算结果（不因表单改动题型分布重算），仅更新 {@link Exam} 主表字段。
+     */
     @Override
     @Transactional
     public Result<String> updateExam(ExamUpdateForm examUpdateForm, Integer examId) {
@@ -285,6 +294,7 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
         return Result.success("修改试卷成功");
     }
 
+    /** 批量逻辑删除试卷（逗号分隔 ID）。 */
     @Override
     @Transactional
     public Result<String> deleteExam(String ids) {
@@ -300,6 +310,9 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
         return Result.success("删除试卷成功");
     }
 
+    /**
+     * 教师仅看自己创建的试卷，管理员看全部；支持标题模糊，未删除数据。
+     */
     @Override
     public Result<IPage<ExamVO>> getPagingExam(Integer pageNum, Integer pageSize, String title) {
         // 创建Page对象
@@ -317,6 +330,9 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
         return Result.success("查询成功", examVOPage);
     }
 
+    /**
+     * 考试中答题卡总览：校验处于进行中状态，组装四类题型题目及是否已作答标记，并计算剩余秒数。
+     */
     @Override
     public Result<ExamQuestionListVO> getQuestionList(Integer examId) {
         Integer userId = SecurityUtil.getUserId();
@@ -378,6 +394,9 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
         return Result.success("查询成功", examQuestionListVO);
     }
 
+    /**
+     * 考试中单题详情：题干、选项及当前用户已选状态（单选/判断/多选/简答分支处理）。
+     */
     @Override
     public Result<ExamQuDetailVO> getQuestionSingle(Integer examId, Integer quId) {
         // 检查是否正在考试
@@ -453,6 +472,9 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
         return Result.success("获取成功", examQuDetailVO);
     }
 
+    /**
+     * 考试中题目汇总列表：按试卷顺序展示题干、选项及「我的答案」展示形式（选项序号或简答文本）。
+     */
     @Override
     public Result<List<ExamQuCollectVO>> getCollect(Integer examId) {
         // 检查是否正在考试
@@ -548,6 +570,7 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
         return Result.success("查询成功", examQuCollectVOS);
     }
 
+    /** 试卷静态信息详情，并附带创建人用户名。 */
     @Override
     public Result<ExamDetailVO> getDetail(Integer examId) {
         // 查询考试详情信息
@@ -561,6 +584,9 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
         return Result.success("查询成功", examDetailVO);
     }
 
+    /**
+     * 记录切屏/作弊次数：超过试卷 {@code maxCount} 则触发自动 {@link #handExam(Integer)}；返回码见业务约定（data 0/1）。
+     */
     @Override
     public Result<Integer> addCheat(Integer examId) {
         LambdaQueryWrapper<UserExamsScore> userExamsScoreLambdaQuery = new LambdaQueryWrapper<>();
@@ -581,6 +607,9 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
         return Result.success("请勿切屏，最大切屏次数：" + exam.getMaxCount() + ",已切屏次数:" + (userExamsScore.getCount() + 1), 0);
     }
 
+    /**
+     * 保存或更新作答：按题目类型自动判断走 {@link #insertNewAnswer} 还是 {@link #updateAnswerIfExists}。
+     */
     @Override
     public Result<String> addAnswer(ExamQuAnswerAddForm examQuAnswerForm) {
         // 检查是否正在考试
@@ -607,6 +636,9 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
         }
     }
 
+    /**
+     * 首次作答插入 {@link ExamQuAnswer}：客观题比对选项正确性置 {@code isRight}，简答题按参考答案比对（若配置了选项文本）。
+     */
     @Override
     public Result<String> insertNewAnswer(ExamQuAnswerAddForm examQuAnswerForm, Integer quType) {
         // 根据试题类型进行修改
@@ -675,6 +707,9 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
         }
     }
 
+    /**
+     * 修改已有作答记录：更新选项 ID、文本答案及是否正确标记（多选需与全部正确选项集合一致）。
+     */
     @Override
     public Result<String> updateAnswerIfExists(ExamQuAnswerAddForm examQuAnswerForm, Integer quType) {
         // 根据试题类型进行修改
@@ -771,6 +806,9 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
         }
     }
 
+    /**
+     * 将前端表单转为 {@link ExamQuAnswer}：主观题写入 {@code answerContent}，客观题写入 {@code answerId}，并填充当前用户与题型。
+     */
     @Override
     public ExamQuAnswer prepareExamQuAnswer(ExamQuAnswerAddForm form, Integer quType) {
         // 表单转换实体
@@ -785,6 +823,9 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
         return examQuAnswer;
     }
 
+    /**
+     * 当前用户是否存在指定试卷且 {@code state=0}（进行中）的 {@link UserExamsScore} 记录。
+     */
     @Override
     public boolean isUserTakingExam(Integer examId) {
         // 判断是否正在考试
@@ -799,6 +840,9 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
         return true;
     }
 
+    /**
+     * 考后查看解析：每题题干、选项、正确答案展示串、解析说明等（不区分是否本人，由上层接口控制权限）。
+     */
     @Override
     public Result<List<ExamRecordDetailVO>> details(Integer examId) {
         // 1、题干 2、选项 3、自己的答案 4、正确的答案 5、是否正确 6、试题分析
@@ -866,6 +910,9 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
 
     }
 
+    /**
+     * 学生查本班可见考试列表；管理员走另一 SQL；分页结果由 {@code exam_grade} 关联填充。
+     */
     @Override
     public Result<IPage<ExamGradeListVO>> getGradeExamList(Integer pageNum, Integer pageSize, String title, Boolean isASC) {
         // 创建分页对象
@@ -884,7 +931,10 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
         return Result.success("查询成功", examPage);
     }
 
-
+    /**
+     * 主动交卷：校验在考试窗口内，补全未答简答题占位，汇总客观题得分、错题入本，更新成绩状态；
+     * 含简答题则返回待阅卷提示；否则达标可发放证书。
+     */
     @Override
     @Transactional
     public Result<ExamQuDetailVO> handExam(Integer examId) {
@@ -1032,6 +1082,9 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
         return Result.success("交卷成功");
     }
 
+    /**
+     * 开始考试：禁止重复进行中或重复交卷；插入 {@link UserExamsScore} 状态为进行中并记录考试时长配置。
+     */
     @Override
     public Result<String> startExam(Integer examId) {
         // 检查是否正在考试
@@ -1058,6 +1111,7 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
         return Result.success("已开始考试");
     }
 
+    /** 查询用户本场进行中考试记录的开始时间（用于倒计时）。方法名 {@code Star} 为历史拼写。 */
     private LocalDateTime getUserStarExamTime(Integer examId, Integer userId) {
         LambdaQueryWrapper<UserExamsScore> userExamsScoreLambdaQueryWrapper = new LambdaQueryWrapper<>();
         userExamsScoreLambdaQueryWrapper.eq(UserExamsScore::getUserId, userId)

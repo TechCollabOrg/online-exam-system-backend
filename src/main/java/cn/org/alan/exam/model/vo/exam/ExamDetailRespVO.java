@@ -3,9 +3,10 @@ package cn.org.alan.exam.model.vo.exam;
 import lombok.Data;
 
 /**
- * @Author Alan
- * @Version
- * @Date 2024/4/1 3:37 PM
+ * 学生进入考试前看到的考试说明与注意事项聚合。
+ *
+ * @author Alan
+ * @since 2024/4/1
  */
 @Data
 public class ExamDetailRespVO {

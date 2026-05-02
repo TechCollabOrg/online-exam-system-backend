@@ -12,7 +12,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import java.util.List;
 
 /**
- * 答卷管理服务接口
+ * 主观题人工阅卷：查看考生作答、批量提交分数、待阅考试与考生分页。
  *
  * @author WeiJin
  * @since 2024-03-21

@@ -8,6 +8,8 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.apache.ibatis.annotations.Mapper;
 
 /**
+ * 课堂讨论表 Mapper：教师分页查看本人讨论、学生按班级分页、讨论详情。
+ *
  * @author WeiJin
  * @version 1.0
  * @since 2025/4/3 9:43

@@ -8,17 +8,20 @@ import org.mapstruct.Mapper;
 import org.springframework.stereotype.Component;
 
 /**
- * @Author Alan
- * @Version
- * @Date 2024/3/28 11:04 PM
+ * 公告表单、分页与详情 VO 映射。
+ *
+ * @author Alan
  */
 @Component
 @Mapper(componentModel="spring")
 public interface NoticeConverter {
 
+    /** 发布公告：表单转实体。 */
     Notice formToEntity(NoticeForm noticeForm);
 
+    /** 公告分页列表实体转 VO。 */
     Page<NoticeVO> pageEntityToVo(Page<Notice> noticePage);
 
+    /** 单条公告实体转展示 VO。 */
     NoticeVO NoticeToNoticeVO(Notice notice);
 }

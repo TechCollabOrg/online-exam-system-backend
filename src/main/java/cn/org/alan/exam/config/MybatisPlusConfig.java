@@ -13,23 +13,21 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * MybatisPlus配置
+ * MyBatis-Plus：扫描 {@code cn.org.alan.exam.mapper}、注册 MySQL 分页插件，
+ * 并将 {@link FiledFullHandler} 注册为全局元对象处理器（插入时自动填充等）。
  *
- * @Author Alan
- * @Version
- * @Date 2024/3/28 3:57 PM
+ * @author Alan
  */
 @Configuration
-// mapper 包扫描
 @MapperScan("cn.org.alan.exam.mapper")
 public class MybatisPlusConfig {
     @Resource
     private FiledFullHandler filedFullHandler;
 
     /**
-     * 配置数据库类型
+     * 拦截器链：启用针对 MySQL 的物理分页（{@link PaginationInnerInterceptor}）。
      *
-     * @return
+     * @return MyBatis-Plus 插件总线
      */
     @Bean
     public MybatisPlusInterceptor mybatisPlusInterceptor() {
@@ -40,6 +38,11 @@ public class MybatisPlusConfig {
         return interceptor;
     }
 
+    /**
+     * 全局配置：挂载插入/更新时的字段自动填充处理器。
+     *
+     * @return MyBatis-Plus {@link GlobalConfig}
+     */
     @Bean
     public GlobalConfig globalConfig() {
         GlobalConfig config = new GlobalConfig();

@@ -9,7 +9,7 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
- * 考试实体类
+ * 考试（试卷）定义：题型分值、开放时间、阅卷方式等。
  *
  * @author WeiJin
  * @since 2024-03-21

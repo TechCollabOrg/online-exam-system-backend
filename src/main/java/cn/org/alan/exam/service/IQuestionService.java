@@ -9,7 +9,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import org.springframework.web.multipart.MultipartFile;
 
 /**
- * 试题管理服务接口
+ * 试题：录入与修改、选项联动、分页检索、导入及试卷引用的题目查询。
  *
  * @author WeiJin
  * @since 2024-03-21

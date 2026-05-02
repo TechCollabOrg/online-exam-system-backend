@@ -14,9 +14,9 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.annotation.Resource;
 
 /**
+ * 讨论/回复点赞切换（重复请求视为取消）。
+ *
  * @author WeiJin
- * @version 1.0
- * @since 2025/4/16 22:20
  */
 @RestController
 @RequestMapping("/api/like")
@@ -26,6 +26,7 @@ public class LikeController {
     @Resource
     private ILikeService likeService;
 
+    /** POST 点赞或取消点赞。 */
     @PostMapping("/doLike")
     @ApiOperation("点赞或取消点赞")
     public Result<String> doLike(@Validated @RequestBody LikeForm likeForm) {

@@ -1,18 +1,14 @@
 package cn.org.alan.exam.common.exception;
 
 /**
- * 说明：
- * 自定义服务异常类
+ * 业务层运行时异常：携带可读错误信息，由全局异常处理器转换为统一响应。
  *
- * @Author Alan
- * @Version 1.0
- * @Date 2025/3/20 11:15 AM
+ * @author Alan
+ * @since 2025/3/20
  */
 public class ServiceRuntimeException extends RuntimeException {
     /**
-     * 自定义服务异常类构造器
-     *
-     * @param msg
+     * @param msg 展示给用户或写入日志的业务错误描述
      */
     public ServiceRuntimeException(String msg) {
         super(msg);

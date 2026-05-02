@@ -40,12 +40,10 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * 安全类工具类
- * 支持AES、DES、RSA加密、数字签名以及生成对称密钥和非对称密钥对
+ * 加解密与签名工具集：对称（AES/DES）、非对称（RSA/DSA）、SHA1/SHA256WithRSA 签名与验签；
+ * 密钥与密文默认经 Base64 传输；内部对 {@link Cipher}/{@link KeyFactory} 做少量缓存以减少创建开销。
  *
- * @Author Alan
- * @Version
- * @Date 2024/6/8 10:41 AM
+ * @author Alan
  */
 @Component
 public class CryptoUtils {
@@ -85,10 +83,16 @@ public class CryptoUtils {
         return new AsymmetricKeyPair(publicKey, privateKey);
     }
 
+    /**
+     * RSA 公钥加密（PKCS1 填充），输出 Base64 密文。
+     */
     public static String encryptByRSA(String publicKeyText, String plainText) throws Exception {
         return encryptAsymmetrically(publicKeyText, plainText, Encryption.RSA_ECB_PKCS1);
     }
 
+    /**
+     * RSA 私钥解密，与 {@link #encryptByRSA(String, String)} 配对。
+     */
     public static String decryptByRSA(String privateKeyText, String ciphertext) throws Exception {
         return decryptAsymmetrically(privateKeyText, ciphertext, Encryption.RSA_ECB_PKCS1);
     }

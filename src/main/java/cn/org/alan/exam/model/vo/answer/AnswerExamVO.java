@@ -3,9 +3,10 @@ package cn.org.alan.exam.model.vo.answer;
 import lombok.Data;
 
 /**
- * @Author Alan
- * @Version
- * @Date 2024/4/15 2:17 PM
+ * 教师待阅卷列表中的考试项：考试 id、标题、是否含待阅主观题等。
+ *
+ * @author Alan
+ * @since 2024/4/15
  */
 @Data
 public class AnswerExamVO {

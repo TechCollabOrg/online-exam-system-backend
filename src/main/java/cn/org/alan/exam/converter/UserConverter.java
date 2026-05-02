@@ -9,16 +9,18 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 
 /**
- * @Author WeiJin
- * @Version 1.0
- * @Date 2024/3/29 15:51
+ * {@link UserForm} 与 {@link User} 的 MapStruct 映射，供用户新增、批量导入等场景注入使用。
+ *
+ * @author WeiJin
  */
 @Component
 @Mapper(componentModel = "spring")
 public interface UserConverter {
 
+    /** 单条注册/编辑表单转持久化实体。 */
     User fromToEntity(UserForm userForm);
 
+    /** 批量表单转实体列表（如 Excel 导入）。 */
     List<User> listFromToEntity(List<UserForm> list);
 
 }

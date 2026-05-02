@@ -11,13 +11,13 @@ import lombok.Data;
 import java.io.Serializable;
 
 /**
- * 用户班级关联实体类
+ * 考试与参考班级的关联：哪些班级参加本场考试及扩展字段。
  *
  * @author WeiJin
  * @since 2024-03-21
  */
 @Data
-@ApiModel("用户班级关联实体类")
+@ApiModel("考试班级关联")
 @TableName("t_exam_grade")
 public class ExamGrade implements Serializable {
 

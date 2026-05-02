@@ -5,9 +5,10 @@ import lombok.Data;
 import javax.validation.constraints.NotNull;
 
 /**
+ * 对讨论或回复执行点赞/取消时提交的目标 ID 与类型。
+ *
  * @author WeiJin
- * @version 1.0
- * @since 2025/4/16 22:16
+ * @since 2025/4/16
  */
 @Data
 public class LikeForm {

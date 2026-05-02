@@ -12,7 +12,7 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
- * 题库实体类
+ * 题库：标题、分类、创建者，其下挂多道 {@link Question}。
  *
  * @author WeiJin
  * @since 2024-03-21

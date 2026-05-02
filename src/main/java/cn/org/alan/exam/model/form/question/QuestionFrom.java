@@ -14,11 +14,10 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * 试卷请求体
+ * 试题新增或修改请求：题干、题型、分值、选项列表及所属题库等。
  *
- * @Author WeiJin
- * @Version 1.0
- * @Date 2024/4/1 11:12
+ * @author WeiJin
+ * @since 2024/4/1
  */
 @Data
 public class QuestionFrom {

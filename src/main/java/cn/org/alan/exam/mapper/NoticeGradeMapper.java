@@ -6,7 +6,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import java.util.List;
 
 /**
- * 公告班级关联 Mapper 接口
+ * 公告与班级多对多关联 Mapper：维护定向发布公告的班级范围。
  *
  * @author WeiJin
  * @since 2024-03-21
@@ -33,7 +33,7 @@ public interface NoticeGradeMapper extends BaseMapper<NoticeGrade> {
     /**
      * 获得班级关联的公告id
      *
-     * @param gradeId 公告ID
+     * @param gradeId 班级 ID
      * @return 结果集
      */
     List<Integer> getNoticeIdList(Integer gradeId);

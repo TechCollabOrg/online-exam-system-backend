@@ -3,9 +3,10 @@ package cn.org.alan.exam.model.form.count;
 import lombok.Data;
 
 /**
- * @ Author JinXi
- * @ Version 1.0
- * @ Date 2024/5/13 11:19
+ * 班级维度统计结果：班级信息及人数、考试数、试题数等聚合字段。
+ *
+ * @author JinXi
+ * @since 2024/5/13
  */
 @Data
 public class ClassCountResult {

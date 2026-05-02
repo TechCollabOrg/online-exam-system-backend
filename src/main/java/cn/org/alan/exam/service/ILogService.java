@@ -4,12 +4,10 @@ import cn.org.alan.exam.model.entity.Log;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 
 /**
- * 说明：
- * 日志记录服务（主要记录登录日志）
+ * 登录与操作日志：写入登录日志、管理员分页查询。
  *
- * @Author Alan
- * @Version 1.0
- * @Date 2025/4/4 11:38 AM
+ * @author Alan
+ * @since 2025/4/4
  */
 public interface ILogService {
     /**

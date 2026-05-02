@@ -6,9 +6,10 @@ import lombok.Data;
 import java.util.List;
 
 /**
- * @Author Alan
- * @Version
- * @Date 2024/4/25 2:30 PM
+ * 某场考试下错题列表中单题的题干与选项等展示数据。
+ *
+ * @author Alan
+ * @since 2024/4/25
  */
 @Data
 public class UserExamBookVO {

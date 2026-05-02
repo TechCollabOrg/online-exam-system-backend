@@ -9,7 +9,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import org.springframework.web.multipart.MultipartFile;
 
 /**
- * 用户服务接口
+ * 用户账户：注册与资料维护、分页检索、班级关联、头像与密码等。
  *
  * @author WeiJin
  * @since 2024-03-21

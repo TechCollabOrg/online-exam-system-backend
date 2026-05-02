@@ -9,7 +9,7 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
- * 错题本实体类
+ * 学生错题本条目：关联考试、题目及错题发生时的作答快照。
  *
  * @author WeiJin
  * @since 2024-03-21

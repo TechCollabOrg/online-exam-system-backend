@@ -10,9 +10,10 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 /**
- * @Author Alan
- * @Version
- * @Date 2024/5/26 7:06 PM
+ * 学生「我的证书」分页行：证书名、考试、获得时间、编号等。
+ *
+ * @author Alan
+ * @since 2024/5/26
  */
 @Data
 public class MyCertificateVO {

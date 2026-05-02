@@ -23,11 +23,9 @@ import javax.validation.constraints.Min;
 import java.util.List;
 
 /**
- * 刷题管理
+ * 学生刷题：可选题库列表、答题卡、提交答案与查看解析。
  *
- * @Author Alan
- * @Version
- * @Date 2024/3/25 11:21 AM
+ * @author Alan
  */
 @Api(tags = "刷题管理相关接口")
 @RestController
@@ -40,13 +38,7 @@ public class ExerciseController {
     @Resource
     private IRepoService iRepoService;
 
-    /**
-     * 获取试题Id列表
-     *
-     * @param repoId 题库Id
-     * @param quType 试题类型
-     * @return 响应结果
-     */
+    /** GET 某题库答题卡列表；{@code quType} 可选，取值 1–4。 */
     @ApiOperation("获取试题Id列表")
     @GetMapping("/{repoId}")
     @PreAuthorize("hasAnyAuthority('role_student')")
@@ -58,13 +50,7 @@ public class ExerciseController {
         return iExerciseRecordService.getQuestionSheet(repoId, quType);
     }
 
-
-    /**
-     * 填充答案，并返回试题信息
-     *
-     * @param exerciseFillAnswerFrom 请求参数
-     * @return 响应结果
-     */
+    /** POST 提交刷题答案并返回题目信息。 */
     @ApiOperation("填充答案，并返回试题信息")
     @PostMapping("/fillAnswer")
     @PreAuthorize("hasAnyAuthority('role_student')")
@@ -72,15 +58,7 @@ public class ExerciseController {
         return iExerciseRecordService.fillAnswer(exerciseFillAnswerFrom);
     }
 
-    /**
-     * 分页获取可刷题库列表
-     *
-     * @param pageNum    页码
-     * @param pageSize   每页大小
-     * @param title      题库名
-     * @param categoryId 分类ID
-     * @return 响应结果
-     */
+    /** GET 学生可见的可刷题库分页。 */
     @ApiOperation("分页获取可刷题库列表")
     @GetMapping("/getRepo")
     @PreAuthorize("hasAnyAuthority('role_student')")
@@ -92,12 +70,7 @@ public class ExerciseController {
         return iRepoService.getRepo(pageNum, pageSize, title, categoryId);
     }
 
-    /**
-     * 获取单题详情，没有答案
-     *
-     * @param id 试题id
-     * @return
-     */
+    /** GET 刷题场景下单题详情（不含标准答案暴露策略由 VO 决定）。 */
     @ApiOperation("获取单题详情，没有答案")
     @GetMapping("/question/{id}")
     @PreAuthorize("hasAnyAuthority('role_student')")
@@ -105,12 +78,7 @@ public class ExerciseController {
         return iExerciseRecordService.getSingle(id);
     }
 
-    /**
-     * 获取用户回答详情
-     *
-     * @param
-     * @return
-     */
+    /** GET 用户对某题库某题的作答摘要。 */
     @ApiOperation("获取用户回答详情")
     @GetMapping("/answerInfo/{repoId}/{quId}")
     @PreAuthorize("hasAnyAuthority('role_student')")

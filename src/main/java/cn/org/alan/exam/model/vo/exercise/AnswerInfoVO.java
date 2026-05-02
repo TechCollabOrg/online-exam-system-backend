@@ -8,9 +8,10 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * @Author WeiJin
- * @Version 1.0
- * @Date 2024/6/6 18:13
+ * 刷题过程中上一题/下一题切换时的答案缓存项（题 id 与内容）。
+ *
+ * @author WeiJin
+ * @since 2024/6/6
  */
 @Data
 public class AnswerInfoVO {

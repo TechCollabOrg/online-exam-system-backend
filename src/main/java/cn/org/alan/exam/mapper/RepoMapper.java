@@ -13,7 +13,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 /**
- * 题库表 Mapper 接口
+ * 题库表 Mapper：管理端分页、可刷题库分页、下拉列表、用户刷题记录关联分页。
  *
  * @author WeiJin
  * @since 2024-03-21

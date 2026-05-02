@@ -15,10 +15,9 @@ import javax.annotation.Resource;
 import java.util.List;
 
 /**
- * 错题本管理
+ * 错题本：分页、按考试列错题、单题巩固作答。
  *
  * @author Alan
- * @since 2024-03-21
  */
 @Api(tags = "错题本相关接口")
 @RestController
@@ -28,14 +27,7 @@ public class UserBookController {
     @Resource
     private IUserBookService userBookService;
 
-    /**
-     * 学生错题本分页查询
-     *
-     * @param pageNum  页码
-     * @param pageSize 每页大小
-     * @param examName 考试名称
-     * @return
-     */
+    /** GET 学生错题本分页；可按考试名称筛选。 */
     @ApiOperation("学生错题本分页查询")
     @GetMapping("/paging")
     @PreAuthorize("hasAnyAuthority('role_student')")
@@ -46,12 +38,7 @@ public class UserBookController {
         return userBookService.getPage(pageNum, pageSize, examName);
     }
 
-    /**
-     * 查询错题本错题id列表
-     *
-     * @param examId 考试ID
-     * @return
-     */
+    /** GET 某场考试下的错题 ID 列表摘要。 */
     @ApiOperation("查询错题本错题id列表")
     @GetMapping("/question/list/{examId}")
     @PreAuthorize("hasAnyAuthority('role_teacher','role_admin','role_student')")
@@ -59,12 +46,7 @@ public class UserBookController {
         return userBookService.getReUserExamBook(examId);
     }
 
-    /**
-     * 查询单题
-     *
-     * @param quId 试题ID
-     * @return
-     */
+    /** GET 错题单题详情（题干选项等）。 */
     @ApiOperation("查询单题")
     @GetMapping("/question/single/{quId}")
     @PreAuthorize("hasAnyAuthority('role_teacher','role_admin','role_student')")
@@ -72,12 +54,7 @@ public class UserBookController {
         return userBookService.getBookOne(quId);
     }
 
-    /**
-     * 填充答案
-     *
-     * @param reUserBookForm
-     * @return
-     */
+    /** POST 错题复习作答提交。 */
     @ApiOperation("填充答案")
     @PostMapping("/full-book")
     @PreAuthorize("hasAnyAuthority('role_teacher','role_admin','role_student')")

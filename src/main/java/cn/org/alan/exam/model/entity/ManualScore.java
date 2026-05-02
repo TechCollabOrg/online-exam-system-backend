@@ -9,6 +9,7 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
+ * 主观题人工阅卷记录：题、考生、得分与批注等。
  *
  * @author WeiJin
  * @since 2024-03-21

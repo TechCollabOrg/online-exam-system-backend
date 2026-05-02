@@ -25,11 +25,10 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 
 /**
- * AOP记录请求响应日志
+ * Controller 请求/响应 AOP：记录入参、返回摘要与 TraceId，敏感字段脱敏后写日志。
  *
- * @Author Alan
- * @Version
- * @Date 2024/5/13 2:33 PM
+ * @author Alan
+ * @since 2024/5/13
  */
 @Aspect
 @Component

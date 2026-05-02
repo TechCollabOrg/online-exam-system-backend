@@ -26,10 +26,9 @@ import javax.servlet.http.HttpServletResponse;
 import java.util.List;
 
 /**
- * 成绩管理服务接口实现类
+ * 用户考试成绩 {@link UserExamsScore}：教师端分页查询、按班级导出 Excel、成绩统计（限定教师所带班级）。
  *
  * @author WeiJin
- * @since 2024-03-21
  */
 @Service
 public class UserExamsScoreServiceImpl extends ServiceImpl<UserExamsScoreMapper, UserExamsScore> implements IUserExamsScoreService {
@@ -40,6 +39,9 @@ public class UserExamsScoreServiceImpl extends ServiceImpl<UserExamsScoreMapper,
     @Resource
     private UserGradeMapper userGradeMapper;
 
+    /**
+     * 多条件分页查询成绩列表（班级、考试、真实姓名模糊），返回 VO 分页。
+     */
     @Override
     public Result<IPage<UserScoreVO>> pagingScore(Integer pageNum, Integer pageSize, Integer gradeId, Integer examId, String realName) {
         IPage<UserScoreVO> page = new Page<>(pageNum, pageSize);
@@ -47,6 +49,9 @@ public class UserExamsScoreServiceImpl extends ServiceImpl<UserExamsScoreMapper,
         return Result.success(null, page);
     }
 
+    /**
+     * 导出指定考试与班级下的成绩为 Excel，并为每条记录生成名次序号。
+     */
     @Override
     public void exportScores(HttpServletResponse response, Integer examId, Integer gradeId) {
         // 获取成绩信息
@@ -61,6 +66,9 @@ public class UserExamsScoreServiceImpl extends ServiceImpl<UserExamsScoreMapper,
 
     }
 
+    /**
+     * 教师查看成绩统计：若无关联班级则报错；否则按角色与班级 ID 列表过滤分页数据。
+     */
     @Override
     public Result<IPage<GradeScoreVO>> getExamScoreInfo(Integer pageNum, Integer pageSize, String examTitle, Integer gradeId) {
         IPage<GradeScoreVO> page = new Page<>(pageNum, pageSize);

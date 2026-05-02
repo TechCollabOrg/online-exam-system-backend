@@ -10,11 +10,10 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * 用户班级关联实体类
+ * 教师用户与班级关联（任教关系），多对多中间表。
  *
- * @Author Alan
- * @Version
- * @Date 2025/3/14 6:57 PM
+ * @author Alan
+ * @since 2025/3/14
  */
 @TableName("t_user_grade")
 @Data

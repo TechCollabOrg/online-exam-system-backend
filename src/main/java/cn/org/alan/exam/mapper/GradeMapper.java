@@ -9,7 +9,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 /**
- * 班级表 Mapper 接口
+ * 班级表 Mapper：分页查询、按角色数据范围列出全部班级、按班级编码取实体。
  *
  * @author WeiJin
  * @since 2024-03-21
@@ -32,7 +32,7 @@ public interface GradeMapper extends BaseMapper<Grade> {
      * 获得所有班级
      *
      * @param userId      用户ID
-     * @param roleCode    觉得代码
+     * @param roleCode    角色代码
      * @param gradeIdList 班级ID列表
      * @return 结果集
      */

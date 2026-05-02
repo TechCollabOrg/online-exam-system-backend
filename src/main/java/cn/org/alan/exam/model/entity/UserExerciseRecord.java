@@ -9,7 +9,7 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
- * 用户刷题记录实体类
+ * 用户在某个题库上的刷题汇总（进度/次数等维度），与单次题目作答 {@link ExerciseRecord} 不同。
  *
  * @author WeiJin
  * @since 2024-03-21

@@ -4,9 +4,7 @@ import cn.org.alan.exam.model.entity.UserExerciseRecord;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 /**
- * <p>
- *  服务类
- * </p>
+ * 用户在题库下的刷题汇总记录（与单次答题明细 {@link IExerciseRecordService} 区分）；当前无自定义方法。
  *
  * @author WeiJin
  * @since 2024-03-21

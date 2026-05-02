@@ -6,13 +6,14 @@ import org.mapstruct.Mapper;
 import org.springframework.stereotype.Component;
 
 /**
+ * 讨论帖表单与 {@link Discussion} 实体映射。
+ *
  * @author WeiJin
- * @version 1.0
- * @since 2025/4/3 9:36
  */
 @Component
 @Mapper(componentModel="spring")
 public interface DiscussionConverter {
 
+    /** 发帖/编辑讨论：表单转实体。 */
     Discussion formToEntity(DiscussionForm discussion);
 }

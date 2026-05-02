@@ -6,9 +6,10 @@ import lombok.Data;
 import java.util.List;
 
 /**
- * @Author Alan
- * @Version
- * @Date 2024/4/30 12:32 PM
+ * 刷题记录详情页中单题维度：题干、作答与对错。
+ *
+ * @author Alan
+ * @since 2024/4/30
  */
 @Data
 public class ExerciseRecordDetailVO {

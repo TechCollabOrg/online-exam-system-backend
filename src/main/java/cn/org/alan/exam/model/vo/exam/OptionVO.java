@@ -8,9 +8,10 @@ import lombok.Data;
 import javax.validation.constraints.NotBlank;
 
 /**
- * @Author Alan
- * @Version
- * @Date 2024/5/20 10:04 AM
+ * 考试中展示的选项：序号、文本、是否选中（考生视角）。
+ *
+ * @author Alan
+ * @since 2024/5/20
  */
 @Data
 public class OptionVO {

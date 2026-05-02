@@ -6,12 +6,13 @@ import org.mapstruct.Mapper;
 import org.springframework.stereotype.Component;
 
 /**
+ * 点赞操作表单与 {@link Like} 实体映射。
+ *
  * @author WeiJin
- * @version 1.0
- * @since 2025/4/16 22:18
  */
 @Component
 @Mapper(componentModel = "spring")
 public interface LikeConverter {
+    /** 用户点赞/取消场景下的表单转实体。 */
     Like formToEntity(LikeForm likeForm);
 }

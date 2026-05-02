@@ -9,11 +9,10 @@ import javax.validation.constraints.*;
 import java.time.LocalDateTime;
 
 /**
- * 试卷更新请求体
+ * 修改已创建考试：标题、时间窗口、题型分值、阅卷开关等。
  *
- * @Author Alan
- * @Version
- * @Date 2024/4/1 3:17 PM
+ * @author Alan
+ * @since 2024/4/1
  */
 @Data
 public class ExamUpdateForm {

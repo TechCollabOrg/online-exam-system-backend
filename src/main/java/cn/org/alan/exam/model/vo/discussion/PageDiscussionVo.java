@@ -6,9 +6,10 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 /**
+ * 讨论区分页列表行：标题、班级、回复数、时间等。
+ *
  * @author WeiJin
- * @version 1.0
- * @since 2025/4/4 13:31
+ * @since 2025/4/4
  */
 @Data
 public class PageDiscussionVo {

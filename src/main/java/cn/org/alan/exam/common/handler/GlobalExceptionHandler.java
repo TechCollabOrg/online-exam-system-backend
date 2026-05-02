@@ -17,21 +17,22 @@ import javax.validation.ConstraintViolationException;
 import java.sql.SQLIntegrityConstraintViolationException;
 
 /**
- * 全局异常拦截器
+ * 控制器层统一异常出口：将各类异常转为 {@link Result#failed(String)}，避免堆栈直接暴露给前端。
+ * <p>
+ * 业务异常使用异常消息原文；校验类异常提取首条错误文案；数据库唯一约束等映射为简短中文提示。
+ * </p>
  *
- * @Author WeiJin
- * @Version 1.0
- * @Date 2024/3/29 16:10
+ * @author WeiJin
  */
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
     /**
-     * 处理自定义服务异常拦截处理
+     * 业务主动抛出的运行时异常（{@link ServiceRuntimeException}），通常携带可读的业务提示文案。
      *
-     * @param e 异常
-     * @return 响应
+     * @param e 业务异常
+     * @return {@code code=0} 的失败响应，{@code msg} 为异常消息
      */
     @ExceptionHandler(ServiceRuntimeException.class)
     public Result<String> handleException(ServiceRuntimeException e) {
@@ -41,10 +42,10 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 处理参数校验异常
+     * {@code @Valid} 校验失败（如表单 DTO 字段约束），取绑定结果中第一条 {@code defaultMessage} 返回。
      *
-     * @param e 异常
-     * @return 响应
+     * @param e Spring MVC 方法参数校验异常
+     * @return 失败响应，消息为首条校验错误说明
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public Result<String> handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {
@@ -54,10 +55,10 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 处理唯一约束异常
+     * JDBC 层违反 SQL 完整性约束（如唯一索引），统一返回固定文案「重复」，避免暴露数据库细节。
      *
-     * @param e 异常
-     * @return 响应
+     * @param e SQL 完整性约束异常
+     * @return 失败响应
      */
     @ExceptionHandler(SQLIntegrityConstraintViolationException.class)
     public Result<String> handleSQLIntegrityConstraintViolationException(SQLIntegrityConstraintViolationException e) {
@@ -66,10 +67,10 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 处理请求参数无法解析异常
+     * 请求体 JSON/XML 反序列化失败或格式非法（如类型不匹配、缺少必需字段），返回「请求参数无法解析」。
      *
-     * @param e 异常
-     * @return 响应
+     * @param e HTTP 消息不可读异常
+     * @return 失败响应
      */
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public Result<String> handleHttpMessageNotReadableException(HttpMessageNotReadableException e) {
@@ -78,10 +79,10 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 处理请求参数缺失异常
+     * 必填的 Query/Form 参数未传递，返回「参数名为必填项」形式的提示。
      *
-     * @param e
-     * @return
+     * @param e 缺少 Servlet 请求参数异常
+     * @return 失败响应
      */
     @ExceptionHandler(MissingServletRequestParameterException.class)
     public Result<String> handleMissingServletRequestParameterException(MissingServletRequestParameterException e) {
@@ -90,10 +91,11 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 处理主键冲突异常
+     * MyBatis-Plus 捕获的数据库重复键（插入/更新冲突）；从异常消息中截取冲突字段名拼接「主键冲突…已存在」。
+     * <p>注意：依赖异常消息格式，若驱动文案变化可能需调整解析逻辑。</p>
      *
-     * @param e 异常
-     * @return 响应
+     * @param e 重复键异常
+     * @return 失败响应
      */
     @ExceptionHandler(DuplicateKeyException.class)
     public Result<String> handleDuplicateKeyException(DuplicateKeyException e) {
@@ -103,10 +105,10 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 处理无权限访问异常
+     * Spring Security 鉴权通过但授权失败（如无对应角色/权限访问接口），返回固定无权限文案。
      *
-     * @param e 异常
-     * @return 响应
+     * @param e 访问被拒绝异常
+     * @return 失败响应
      */
     @ExceptionHandler(AccessDeniedException.class)
     public Result<String> handleAccessDeniedException(AccessDeniedException e) {
@@ -116,10 +118,10 @@ public class GlobalExceptionHandler {
 
 
     /**
-     * 处理文件太大异常
+     * 上传文件超过 Spring 配置的单次/总大小限制，提示最大 5MB（需与 {@code multipart} 配置保持一致）。
      *
-     * @param e 异常
-     * @return 响应
+     * @param e 超过最大上传大小异常
+     * @return 失败响应
      */
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     public Result<String> handlerMaxUploadSizeExceededException(MaxUploadSizeExceededException e) {
@@ -128,10 +130,10 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 处理文件获取不到异常
+     * Multipart 请求中缺少某个 {@code part}（常见于前端未按约定字段名上传文件）。
      *
-     * @param e 异常
-     * @return 响应
+     * @param e 缺少请求部件异常
+     * @return 失败响应
      */
     @ExceptionHandler(MissingServletRequestPartException.class)
     public Result<String> handlerMissingServletRequestPartException(MissingServletRequestPartException e) {
@@ -141,10 +143,10 @@ public class GlobalExceptionHandler {
 
 
     /**
-     * 处理约束违反异常
+     * 方法级 {@code @Validated}（如单个路径变量）触发的 Bean Validation 约束违反，直接返回异常消息字符串。
      *
-     * @param e 异常
-     * @return 响应
+     * @param e 约束违反异常
+     * @return 失败响应，{@code msg} 通常含属性路径与约束说明
      */
     @ExceptionHandler(ConstraintViolationException.class)
     public Result<String> handleConstraintViolationException(ConstraintViolationException e) {

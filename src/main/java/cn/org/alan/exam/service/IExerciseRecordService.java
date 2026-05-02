@@ -16,7 +16,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import java.util.List;
 
 /**
- * 考试记录服务接口
+ * 刷题与练习过程：抽题卡、作答提交、刷题/考试维度历史分页与详情。
  *
  * @author WeiJin
  * @since 2024-03-21

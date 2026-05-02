@@ -9,9 +9,7 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
- * <p>
- * 
- * </p>
+ * 用户在某场考试中的成绩与过程状态（得分、交卷、阅卷状态等），对应成绩业务主表。
  *
  * @author WeiJin
  * @since 2024-03-21

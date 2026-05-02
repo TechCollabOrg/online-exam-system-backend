@@ -9,9 +9,10 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 /**
- * @Author Alan
- * @Version
- * @Date 2024/4/25 2:33 PM
+ * 按考试汇总的错题题目 ID 列表项（用于跳转巩固练习）。
+ *
+ * @author Alan
+ * @since 2024/4/25
  */
 @Data
 public class ReUserExamBookVO {

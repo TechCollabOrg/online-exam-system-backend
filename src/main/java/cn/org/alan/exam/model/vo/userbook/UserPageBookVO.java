@@ -8,9 +8,10 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 /**
- * @Author Alan
- * @Version
- * @Date 2024/4/25 2:10 PM
+ * 错题本分页行：关联考试、错题数量或摘要信息。
+ *
+ * @author Alan
+ * @since 2024/4/25
  */
 @Data
 public class UserPageBookVO {

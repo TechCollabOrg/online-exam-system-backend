@@ -8,7 +8,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import java.util.List;
 
 /**
- * 错题本表 Mapper 接口
+ * 错题本表 Mapper：批量写入错题、分页查询学生错题（可按考试名筛选）。
  *
  * @author WeiJin
  * @since 2024-03-21

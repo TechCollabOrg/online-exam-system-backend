@@ -14,7 +14,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import java.util.List;
 
 /**
- * 考试服务接口
+ * 考试（试卷）业务：组卷与发布、开考与交卷、阅卷与成绩、考试记录查询。
  *
  * @author Alan
  * @since 2024-03-21

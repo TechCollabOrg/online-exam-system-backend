@@ -8,9 +8,10 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * @Author WeiJin
- * @Version 1.0
- * @Date 2024/4/2 20:27
+ * 试题详情/编辑回显：题干、类型、选项列表与解析等。
+ *
+ * @author WeiJin
+ * @since 2024/4/2
  */
 @Data
 public class QuestionVO {

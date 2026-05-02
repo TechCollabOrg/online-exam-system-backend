@@ -7,12 +7,9 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.stereotype.Service;
 
 /**
- * <p>
- *  服务实现类
- * </p>
+ * 考试与题库引用关系 {@link cn.org.alan.exam.model.entity.ExamRepo} 的基础服务。
  *
  * @author WeiJin
- * @since 2024-03-21
  */
 @Service
 public class ExamRepoServiceImpl extends ServiceImpl<ExamRepoMapper, ExamRepo> implements IExamRepoService {

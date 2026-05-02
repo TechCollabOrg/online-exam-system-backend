@@ -6,7 +6,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import java.util.List;
 
 /**
- * 简答题阅卷表 Mapper 接口
+ * 主观题人工阅卷打分记录 Mapper：批量插入阅卷得分行。
  *
  * @author WeiJin
  * @since 2024-03-21

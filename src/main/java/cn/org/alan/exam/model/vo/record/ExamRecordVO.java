@@ -12,9 +12,10 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * @Author Alan
- * @Version
- * @Date 2024/4/30 11:17 AM
+ * 考试历史分页行：考试名、分数、交卷时间等。
+ *
+ * @author Alan
+ * @since 2024/4/30
  */
 @Data
 public class ExamRecordVO {

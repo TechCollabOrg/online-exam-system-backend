@@ -8,33 +8,33 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 /**
- * 安全工具类
+ * AES/CBC/NoPadding + Base64 编解码的简化封装；密钥与 IV 写死在类内（适合与遗留客户端对齐，生产建议改为配置中心）。
  *
- * @Author Alan
- * @Version
- * @Date 2024/6/8 9:57 AM
+ * @author Alan
  */
 @Component
 public class SecretUtils {
-    /***
-     * key和iv值可以随机生成
-     */
+    /** 16 字节 AES 密钥（与 IV 相同长度要求）。 */
     private static String KEY = "63eeac68cf074c8c";
 
+    /** CBC 模式初始化向量。 */
     private static String IV = "63eeac68cf074c8c";
 
-    /***
-     * 加密
-     * @param  data 要加密的数据
-     * @return encrypt
+    /**
+     * 使用内置 KEY/IV 加密明文，明文长度会被填充到块大小的整数倍。
+     *
+     * @param data 原始字符串
+     * @return Base64 密文；异常时可能返回 {@code null}
      */
     public static String encrypt(String data) {
         return encrypt(data, KEY, IV);
     }
 
-    /***
-     * param data 需要解密的数据
-     * 调用desEncrypt（）方法
+    /**
+     * 使用内置 KEY/IV 解密密文（方法名 {@code desEncrypt} 为历史命名，实为 AES 解密）。
+     *
+     * @param data Base64 密文
+     * @return 明文；异常时可能返回 {@code null}
      */
     public static String desEncrypt(String data) {
         return desEncrypt(data, KEY, IV);

@@ -7,12 +7,9 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.stereotype.Service;
 
 /**
- * <p>
- *  服务实现类
- * </p>
+ * 用户练习题作答流水：无自定义方法，继承 MyBatis-Plus {@link ServiceImpl} 默认 CRUD。
  *
  * @author WeiJin
- * @since 2024-03-21
  */
 @Service
 public class UserExerciseRecordServiceImpl extends ServiceImpl<UserExerciseRecordMapper, UserExerciseRecord> implements IUserExerciseRecordService {

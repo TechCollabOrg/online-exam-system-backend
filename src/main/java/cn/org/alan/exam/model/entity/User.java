@@ -9,7 +9,7 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
- * 用户实体类
+ * 登录用户主数据：账号、班级、角色、头像等。
  *
  * @author WeiJin
  * @since 2024-03-21

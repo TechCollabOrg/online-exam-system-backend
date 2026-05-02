@@ -6,12 +6,13 @@ import org.mapstruct.Mapper;
 import org.springframework.stereotype.Component;
 
 /**
+ * 讨论区回复表单与 {@link Reply} 实体映射。
+ *
  * @author WeiJin
- * @version 1.0
- * @since 2025/4/4 14:11
  */
 @Component
 @Mapper(componentModel = "spring")
 public interface ReplyConverter {
+    /** 发表评论/回复时 DTO 转持久化对象。 */
     Reply formToEntity(ReplyForm replyForm);
 }

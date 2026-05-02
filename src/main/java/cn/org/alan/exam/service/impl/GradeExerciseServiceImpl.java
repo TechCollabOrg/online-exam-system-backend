@@ -7,12 +7,9 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.stereotype.Service;
 
 /**
- * <p>
- *  服务实现类
- * </p>
+ * 班级与练习题关联 {@link cn.org.alan.exam.model.entity.GradeExercise} 的基础服务。
  *
  * @author WeiJin
- * @since 2024-03-21
  */
 @Service
 public class GradeExerciseServiceImpl extends ServiceImpl<GradeExerciseMapper, GradeExercise> implements IGradeExerciseService {

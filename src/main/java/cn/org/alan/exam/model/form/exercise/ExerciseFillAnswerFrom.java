@@ -9,9 +9,10 @@ import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 
 /**
- * @Author WeiJin
- * @Version 1.0
- * @Date 2024/5/6 9:52
+ * 刷题模式下逐题或批量提交作答（客观选项、主观文本等）。
+ *
+ * @author WeiJin
+ * @since 2024/5/6
  */
 @Data
 public class ExerciseFillAnswerFrom {

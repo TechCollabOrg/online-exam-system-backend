@@ -5,11 +5,10 @@ import lombok.Data;
 import javax.validation.constraints.NotBlank;
 
 /**
- * 登录表单
+ * 用户名密码登录及验证码等字段。
  *
- * @Author Alan
- * @Version
- * @Date 2024/5/6 10:07 PM
+ * @author Alan
+ * @since 2024/5/6
  */
 @Data
 public class LoginForm {

@@ -7,9 +7,10 @@ import java.util.Calendar;
 import java.util.List;
 
 /**
- * @Author Alan
- * @Version
- * @Date 2024/5/11 9:45 AM
+ * 预览试卷：按题型分组的题目列表（单选/多选/判断/主观）。
+ *
+ * @author Alan
+ * @since 2024/5/11
  */
 @Data
 public class ExamQuestionListVO {

@@ -14,11 +14,14 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 /**
- * Spring Security 权限配置类
- * 该类用于配置 Spring Security 的相关规则，包括请求授权、异常处理、过滤器等
+ * Spring Security 核心配置：基于 JWT 的无状态认证链路。
+ * <ul>
+ *   <li>放行登录注册、Swagger/Knife4j、部分 WebSocket 路径；其余请求需已认证。</li>
+ *   <li>无权限访问资源时由 {@link cn.org.alan.exam.utils.ResponseUtil} 写入 JSON，而非默认 HTML。</li>
+ *   <li>在表单登录过滤器之前插入 {@link VerifyTokenFilter}，从 Header 解析 Token 并填充 SecurityContext。</li>
+ * </ul>
  *
  * @author Alan
- * @since 2024/4/17
  */
 @Configuration
 @EnableWebSecurity // 启用 Spring Security 的 Web 安全功能，会自动配置一个过滤器链来处理安全相关的事务
@@ -34,10 +37,10 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     private VerifyTokenFilter verifyTokenFilter;
 
     /**
-     * 配置 HttpSecurity 对象，定义请求的授权规则、异常处理方式、过滤器链等
+     * 组装 HTTP 安全策略：关闭 CSRF、配置匿名白名单、403 JSON、挂载 JWT 过滤器。
      *
-     * @param http HttpSecurity 对象，用于配置 Spring Security 的 HTTP 请求相关规则
-     * @throws Exception 配置过程中可能出现的异常
+     * @param http Spring Security 构造器
+     * @throws Exception 配置异常
      */
     @Override
     protected void configure(HttpSecurity http) throws Exception {

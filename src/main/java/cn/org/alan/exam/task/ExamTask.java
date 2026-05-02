@@ -23,8 +23,11 @@ import java.util.Date;
 import java.util.List;
 
 /**
- * 说明：
- *
+ * 考试相关定时任务：扫描「进行中」的 {@link UserExamsScore}，在用户答题时长超过试卷限定时间后触发自动交卷。
+ * <p>
+ * 结束时刻 = 用户开始答题时间（记录创建时间）+ 试卷 {@link Exam#getExamDuration()} 分钟；与全局 {@link Exam#getEndTime()} 的注释代码分支二选一，
+ * 当前启用的是「个人开考时刻 + 时长」模型。
+ * </p>
  */
 @Component
 @Slf4j
@@ -45,7 +48,7 @@ public class ExamTask {
     private IAutoScoringService autoScoringService;
 
     /**
-     * 维护任务定时检测是否有正在考试但是当前时间大于结束时间到，自动交卷
+     * 每 5 秒执行（启动后延迟 1 秒）：查询状态为进行中的用户考试记录，若当前时间已超过该用户本场考试的截止时间则调用 {@link #handExam(UserExamsScore)}。
      */
     @Scheduled(initialDelay = 1000, fixedDelay = 5 * 1000)
     public void test() {
@@ -121,8 +124,11 @@ public class ExamTask {
     }
 
     /**
-     * 交卷操作
-     * @return
+     * 执行交卷：汇总客观题得分、错题入库、更新 {@link UserExamsScore} 状态与用时；若含简答题则触发自动阅卷或等待教师阅卷；
+     * 纯客观题且达及格线可发放证书关联记录。
+     *
+     * @param ues 用户本场考试得分记录（进行中状态）
+     * @return 成功提示；含简答题时可能为「待老师阅卷」
      */
     @Transactional
     public Result<ExamQuDetailVO> handExam(UserExamsScore ues) {

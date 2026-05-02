@@ -1,31 +1,40 @@
 package cn.org.alan.exam.utils.agent;
 
 /**
- * ai相关的提示词常量
+ * LLM / RAG 相关默认参数与主观题阅卷系统提示词（主要为 {@link cn.org.alan.exam.utils.agent.impl.LLMUtil} 使用）。
+ *
  * @author 赵浩森
- * @since 2025/4/15 21:17
- * @version 1.0
+ * @since 2025/4/15
  */
 public class Constants {
 
-    // 上下文最大token
+    /** 单次补全允许的最大 token 上限。 */
     public static final Integer maxToken = 4096;
-    // 回答相似性（0 表示确定性，1 表示高随机性）
+
+    /** 采样温度：0 偏确定，1 偏随机。 */
     public static final Double temperature = 0.8;
-    // 知识库文件夹路径
+
+    /** 本地知识库目录（启用文档加载时的路径，需按部署环境修改）。 */
     public static final String knowledgeBasePath = "Q:\\GitBench\\online-exam-system-backend\\knowledge-base";
-    // 知识库最大切片大小
+
+    /** 文档切片最大字符数。 */
     public static final Integer maxSegmentSizeInChars = 300;
-    // 相邻块之间最大重叠字符数
+
+    /** 相邻切片重叠字符数。 */
     public static final Integer maxOverlapSizeChars = 0;
-    // 保留的查询到的知识库数据条数
+
+    /** 向量检索返回的最大片段条数。 */
     public static final Integer maxResults = 2;
-    // 知识库匹配最低相似度
+
+    /** 检索结果最低相似度阈值。 */
     public static final Double minScore = 0.5;
-    // 最大模型记忆条数
+
+    /** 对话记忆窗口保留的消息条数（0 表示不保留历史）。 */
     public static final Integer withMaxMessages = 0;
 
-    // 系统提示词
+    /**
+     * 主观题 AI 辅助评分系统提示：约束角色、输出为 JSON 数组格式及字段含义。
+     */
     public static final String systemMessage = "# 角色：考试主观题评分官  \n" +
             "精准评估学生对考试内容涉及知识概念的理解深度与表述准确性  \n" +
             "\n" +

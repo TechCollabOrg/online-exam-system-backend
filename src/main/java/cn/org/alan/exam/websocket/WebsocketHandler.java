@@ -11,9 +11,13 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * @Author WeiJin
- * @Version 1.0
- * @Date 2025/3/22 10:50
+ * JSR-356 WebSocket 端点 {@code /websocket}：按用户 ID 维护会话映射，支持广播文本消息。
+ * <p>
+ * 前端需在连接 URL 上携带查询参数 {@code userId=…}（见 {@link #getUserIdBySession(Session)}），
+ * 同一用户若已存在打开中的会话则不再重复注册。
+ * </p>
+ *
+ * @author WeiJin
  */
 @ServerEndpoint("/websocket")
 @Component
@@ -22,12 +26,19 @@ public class WebsocketHandler {
 
     private static final ConcurrentHashMap<Integer, Session> SESSION_MAP = new ConcurrentHashMap<>();
 
-
+    /**
+     * Spring 注入占位：{@link ServerEndpoint} 实例由容器管理，此处仅用于满足组件扫描下的依赖注入钩子（当前无字段赋值）。
+     */
     @Autowired
     public void setInstance() {
 
     }
 
+    /**
+     * 握手成功：解析 {@code userId}，若该用户尚无活跃连接则写入 {@link #SESSION_MAP}。
+     *
+     * @param session 当前 WebSocket 会话
+     */
     @OnOpen
     public void onOpen(Session session) {
         // 获取用户id
@@ -44,6 +55,11 @@ public class WebsocketHandler {
     }
 
 
+    /**
+     * 连接关闭：根据 {@code userId} 从映射中移除（若映射中无对应会话则忽略）。
+     *
+     * @param session 即将关闭的会话
+     */
     @OnClose
     public void onClose(Session session) {
         Integer userId = getUserIdBySession(session);
@@ -59,11 +75,22 @@ public class WebsocketHandler {
         log.info("[websocket消息]：用户 {} 断开连接", userId);
     }
 
+    /**
+     * 传输或协议层错误：记录日志（不在此清理 {@link #SESSION_MAP}，关闭流程仍走 {@link #onClose(Session)}）。
+     *
+     * @param throwable 错误原因
+     */
     @OnError
     public void onError(Throwable throwable) {
         log.error("WebSocket error: {}", throwable.getMessage());
     }
 
+    /**
+     * 收到客户端文本消息后广播给当前所有在线会话（过滤已关闭连接）。
+     *
+     * @param session 发送方会话（当前实现未按发送方区分，全员广播）
+     * @param message 文本载荷
+     */
     @OnMessage
     public void onMessage(Session session, String message) {
         // 反序列化字符串信息获取消息信息
@@ -76,9 +103,9 @@ public class WebsocketHandler {
     }
 
     /**
-     * 广播所有人信息
+     * 向 {@link #SESSION_MAP} 中所有仍处于打开状态的会话同步发送文本（类级锁保护 BasicRemote 发送）。
      *
-     * @param message 信息
+     * @param message 广播内容
      */
     private void sendAllMessage(String message) {
         SESSION_MAP.values().forEach(session -> {
@@ -96,10 +123,10 @@ public class WebsocketHandler {
 
 
     /**
-     * 从session连接路径中获取userId
+     * 从握手 URL 的 Query 串解析用户 ID（约定形如 {@code …?userId=123}，取最后一个 {@code =} 右侧整数）。
      *
-     * @param session session
-     * @return 用户id
+     * @param session WebSocket 会话
+     * @return 用户主键
      */
     private Integer getUserIdBySession(Session session) {
         String[] arr = session.getRequestURI().getQuery().split("=");

@@ -9,7 +9,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import java.util.List;
 
 /**
- * 试题表 Mapper 接口
+ * 试题主表 Mapper：单题详情、分页检索、刷题卷面题目列表（含是否已做标记）。
  *
  * @author WeiJin
  * @since 2024-03-21

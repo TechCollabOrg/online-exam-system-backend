@@ -14,9 +14,9 @@ import javax.annotation.Resource;
 import java.util.List;
 
 /**
+ * 讨论帖回复：新增、删除、按讨论 ID 分页/排序查询。
+ *
  * @author WeiJin
- * @version 1.0
- * @since 2025/4/4 15:18
  */
 @RestController
 @Api(tags = "回复相关接口")
@@ -26,12 +26,7 @@ public class ReplyController {
     @Resource
     private IReplyService replyService;
 
-    /**
-     * 新增回复
-     *
-     * @param replyForm 入参
-     * @return 新增后的回复
-     */
+    /** POST 发表评论/回复。 */
     @PostMapping("add")
     @ApiOperation("添加回复")
     @PreAuthorize("hasAnyAuthority('role_student,role_teacher')")
@@ -40,12 +35,7 @@ public class ReplyController {
         return Result.success("回复成功", reply);
     }
 
-    /**
-     * 根据id删除回复
-     *
-     * @param id id
-     * @return 返回id
-     */
+    /** DELETE 删除回复（楼主或本人，逻辑在 Service）。 */
     @PreAuthorize("hasAnyAuthority('role_student,role_teacher')")
     @ApiOperation("删除回复")
     @DeleteMapping("/delete/{id}")
@@ -55,11 +45,7 @@ public class ReplyController {
     }
 
     /**
-     * 根据讨论id获取评论
-     *
-     * @param orderBy 排序方式 1时间升序 2时间降序 3点赞数量升序 4点赞数量降序
-     * @param id      讨论id
-     * @return 评论
+     * GET 某讨论下回复列表；{@code orderBy}：1 时间升序、2 时间降序、3 点赞升序、4 点赞降序（与 Mapper 约定一致）。
      */
     @PreAuthorize("hasAnyAuthority('role_student,role_teacher')")
     @ApiOperation("根据讨论id获取评论")

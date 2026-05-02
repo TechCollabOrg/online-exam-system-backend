@@ -7,12 +7,9 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.stereotype.Service;
 
 /**
- * <p>
- *  服务实现类
- * </p>
+ * 试题选项实体 {@link cn.org.alan.exam.model.entity.Option} 的基础数据访问层封装。
  *
  * @author WeiJin
- * @since 2024-03-21
  */
 @Service
 public class OptionServiceImpl extends ServiceImpl<OptionMapper, Option> implements IOptionService {

@@ -13,7 +13,7 @@ import java.io.Serializable;
 import java.util.Date;
 
 /**
- * 分类实体类
+ * 题库树形分类：父节点、排序、层级。
  *
  * @author Moxuec
  * @since 2025-04-09

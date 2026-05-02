@@ -14,17 +14,18 @@ import java.io.IOException;
 import java.util.Objects;
 
 /**
- * 说明：
+ * 头像等业务图片上传：委托 {@link cn.org.alan.exam.utils.file.FileService} 校验格式与大小后写入对象存储并返回 URL。
  *
- * @Author Alan
- * @Version 1.0
- * @Date 2025/3/21 10:44 PM
+ * @author Alan
  */
 @Service
 public class FileServiceImpl implements IFileService {
     @Resource
     private FileService fileService;
 
+    /**
+     * 校验为常见图片后缀且不超过存储适配器限制（当前提示 50KB），上传成功后返回可访问地址。
+     */
     @SneakyThrows(IOException.class)
     @Override
     public Result<String> uploadImage(MultipartFile file) {

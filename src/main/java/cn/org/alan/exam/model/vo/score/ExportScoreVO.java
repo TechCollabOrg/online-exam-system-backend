@@ -4,9 +4,10 @@ import cn.org.alan.exam.utils.excel.ExcelExport;
 import lombok.Data;
 
 /**
- * @Author WeiJin
- * @Version 1.0
- * @Date 2024/4/22 10:12
+ * 成绩导出 Excel 行映射（姓名、分数等列）。
+ *
+ * @author WeiJin
+ * @since 2024/4/22
  */
 @Data
 public class ExportScoreVO {

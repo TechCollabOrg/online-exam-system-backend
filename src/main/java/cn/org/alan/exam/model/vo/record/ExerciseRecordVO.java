@@ -11,9 +11,10 @@ import javax.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 
 /**
- * @Author Alan
- * @Version
- * @Date 2024/4/30 12:29 PM
+ * 刷题历史分页行：题库、进度、最近练习时间等。
+ *
+ * @author Alan
+ * @since 2024/4/30
  */
 @Data
 public class ExerciseRecordVO {

@@ -8,9 +8,9 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
- * 公告实体类
+ * 系统公告：标题正文、发布人、是否全员可见及时间戳。
  *
-Apiauthor WeiJin
+ * @author WeiJin
  * @since 2024-03-21
  */
 @Data

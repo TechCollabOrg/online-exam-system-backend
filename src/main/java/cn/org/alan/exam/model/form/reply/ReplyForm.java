@@ -6,9 +6,10 @@ import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 
 /**
+ * 提交讨论回复：内容与讨论/父回复关联。
+ *
  * @author WeiJin
- * @version 1.0
- * @since 2025/4/4 14:09
+ * @since 2025/4/4
  */
 @Data
 public class ReplyForm {

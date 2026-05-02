@@ -11,11 +11,10 @@ import lombok.Data;
 import java.io.Serializable;
 
 /**
- * 角色实体类
+ * 系统角色：编码、名称，与 Spring Security 权限名对应。
  *
- * @ Author JinXi
- * @ Version 1.0
- * @ Date 2024/4/25 14:10
+ * @author JinXi
+ * @since 2024/4/25
  */
 @Data
 @ApiModel("角色实体类")

@@ -33,11 +33,11 @@ import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
 /**
- * Excel导入导出工具类
- * 原文链接（不定时增加新功能）: https://zyqok.blog.csdn.net/article/details/121994504
+ * 基于 Apache POI 的 Excel 导入导出工具集：动态列宽、下拉校验、模板导出、Web 响应流写出等，
+ * 供成绩导出、用户/试题批量导入等业务调用（方法较多，均为静态工具）。
+ * <p>参考实现思路来源：<a href="https://zyqok.blog.csdn.net/article/details/121994504">CSDN 原文</a>。</p>
  *
  * @author sunnyzyq
- * @date 2021/12/17
  */
 @SuppressWarnings("unused")
 public class ExcelUtils {

@@ -11,7 +11,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 /**
- * 用户服务Mapper
+ * 用户表 Mapper：分页查询、详情、批量导入、班级关联维护、管理员 ID 列表等。
  *
  * @author WeiJin
  * @since 2024-03-21

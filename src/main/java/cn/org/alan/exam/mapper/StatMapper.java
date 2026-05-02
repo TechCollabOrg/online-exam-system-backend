@@ -10,11 +10,10 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 /**
- * 统计数据 Mapper 接口
+ * 统计查询 Mapper：按角色与数据范围统计各班学生人数、各班关联试卷数量。
  *
- * @ Author JinXi
- * @ Version 1.0
- * @ Date 2024/5/12 14:56
+ * @author JinXi
+ * @since 2024/5/12
  */
 public interface StatMapper extends BaseMapper<Grade> {
 

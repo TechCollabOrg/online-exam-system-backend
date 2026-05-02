@@ -8,12 +8,10 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 /**
- * 说明：
- * 讨论服务接口
+ * 课堂讨论：教师发帖与维护、学生按班级浏览、详情与状态联动。
  *
- * @Author Alan
- * @Version 1.0
- * @Date 2025/4/2 6:35 PM
+ * @author Alan
+ * @since 2025/4/2
  */
 public interface IDiscussionService extends IService<Discussion> {
 

@@ -4,9 +4,10 @@ import lombok.Data;
 import lombok.experimental.Accessors;
 
 /**
- * @Author WeiJin
- * @Version 1.0
- * @Date 2024/4/29 15:31
+ * 刷题答题卡上的单题摘要：是否已做过、题型等。
+ *
+ * @author WeiJin
+ * @since 2024/4/29
  */
 @Data
 public class QuestionSheetVO {

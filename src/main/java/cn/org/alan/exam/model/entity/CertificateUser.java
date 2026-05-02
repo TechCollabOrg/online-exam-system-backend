@@ -9,7 +9,7 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
- * 用户证书关联实体类
+ * 用户获得证书的发放记录：关联证书模板、考试与颁发时间。
  *
  * @author WeiJin
  * @since 2024-03-21

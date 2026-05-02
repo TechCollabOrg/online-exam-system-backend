@@ -3,9 +3,10 @@ package cn.org.alan.exam.model.vo.exam;
 import lombok.Data;
 
 /**
- * @Author Alan
- * @Version
- * @Date 2024/5/20 9:26 AM
+ * 组卷或考试题目列表中的单题项：题型、分值、排序、题干摘要。
+ *
+ * @author Alan
+ * @since 2024/5/20
  */
 @Data
 public class ExamQuestionVO {

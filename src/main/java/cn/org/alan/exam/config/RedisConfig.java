@@ -8,20 +8,19 @@ import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSeriali
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 /**
- * Redis配置类
+ * Redis {@link RedisTemplate} Bean：Key/HashKey 使用字符串序列化，Value/HashValue 使用 Jackson JSON，
+ * 便于存取复杂对象并与 Spring Cache、会话类存储对齐。
  *
- * @Author Alan
- * @Version
- * @Date 2024/6/9 11:07 PM
+ * @author Alan
  */
 @Configuration
 public class RedisConfig {
 
     /**
-     * Redis序列化配置
+     * 构造默认 Redis 模板并绑定连接工厂；适用于 token、验证码等业务读写。
      *
-     * @param redisConnectionFactory
-     * @return
+     * @param redisConnectionFactory Spring Data Redis 连接工厂
+     * @return 已配置序列化器的模板实例
      */
     @Bean
     public RedisTemplate redisTemplateInit(RedisConnectionFactory redisConnectionFactory) {

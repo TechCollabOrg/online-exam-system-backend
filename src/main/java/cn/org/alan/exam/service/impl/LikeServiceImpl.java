@@ -15,9 +15,9 @@ import org.springframework.stereotype.Service;
 import javax.annotation.Resource;
 
 /**
+ * 讨论/回复点赞：同一用户重复点击视为取消点赞；提供按回复、讨论批量清理点赞记录。
+ *
  * @author WeiJin
- * @version 1.0
- * @since 2025/4/16 22:25
  */
 @Service
 public class LikeServiceImpl extends ServiceImpl<LikeMapper, Like> implements ILikeService {
@@ -25,6 +25,7 @@ public class LikeServiceImpl extends ServiceImpl<LikeMapper, Like> implements IL
     @Resource
     private LikeConverter likeConverter;
 
+    /** 若不存在点赞记录则插入，否则删除（ toggle ）。 */
     @Override
     public Result<String> doLike(LikeForm likeForm) {
         Like like = likeConverter.formToEntity(likeForm);
@@ -40,6 +41,7 @@ public class LikeServiceImpl extends ServiceImpl<LikeMapper, Like> implements IL
         return deleted > 0 ? Result.success("取消成功") : Result.failed("取消失败");
     }
 
+    /** 查询当前用户对指定讨论/回复是否已点赞。 */
     @Override
     public Like queryLike(LikeForm likeForm) {
         LambdaQueryWrapper<Like> wrapper = new LambdaQueryWrapper<Like>()
@@ -49,17 +51,20 @@ public class LikeServiceImpl extends ServiceImpl<LikeMapper, Like> implements IL
         return baseMapper.selectOne(wrapper);
     }
 
+    /** 按点赞记录主键删除。 */
     @Override
     public int deleteLike(Integer id) {
         return baseMapper.deleteById(id);
     }
 
+    /** 删除某讨论下所有点赞（删帖时调用）。 */
     @Override
     public int deleteLikeByDiscussionId(Integer discussionId) {
         LambdaUpdateWrapper<Like> wrapper = new LambdaUpdateWrapper<Like>().eq(Like::getDiscussionId, discussionId);
         return baseMapper.delete(wrapper);
     }
 
+    /** 删除某回复下点赞记录。 */
     @Override
     public int deleteLikeByReplyId(Integer replyId) {
         LambdaUpdateWrapper<Like> wrapper = new LambdaUpdateWrapper<Like>().eq(Like::getReplyId, replyId);

@@ -9,7 +9,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import java.util.List;
 
 /**
- * 公告表 Mapper 接口
+ * 公告表 Mapper：更新公告、可见范围查询、教师/管理员列表与最新公告分页。
  *
  * @author WeiJin
  * @since 2024-03-21

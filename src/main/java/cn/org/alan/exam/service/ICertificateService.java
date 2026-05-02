@@ -8,7 +8,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 /**
- * 证书服务接口
+ * 证书模板与发放：模板维护、教师/管理员分页、学生查看已获证书。
  *
  * @author JinXi
  * @since 2024-03-21

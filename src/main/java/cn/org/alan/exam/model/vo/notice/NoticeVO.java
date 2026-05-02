@@ -7,9 +7,10 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * @Author Alan
- * @Version
- * @Date 2024/3/28 11:26 PM
+ * 公告列表或详情：标题、发布时间、发布者与可见范围摘要。
+ *
+ * @author Alan
+ * @since 2024/3/28
  */
 @Data
 public class NoticeVO {

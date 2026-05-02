@@ -6,10 +6,10 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 /**
- * 未批改用户
- * @Author WeiJin
- * @Version 1.0
- * @Date 2024/4/29 9:25
+ * 某场考试中尚未完成主观题阅卷的考生分页行。
+ *
+ * @author WeiJin
+ * @since 2024/4/29
  */
 @Data
 public class UncorrectedUserVO {

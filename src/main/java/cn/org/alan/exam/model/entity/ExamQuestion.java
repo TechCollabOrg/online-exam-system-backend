@@ -8,11 +8,10 @@ import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
 /**
- * 考试试题实体类
+ * 试卷与试题的关联：题型、分值、大题顺序等组卷信息。
  *
- * @Author Alan
- * @Version
- * @Date 2024/4/7 3:42 PM
+ * @author Alan
+ * @since 2024/4/7
  */
 @Data
 @ApiModel("考试试题实体类")

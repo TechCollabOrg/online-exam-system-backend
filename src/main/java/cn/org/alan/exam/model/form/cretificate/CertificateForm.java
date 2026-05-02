@@ -7,11 +7,10 @@ import lombok.Data;
 import javax.validation.constraints.NotBlank;
 
 /**
- * 证书请求体
+ * 证书模板维护：名称、颁发单位、背景图 URL 等。
  *
- * @ Author JinXi
- * @ Version 1.0
- * @ Date 2024/4/11 15:15
+ * @author JinXi
+ * @since 2024/4/11
  */
 @Data
 public class CertificateForm {

@@ -6,9 +6,10 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 /**
- * @Author WeiJin
- * @Version 1.0
- * @Date 2024/4/15 9:28
+ * 班级成绩统计分页行：考试名称、班级、平均分等。
+ *
+ * @author WeiJin
+ * @since 2024/4/15
  */
 @Data
 public class GradeScoreVO {

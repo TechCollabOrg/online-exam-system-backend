@@ -24,10 +24,10 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 /**
- * 考试管理
+ * 试卷生命周期与学生作答 HTTP 入口：创建维护需教师或管理员；开考、答题、交卷等支持学生角色。
+ * <p>路径前缀 {@code /api/exams}，具体权限见各方法 {@link PreAuthorize}。</p>
  *
  * @author Alan
- * @since 2024-03-21
  */
 @Api(tags = "考试管理相关接口")
 @RestController
@@ -37,12 +37,7 @@ public class ExamController {
     @Resource
     private IExamService examService;
 
-    /**
-     * 创建考试
-     *
-     * @param examAddForm
-     * @return
-     */
+    /** POST 创建试卷（组卷、班级、题库关联等在 Service 内完成）。 */
     @ApiOperation("创建考试")
     @PostMapping
     @PreAuthorize("hasAnyAuthority('role_teacher','role_admin')")
@@ -50,12 +45,7 @@ public class ExamController {
         return examService.createExam(examAddForm);
     }
 
-    /**
-     * 开始考试
-     *
-     * @param examId 试卷ID
-     * @return
-     */
+    /** GET 开课：写入进行中成绩记录，防重复开考。 */
     @ApiOperation("开始考试")
     @GetMapping("/start")
     @PreAuthorize("hasAnyAuthority('role_teacher','role_admin','role_student')")
@@ -63,13 +53,7 @@ public class ExamController {
         return examService.startExam(examId);
     }
 
-    /**
-     * 修改考试
-     *
-     * @param examUpdateForm
-     * @param id             试卷ID
-     * @return
-     */
+    /** PUT 更新试卷基础信息（路径 {@code id}）。 */
     @ApiOperation("修改考试")
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyAuthority('role_teacher','role_admin')")
@@ -77,12 +61,7 @@ public class ExamController {
         return examService.updateExam(examUpdateForm, id);
     }
 
-    /**
-     * 删除考试
-     *
-     * @param ids 试卷ID
-     * @return
-     */
+    /** DELETE 批量删除试卷；{@code ids} 支持逗号分隔，须匹配正则校验。 */
     @ApiOperation("删除考试")
     @DeleteMapping("/{ids}")
     @PreAuthorize("hasAnyAuthority('role_teacher','role_admin')")
@@ -90,14 +69,7 @@ public class ExamController {
         return examService.deleteExam(ids);
     }
 
-    /**
-     * 教师分页查找考试列表
-     *
-     * @param pageNum  页码
-     * @param pageSize 每页大小
-     * @param title    试卷标题
-     * @return
-     */
+    /** GET 试卷管理分页（教师只看本人创建，管理员看全部）。 */
     @ApiOperation("教师分页查找考试列表")
     @GetMapping("/paging")
     @PreAuthorize("hasAnyAuthority('role_teacher','role_admin')")
@@ -107,12 +79,7 @@ public class ExamController {
         return examService.getPagingExam(pageNum, pageSize, title);
     }
 
-    /**
-     * 获取考试题目id列表
-     *
-     * @param examId 试卷ID
-     * @return
-     */
+    /** GET 考试中题型分组题目列表与倒计时（须处于进行中状态）。 */
     @ApiOperation("获取考试题目id列表")
     @GetMapping("/question/list/{examId}")
     @PreAuthorize("hasAnyAuthority('role_teacher','role_admin','role_student')")
@@ -120,13 +87,7 @@ public class ExamController {
         return examService.getQuestionList(examId);
     }
 
-    /**
-     * 获取单题信息
-     *
-     * @param examId     试卷ID
-     * @param questionId 试题ID
-     * @return
-     */
+    /** GET 考试中单题题干、选项及作答勾选状态。 */
     @ApiOperation("获取单题信息")
     @GetMapping("/question/single")
     @PreAuthorize("hasAnyAuthority('role_teacher','role_admin','role_student')")
@@ -135,12 +96,7 @@ public class ExamController {
         return examService.getQuestionSingle(examId, questionId);
     }
 
-    /**
-     * 题目汇总
-     *
-     * @param examId 试卷ID
-     * @return
-     */
+    /** GET 考试中题目导航汇总（含「我的答案」展示）。 */
     @ApiOperation("题目汇总")
     @GetMapping("/collect/{id}")
     @PreAuthorize("hasAnyAuthority('role_teacher','role_admin','role_student')")
@@ -149,12 +105,7 @@ public class ExamController {
     }
 
 
-    /**
-     * 获取考试详情信息
-     *
-     * @param examId 试卷ID
-     * @return
-     */
+    /** GET 试卷静态详情（非作答中界面）。 */
     @ApiOperation("获取考试详情信息")
     @GetMapping("/detail")
     @PreAuthorize("hasAnyAuthority('role_teacher','role_admin','role_student')")
@@ -162,15 +113,7 @@ public class ExamController {
         return examService.getDetail(examId);
     }
 
-    /**
-     * 根据班级获得考试
-     *
-     * @param pageNum  页码
-     * @param pageSize 每页大小
-     * @param title    试卷标题
-     * @param isASC    是否升序排列，true为升序，false为降序，默认为false
-     * @return
-     */
+    /** GET 按班级/角色可见的考试列表分页（学生、教师、管理员 SQL 分支不同）。 */
     @ApiOperation("根据班级获得考试")
     @GetMapping("/grade")
     @PreAuthorize("hasAnyAuthority('role_teacher','role_admin','role_student')")
@@ -181,12 +124,7 @@ public class ExamController {
         return examService.getGradeExamList(pageNum, pageSize, title, isASC);
     }
 
-    /**
-     * 考试作弊次数添加
-     *
-     * @param examId 试卷ID
-     * @return
-     */
+    /** PUT 上报切屏次数；超限可由服务端触发自动交卷。 */
     @ApiOperation("考试作弊次数添加")
     @PutMapping("/cheat/{examId}")
     @PreAuthorize("hasAnyAuthority('role_teacher','role_admin','role_student')")
@@ -194,12 +132,7 @@ public class ExamController {
         return examService.addCheat(examId);
     }
 
-    /**
-     * 填充答案
-     *
-     * @param examQuAnswerForm
-     * @return
-     */
+    /** POST 保存或更新本场考试某一题作答。 */
     @ApiOperation("填充答案")
     @PostMapping("/full-answer")
     @PreAuthorize("hasAnyAuthority('role_teacher','role_admin','role_student')")
@@ -207,12 +140,7 @@ public class ExamController {
         return examService.addAnswer(examQuAnswerForm);
     }
 
-    /**
-     * 交卷操作
-     *
-     * @param examId 试卷ID
-     * @return
-     */
+    /** GET 手动交卷（路径参数 examId）。 */
     @ApiOperation("交卷操作")
     @GetMapping(value = "/hand-exam/{examId}")
     @PreAuthorize("hasAnyAuthority('role_teacher','role_admin','role_student')")
@@ -220,12 +148,7 @@ public class ExamController {
         return examService.handExam(examId);
     }
 
-    /**
-     * 查看详情
-     *
-     * @param examId 试卷ID
-     * @return
-     */
+    /** GET 考后试题解析列表（题干、选项、正确答案等）。 */
     @ApiOperation("查看考试详情")
     @GetMapping(value = "/details/{examId}")
     @PreAuthorize("hasAnyAuthority('role_teacher','role_admin','role_student')")

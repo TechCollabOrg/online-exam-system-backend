@@ -6,9 +6,10 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 /**
- * @Author WeiJin
- * @Version 1.0
- * @Date 2024/3/31 13:14
+ * 用户管理分页/详情：账号、角色、班级、头像等对外展示字段。
+ *
+ * @author WeiJin
+ * @since 2024/3/31
  */
 @Data
 public class UserVO {

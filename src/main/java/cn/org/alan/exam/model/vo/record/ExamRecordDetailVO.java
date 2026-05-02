@@ -6,9 +6,10 @@ import lombok.Data;
 import java.util.List;
 
 /**
- * @Author Alan
- * @Version
- * @Date 2024/4/30 11:44 AM
+ * 考试回顾详情中单题：选项、用户答案、标准答案与解析。
+ *
+ * @author Alan
+ * @since 2024/4/30
  */
 @Data
 public class ExamRecordDetailVO {

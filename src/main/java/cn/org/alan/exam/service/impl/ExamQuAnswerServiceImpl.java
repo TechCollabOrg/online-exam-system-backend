@@ -14,12 +14,9 @@ import java.text.DecimalFormat;
 import java.util.List;
 
 /**
- * <p>
- * 服务实现类
- * </p>
+ * 考试作答明细 {@link ExamQuAnswer}：扩展「单题正确率分析」等阅卷统计能力。
  *
  * @author WeiJin
- * @since 2024-03-21
  */
 @Service
 public class ExamQuAnswerServiceImpl extends ServiceImpl<ExamQuAnswerMapper, ExamQuAnswer> implements IExamQuAnswerService {
@@ -27,6 +24,9 @@ public class ExamQuAnswerServiceImpl extends ServiceImpl<ExamQuAnswerMapper, Exa
     @Resource
     private ExamQuAnswerMapper examQuAnswerMapper;
 
+    /**
+     * 统计某场考试指定题目的作答人数、正确数，并格式化为两位小数正确率。
+     */
     @Override
     public Result<QuestionAnalyseVO> questionAnalyse(Integer examId, Integer questionId) {
         QuestionAnalyseVO questionAnalyseVO = examQuAnswerMapper.questionAnalyse(examId, questionId);

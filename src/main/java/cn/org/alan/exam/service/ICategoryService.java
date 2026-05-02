@@ -8,7 +8,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import java.util.List;
 
 /**
- * 分类服务接口
+ * 题库分类：树形增删改查、一级分类与子节点查询。
  *
  * @author Moxuec
  * @since 2025-04-09

@@ -26,10 +26,9 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * 错题本服务实现类
+ * 错题本：收录考试/练习错题、分页复习、移除错题及按考试维度查看错题列表（组装题干与选项）。
  *
  * @author Alan
- * @since 2024-03-21
  */
 @Service
 public class UserBookServiceImpl extends ServiceImpl<UserBookMapper, UserBook> implements IUserBookService {

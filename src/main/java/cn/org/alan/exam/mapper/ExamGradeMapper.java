@@ -13,7 +13,7 @@ import org.apache.ibatis.annotations.Param;
 import java.util.List;
 
 /**
- * 考试与班级关联表 Mapper 接口
+ * 考试与参考班级关联 Mapper：绑定班级、统计应考人数、教师/管理员查看班级考试分页。
  *
  * @author WeiJin
  * @since 2024-03-21
@@ -30,7 +30,7 @@ public interface ExamGradeMapper extends BaseMapper<ExamGrade> {
     Integer addExamGrade(Integer examId, List<Integer> gradeIds);
 
     /**
-     * 根据开始id获取所有需要参加该考试的人数
+     * 根据考试 ID 统计应参加该场考试的人数（关联班级人数汇总口径见 SQL）
      *
      * @param id 考试id
      * @return 人数

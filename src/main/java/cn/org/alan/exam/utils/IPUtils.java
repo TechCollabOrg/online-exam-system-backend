@@ -3,7 +3,6 @@ package cn.org.alan.exam.utils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.lionsoul.ip2region.xdb.Searcher;
-import org.springframework.stereotype.Component;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.InputStream;
@@ -14,7 +13,10 @@ import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 /**
- * 基于 ip2region 从 {@link HttpServletRequest} 解析客户端 IP 及归属地。
+ * IP 工具：从请求头链解析真实客户端 IP，并结合 classpath 内 {@code ipdata/ip2region.xdb} 查询行政区划文本；
+ * {@link Searcher} 按线程存放，用完须 {@link #closeSearcher()} 以防泄漏。
+ *
+ * @author Alan
  */
 public class IPUtils {
 
@@ -56,11 +58,11 @@ public class IPUtils {
     });
 
     /**
-     * 获取ip归属地
-     * @param request
-     * @return
+     * 解析请求 IP 并查询 ip2region 归属地字符串（未加载库时返回 {@code null}）。
+     *
+     * @param request HTTP 请求
+     * @return 区域文本，如 {@code 国家|区域|省份|城市|ISP}；失败返回 {@code null}
      */
-
     public static String getIPRegion(HttpServletRequest request) {
         String ip = getIPAddress(request);
         Searcher searcher = searcherThreadLocal.get();
@@ -83,9 +85,10 @@ public class IPUtils {
     }
 
     /**
-     * 获取ip地址
-     * @param request
-     * @return
+     * 依次读取常见代理头后回落 {@link HttpServletRequest#getRemoteAddr()}。
+     *
+     * @param request HTTP 请求
+     * @return 客户端 IP 字符串
      */
     private static String getIPAddress(HttpServletRequest request) {
         String ipAddress = request.getHeader("X-Forwarded-For");

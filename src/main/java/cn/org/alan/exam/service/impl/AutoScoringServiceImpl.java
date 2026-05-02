@@ -25,6 +25,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * 主观题 AI 辅助评分：异步调用 {@link AIChat}，解析返回 JSON 中的分数与扣分说明写回 {@link ExamQuAnswer}；
+ * 独立事务 + 最多三次重试，避免与主交卷事务耦合。
+ */
 @Service
 public class AutoScoringServiceImpl extends ServiceImpl<ExamQuAnswerMapper, ExamQuAnswer> implements IAutoScoringService {
 
@@ -37,6 +41,9 @@ public class AutoScoringServiceImpl extends ServiceImpl<ExamQuAnswerMapper, Exam
     @Autowired
     private PlatformTransactionManager platformTransactionManager;
 
+    /**
+     * 按考试与用户拉取待评分主观题，组装 prompt 调模型，正则抽取 markdown 内 JSON，批量更新 aiScore/aiReason。
+     */
     @Override
     @Async
     public void autoScoringExam(Integer examId, Integer userId) {

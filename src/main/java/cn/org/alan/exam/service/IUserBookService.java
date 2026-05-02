@@ -10,7 +10,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import java.util.List;
 
 /**
- * 错题本服务类
+ * 学生错题本：分页查询、按考试汇总的错题、单题详情与巩固作答。
  *
  * @author Alan
  * @since 2024-03-21

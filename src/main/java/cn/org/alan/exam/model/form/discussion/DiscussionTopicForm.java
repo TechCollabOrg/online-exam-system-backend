@@ -1,11 +1,10 @@
 package cn.org.alan.exam.model.form.discussion;
 
 /**
- * 说明：
+ * 讨论主题表单占位类，扩展字段前预留；当前无成员。
  *
- * @Author Alan
- * @Version 1.0
- * @Date 2025/4/2 7:00 PM
+ * @author Alan
+ * @since 2025/4/2
  */
 public class DiscussionTopicForm {
 }

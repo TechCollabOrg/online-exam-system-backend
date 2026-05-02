@@ -6,10 +6,10 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 /**
- * 讨论详情vo
+ * 讨论详情页：主题正文、作者、可见范围及回复区入口数据。
+ *
  * @author WeiJin
- * @version 1.0
- * @since 2025/4/4 13:51
+ * @since 2025/4/4
  */
 @Data
 public class DiscussionDetailVo {

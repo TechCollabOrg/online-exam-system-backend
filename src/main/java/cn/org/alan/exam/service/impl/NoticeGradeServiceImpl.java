@@ -7,12 +7,9 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.stereotype.Service;
 
 /**
- * <p>
- *  服务实现类
- * </p>
+ * 公告与可见班级关联 {@link cn.org.alan.exam.model.entity.NoticeGrade} 的中间表服务。
  *
  * @author WeiJin
- * @since 2024-03-21
  */
 @Service
 public class NoticeGradeServiceImpl extends ServiceImpl<NoticeGradeMapper, NoticeGrade> implements INoticeGradeService {

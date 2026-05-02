@@ -13,11 +13,10 @@ import java.time.LocalDateTime;
 import java.io.Serializable;
 
 /**
- * 用户每日登录时长实体类
+ * 用户按自然日汇总的在线停留时长，用于学习统计。
  *
- * @Author Alan
- * @Version
- * @Date 2024/5/28 10:44 PM
+ * @author Alan
+ * @since 2024/5/28
  */
 @Data
 @ApiModel("用户每日登录时长实体类")

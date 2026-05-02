@@ -10,9 +10,10 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
+ * 用户对讨论或回复的点赞记录（防重复由业务与唯一约束保证）。
+ *
  * @author WeiJin
- * @version 1.0
- * @since 2025/4/16 22:10
+ * @since 2025/4/16
  */
 @Data
 @TableName("t_like")

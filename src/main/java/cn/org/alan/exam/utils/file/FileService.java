@@ -5,30 +5,32 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 
 /**
- * 文件系统服务
+ * 对象存储上传抽象（具体实现如 MinIO、阿里云 OSS）：头像与题干图片等通过 {@link #upload(MultipartFile)} 返回公网或可访问 URL。
  *
  * @author 赵浩森
- * @version 1.0
- * @since 2025/2/5 11:46
  */
 public interface FileService {
     /**
-     * 实现上传图片到OSS
-     */
-    public String upload(MultipartFile file) throws IOException;
-    /**
-     * 判断是否为常见图片格式
+     * 上传多端通用二进制文件（当前业务主要为图片），由实现类决定存储路径与访问域名。
      *
-     * @param filename 文件名
-     * @return 结果
+     * @param file 前端 multipart 文件
+     * @return 访问 URL 或对象键
      */
-    public boolean isImage(String filename);
+    String upload(MultipartFile file) throws IOException;
 
     /**
-     * 判断文件是否大于50KB
+     * 校验扩展名是否为常见图片类型（如 png/jpg/jpeg/bmp）。
      *
-     * @param file 文件
-     * @return 结果
+     * @param filename 原始文件名
+     * @return 是否为允许的图片格式
      */
-    public boolean isOverSize(MultipartFile file);
+    boolean isImage(String filename);
+
+    /**
+     * 是否超过实现类配置的单文件大小上限（业务侧常与「50KB」提示文案对齐）。
+     *
+     * @param file 上传文件
+     * @return true 表示超限
+     */
+    boolean isOverSize(MultipartFile file);
 }

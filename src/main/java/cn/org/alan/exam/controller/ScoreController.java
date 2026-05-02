@@ -4,7 +4,6 @@ import cn.org.alan.exam.common.result.Result;
 import cn.org.alan.exam.model.vo.score.GradeScoreVO;
 import cn.org.alan.exam.model.vo.score.QuestionAnalyseVO;
 import cn.org.alan.exam.model.vo.score.UserScoreVO;
-import cn.org.alan.exam.service.IStatService;
 import cn.org.alan.exam.service.IExamQuAnswerService;
 import cn.org.alan.exam.service.IUserExamsScoreService;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -18,11 +17,9 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 /**
- * 成绩管理
+ * 成绩查询、单题分析与 Excel 导出。
  *
- * @Author WeiJin
- * @Version
- * @Date 2024/3/25 11:19 AM
+ * @author WeiJin
  */
 @Api(tags = "成绩相关接口")
 @RestController
@@ -34,16 +31,7 @@ public class ScoreController {
     @Resource
     private IExamQuAnswerService iExamQuAnswerService;
 
-    /**
-     * 分页获取成绩信息
-     *
-     * @param pageNum  页码
-     * @param pageSize 每页大小
-     * @param gradeId  班级Id
-     * @param examId   考试Id
-     * @param realName 真实姓名
-     * @return 响应结果
-     */
+    /** GET 某班某场考试的成绩分页。 */
     @ApiOperation("分页获取成绩信息")
     @GetMapping("/paging")
     @PreAuthorize("hasAnyAuthority('role_teacher','role_admin')")
@@ -55,13 +43,7 @@ public class ScoreController {
         return iUserExamsScoreService.pagingScore(pageNum, pageSize, gradeId, examId, realName);
     }
 
-    /**
-     * 获取某场考试某题作答情况
-     *
-     * @param examId     考试id
-     * @param questionId 试题id
-     * @return 响应结果
-     */
+    /** GET 单场考试单题正确率等统计。 */
     @ApiOperation("获取某场考试某题作答情况")
     @GetMapping("/question/{examId}/{questionId}")
     @PreAuthorize("hasAnyAuthority('role_teacher','role_admin')")
@@ -70,14 +52,7 @@ public class ScoreController {
         return iExamQuAnswerService.questionAnalyse(examId, questionId);
     }
 
-    /**
-     * 根据班级分析考试情况
-     *
-     * @param pageNum   页码
-     * @param pageSize  每页记录数
-     * @param examTitle 考试名称
-     * @return 响应结果
-     */
+    /** GET 教师侧成绩统计分页（按考试标题、班级过滤）。 */
     @ApiOperation("根据班级分析考试情况")
     @GetMapping("/getExamScore")
     @PreAuthorize("hasAnyAuthority('role_teacher','role_admin')")
@@ -89,13 +64,7 @@ public class ScoreController {
         return iUserExamsScoreService.getExamScoreInfo(pageNum, pageSize, examTitle, gradeId);
     }
 
-    /**
-     * 成绩导出
-     *
-     * @param response 响应对象
-     * @param examId   考试id
-     * @param gradeId  班级id
-     */
+    /** GET 导出某班某场考试成绩 Excel（直接写 response 流）。 */
     @ApiOperation("成绩导出")
     @GetMapping("/export/{examId}/{gradeId}")
     @PreAuthorize("hasAnyAuthority('role_teacher','role_admin')")

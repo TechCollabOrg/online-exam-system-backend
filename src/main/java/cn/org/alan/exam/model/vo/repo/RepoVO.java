@@ -6,9 +6,10 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 /**
- * @Author WeiJin
- * @Version 1.0
- * @Date 2024/3/28 19:57
+ * 题库管理分页/详情：标题、分类、题目数量等。
+ *
+ * @author WeiJin
+ * @since 2024/3/28
  */
 @Data
 public class RepoVO {

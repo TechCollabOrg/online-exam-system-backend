@@ -18,10 +18,9 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 /**
- * 证书管理书管理
+ * 证书模板维护（管理员）与教师查看分页；学生查询本人持证记录。
  *
  * @author zsx
- * @since 2024-04-1
  */
 @Api(tags = "证书管理相关接口")
 @RestController
@@ -31,30 +30,16 @@ public class CertificateController {
     @Resource
     private ICertificateService iCertificateService;
 
-    /**
-     * 添加证书，只有教师和管理员可以添加证书
-     *
-     * @param certificateForm 添加证书的前端参数
-     * @return 返回响应结果
-     */
+    /** POST 新增证书模板；校验分组 {@link CertificateGroup.CertificateInsertGroup}（当前仅管理员）。 */
     @ApiOperation("添加证书")
     @PostMapping
     @PreAuthorize("hasAnyAuthority('role_admin')")
     public Result<String> addCertificate(@RequestBody @Validated(CertificateGroup.CertificateInsertGroup.class)
                                          CertificateForm certificateForm) {
-        // 从token获取用户id，放入创建人id属性
         return iCertificateService.addCertificate(certificateForm);
     }
 
-    /**
-     * 分页查询证书
-     *
-     * @param pageNum           页码
-     * @param pageSize          每页大小
-     * @param certificateName   证书标题
-     * @param certificationUnit 认证单位
-     * @return 响应结果
-     */
+    /** GET 证书模板分页（教师看自己创建的模板数据口径见 Service）。 */
     @ApiOperation("分页查询证书")
     @GetMapping("/paging")
     @PreAuthorize("hasAnyAuthority('role_teacher','role_admin')")
@@ -65,13 +50,7 @@ public class CertificateController {
         return iCertificateService.pagingCertificate(pageNum, pageSize, certificateName, certificationUnit);
     }
 
-    /**
-     * 修改证书
-     *
-     * @param id              证书ID
-     * @param certificateForm 修改证书的前端参数
-     * @return 返回响应结果
-     */
+    /** PUT 更新证书模板。 */
     @ApiOperation("修改证书")
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyAuthority('role_admin')")
@@ -81,12 +60,7 @@ public class CertificateController {
         return iCertificateService.updateCertificate(certificateForm);
     }
 
-    /**
-     * 删除证书
-     *
-     * @param id 证书ID
-     * @return 返回响应结果
-     */
+    /** DELETE 删除证书模板。 */
     @ApiOperation("删除证书")
     @DeleteMapping("/delete/{id}")
     @PreAuthorize("hasAnyAuthority('role_admin')")
@@ -94,14 +68,7 @@ public class CertificateController {
         return iCertificateService.deleteCertificate(id);
     }
 
-    /**
-     * 分页查已获证书
-     *
-     * @param pageNum  页码
-     * @param pageSize 每页大小
-     * @param examName 试卷标题
-     * @return
-     */
+    /** GET 学生分页查看已获得的证书。 */
     @ApiOperation("分页查已获证书")
     @GetMapping("/paging/my")
     @PreAuthorize("hasAnyAuthority('role_student')")

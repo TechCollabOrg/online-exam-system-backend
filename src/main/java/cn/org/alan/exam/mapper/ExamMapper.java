@@ -12,7 +12,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 /**
- * 试卷表 Mapper 接口
+ * 考试（试卷）主表 Mapper：阅卷侧考试分页、学生/教师/管理员考试记录分页。
  *
  * @author Alan
  * @since 2024-03-21
@@ -20,9 +20,12 @@ import java.util.List;
 public interface ExamMapper extends BaseMapper<Exam> {
 
     /**
-     * 获取自己创建的考试，考试id，考试考试标题，是否需要阅卷
+     * 分页查询当前用户创建的、且包含待阅主观题的考试列表（考试 ID、标题、是否需阅卷等）。
      *
-     * @param userId 用户ID
+     * @param page    分页参数
+     * @param userId  用户 ID
+     * @param role    角色编码（SQL 中用于过滤）
+     * @param examName 考试名称模糊条件，可空
      * @return 分页结果
      */
     IPage<AnswerExamVO> selectMarkedList(@Param("page") IPage<AnswerExamVO> page, @Param("userId") Integer userId, String role, String examName);

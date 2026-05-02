@@ -27,10 +27,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * 题库管理服务实现类
+ * 题库：创建与班级授权、列表与练习端可见题库、删除前校验题目占用；教师仅能操作本人或授权范围内题库。
  *
  * @author WeiJin
- * @since 2024-03-21
  */
 @Service
 public class RepoServiceImpl extends ServiceImpl<RepoMapper, Repo> implements IRepoService {
@@ -45,6 +44,7 @@ public class RepoServiceImpl extends ServiceImpl<RepoMapper, Repo> implements IR
     @Resource
     private ICategoryService categoryService;
 
+    /** 新增题库；若携带 {@code categoryId} 则校验分类存在。 */
     @Override
     public Result<String> addRepo(Repo repo) {
         // 检查分类ID是否存在
@@ -62,6 +62,7 @@ public class RepoServiceImpl extends ServiceImpl<RepoMapper, Repo> implements IR
         throw new ServiceRuntimeException("添加题库条数<1");
     }
 
+    /** 更新题库标题、是否练习开关及可选分类。 */
     @Override
     public Result<String> updateRepo(Repo repo, Integer id) {
         // 检查分类ID是否存在
@@ -85,6 +86,9 @@ public class RepoServiceImpl extends ServiceImpl<RepoMapper, Repo> implements IR
         throw new ServiceRuntimeException("修改题库条数<1");
     }
 
+    /**
+     * 删除题库：先将下属试题 {@code repoId} 置空再删题库记录。
+     */
     @Override
     @Transactional
     public Result<String> deleteRepoById(Integer id) {
@@ -101,6 +105,7 @@ public class RepoServiceImpl extends ServiceImpl<RepoMapper, Repo> implements IR
         throw new ServiceRuntimeException("删除题库条数<1");
     }
 
+    /** 简易列表：教师看自己题库，管理员查全部（{@code userId=0} 分支）。 */
     @Override
     public Result<List<RepoListVO>> getRepoList(String repoTitle) {
         List<RepoListVO> list;
@@ -114,6 +119,9 @@ public class RepoServiceImpl extends ServiceImpl<RepoMapper, Repo> implements IR
         return Result.success("根据用户id获取自己的题库获取成功", list);
     }
 
+    /**
+     * 管理端题库分页：填充分类名与各库题目数量；教师仅能看自己创建的题库。
+     */
     @Override
     public Result<IPage<RepoVO>> pagingRepo(Integer pageNum, Integer pageSize, String title, Integer categoryId) {
         IPage<RepoVO> page = new Page<>(pageNum, pageSize);
@@ -148,6 +156,9 @@ public class RepoServiceImpl extends ServiceImpl<RepoMapper, Repo> implements IR
         return Result.success("题库分页查询成功", page);
     }
 
+    /**
+     * 学生刷题端可见题库：限定为本班任课教师及管理员创建的公开题库集合。
+     */
     @Override
     public Result<IPage<ExerciseRepoVO>> getRepo(Integer pageNum, Integer pageSize, String title, Integer categoryId) {
         IPage<ExerciseRepoVO> page = new Page<>(pageNum, pageSize);
@@ -188,7 +199,10 @@ public class RepoServiceImpl extends ServiceImpl<RepoMapper, Repo> implements IR
         
         return Result.success("分页获取可刷题库列表成功", page);
     }
-    
+
+    /**
+     * 按分类筛选题库：包含该分类及其直接子分类；教师结果集再加 {@code userId} 条件。
+     */
     @Override
     public Result<IPage<RepoVO>> getReposByCategory(Integer categoryId, Integer pageNum, Integer pageSize) {
         // 查询该分类下的所有子分类ID

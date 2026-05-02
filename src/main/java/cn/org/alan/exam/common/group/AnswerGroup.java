@@ -1,14 +1,14 @@
 package cn.org.alan.exam.common.group;
 
 /**
- * 说明：
- * validation答题分组
+ * 阅卷与作答提交相关的校验分组。
  *
- * @Author WeiJin
- * @Version 1.0
- * @Date 2024/4/29 15:14
+ * @author WeiJin
+ * @since 2024/4/29
  */
 public interface AnswerGroup {
+
+    /** 教师批量提交主观题得分时的列表元素校验分组。 */
     interface CorrectGroup extends AnswerGroup {
     }
 }

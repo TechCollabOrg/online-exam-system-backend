@@ -6,9 +6,10 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 /**
- * @Author Alan
- * @Version
- * @Date 2024/5/11 9:03 AM
+ * 按班级查看可参加考试的分页行：考试名、时间、状态。
+ *
+ * @author Alan
+ * @since 2024/5/11
  */
 @Data
 public class ExamGradeListVO {

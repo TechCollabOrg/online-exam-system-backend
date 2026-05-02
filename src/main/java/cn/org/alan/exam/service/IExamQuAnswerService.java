@@ -10,9 +10,7 @@ import org.apache.poi.ss.formula.functions.T;
 import java.util.List;
 
 /**
- * <p>
- *  服务类
- * </p>
+ * 考试作答明细：用户对各题的作答内容，及按题维度的答题分析查询。
  *
  * @author WeiJin
  * @since 2024-03-21

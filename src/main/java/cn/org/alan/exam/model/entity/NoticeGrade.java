@@ -11,7 +11,7 @@ import lombok.Data;
 import java.io.Serializable;
 
 /**
- * 公告班级关联实体类
+ * 公告与可见班级的多对多关系。
  *
  * @author WeiJin
  * @since 2024-03-21

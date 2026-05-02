@@ -38,10 +38,9 @@ import java.util.Objects;
 
 
 /**
- * 用户服务实现类
+ * 用户档案：分页筛选、新增修改删除、密码重置、头像上传、Excel 导入导出及踢下线（清理 Redis Token）。
  *
  * @author WeiJin
- * @since 2024-03-21
  */
 @Service
 @Slf4j
@@ -64,10 +63,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
 
 
     /**
-     * 创建用户，教师只能创建学生，管理员可以创建教师和学生
-     *
-     * @param userForm
-     * @return
+     * 后台创建用户：默认密码 {@code 123456}（BCrypt）；教师仅能建学生；校验角色与班级字段业务规则。
      */
     @Override
     public Result<String> createUser(UserForm userForm) {
@@ -93,6 +89,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
 
     }
 
+    /** 当前用户修改登录密码：校验旧密码与新密码确认一致，成功后清除 Redis 会话 token。 */
     @Override
     public Result<String> updatePassword(UserForm userForm) {
         Integer userId = SecurityUtil.getUserId();
@@ -119,6 +116,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
 
     }
 
+    /** 批量逻辑删除用户：禁止删除任意管理员账号。 */
     @Override
     @Transactional
     public Result<String> deleteBatchByIds(String ids) {
@@ -139,6 +137,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         return Result.success("删除成功");
     }
 
+    /** Excel 批量导入用户：校验扩展名、单行上限 300，默认角色为学生并设置默认加密密码。 */
     @SneakyThrows(Exception.class)
     @Override
     @Transactional
@@ -167,11 +166,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         return Result.success("用户导入成功");
     }
 
-    /**
-     * 获取用户个人信息
-     *
-     * @return
-     */
+    /** 当前登录用户档案（脱敏密码字段）。 */
     @Override
     public Result<UserVO> info() {
         // 获取用户信息
@@ -182,12 +177,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         return Result.success("获取用户信息成功", userVo);
     }
 
-    /**
-     * 用户加入班级，只有学生才能加入班级
-     *
-     * @param code
-     * @return
-     */
+    /** 学生通过班级口令更新本人 {@code gradeId}。 */
     @Override
     public Result<String> joinGrade(String code) {
         // 获取班级信息
@@ -207,6 +197,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         throw new ServiceRuntimeException("加入班级失败,加入数据库时失败");
     }
 
+    /**
+     * 用户管理分页：教师仅能查看其任教班级内学生；管理员查看全量，支持班级与真实姓名筛选。
+     */
     @Override
     public Result<IPage<UserVO>> pagingUser(Integer pageNum, Integer pageSize, Integer gradeId, String realName) {
         IPage<UserVO> page = new Page<>(pageNum, pageSize);
@@ -226,6 +219,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         return Result.success("分页获取用户信息成功", page);
     }
 
+    /** 调用文件服务上传头像并回写用户表 {@code avatar} 字段。 */
     @Transactional
     @Override
     public Result<String> uploadAvatar(MultipartFile file) {
