@@ -13,6 +13,9 @@ import java.nio.file.StandardCopyOption;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * 基于 ip2region 从 {@link HttpServletRequest} 解析客户端 IP 及归属地。
+ */
 public class IPUtils {
 
     private static final Logger log = LogManager.getLogger(IPUtils.class);
@@ -104,6 +107,9 @@ public class IPUtils {
         return ipAddress;
     }
 
+    /**
+     * 关闭当前线程持有的 Searcher 并从 ThreadLocal 移除，避免泄漏。
+     */
     public static void closeSearcher() {
         try {
             Searcher searcher = searcherThreadLocal.get();
