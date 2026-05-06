@@ -20,4 +20,7 @@ public class LoginForm {
     // 密码
     @NotBlank(message = "密码不能为空")
     private String password;
+
+    /** 与最近一次图形验证码 {@link cn.org.alan.exam.service.IAuthService#getCaptchaJson} 的 captchaId 一致；启用验证码时必填 */
+    private String captchaId;
 }

@@ -7,6 +7,7 @@ import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;
 import org.aspectj.lang.annotation.Pointcut;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
 import cn.hutool.core.util.RandomUtil;
@@ -119,8 +120,18 @@ public class LogAsPect {
         PropertyPreFilters.MySimplePropertyPreFilter excludeFilter = filters.addFilter();
         // 设置需要排除的属性名
         excludeFilter.addExcludes(excludeProperties);
-        // 打印过滤后的返回结果
-        LOG.info("返回结果: {}", JSONObject.toJSONString(result, excludeFilter));
+        // ResponseEntity（如本地上传文件流）不可 JSON 化，FastJSON 会抛异常并中断响应
+        if (result instanceof ResponseEntity) {
+            ResponseEntity<?> re = (ResponseEntity<?>) result;
+            LOG.info("返回结果: <ResponseEntity status={} contentType={}>",
+                    re.getStatusCode(), re.getHeaders().getContentType());
+        } else {
+            try {
+                LOG.info("返回结果: {}", JSONObject.toJSONString(result, excludeFilter));
+            } catch (Exception e) {
+                LOG.info("返回结果: <{}>", result != null ? result.getClass().getSimpleName() : "null");
+            }
+        }
         // 打印请求结束的日志信息，包括耗时
         LOG.info("------------- 结束 耗时：{} ms -------------", System.currentTimeMillis() - startTime);
         return result;

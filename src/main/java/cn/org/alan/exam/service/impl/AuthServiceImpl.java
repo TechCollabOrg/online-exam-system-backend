@@ -12,7 +12,9 @@ import cn.org.alan.exam.model.entity.Log;
 import cn.org.alan.exam.model.entity.User;
 import cn.org.alan.exam.model.entity.UserDailyLoginDuration;
 import cn.org.alan.exam.model.form.auth.LoginForm;
+import cn.org.alan.exam.model.form.auth.VerifyCodeForm;
 import cn.org.alan.exam.model.form.user.UserForm;
+import cn.org.alan.exam.model.vo.auth.CaptchaVO;
 import cn.org.alan.exam.service.IAuthService;
 import cn.org.alan.exam.service.ILogService;
 import cn.org.alan.exam.utils.*;
@@ -23,10 +25,12 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -38,7 +42,10 @@ import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.Base64;
+import java.util.UUID;
 import java.time.*;
 import java.util.List;
 import java.util.Objects;
@@ -51,13 +58,37 @@ import java.util.regex.Pattern;
 /**
  * 认证注册登录：验证码图片、用户名密码校验、JWT + Redis 会话、BCrypt 密码、游客注册；
  * 含心跳/在线时长写入 Redis、登录日志落库等辅助逻辑。
+ * <p>
+ * 《需求分析文档》映射说明：
+ * </p>
+ * <ul>
+ *   <li>STU-01 / 身份认证矩阵：学号用户名登录、密码加盐存储（BCrypt）、令牌无状态认证；「记住我」由前端延长 Cookie 配合实现。</li>
+ *   <li>5.2：登录成功签发 JWT，过期与刷新阈值见 {@code application-*.yml} 中 {@code jwt.*}。</li>
+ *   <li>ADM-07：登录成功写 {@link ILogService}，便于审计（敏感操作另在业务层记录）。</li>
+ * </ul>
  *
  * @author Alan
  */
+@Slf4j
 @Service
 public class AuthServiceImpl implements IAuthService {
     private static final String HEARTBEAT_KEY_PREFIX = "user:heartbeat:";
     private static final long HEARTBEAT_INTERVAL_MILLIS = 10 * 60 * 1000; // 10分钟
+    /** 图形验证码答案在 Redis 中的前缀（与 Session 解耦，避免 img 请求与 axios 会话不一致） */
+    private static final String CAPTCHA_CODE_KEY_PREFIX = "captcha:code:";
+    /**
+     * 校验通过后写入 Redis，登录/注册请求携带同一 captchaId 即可，无需依赖 Cookie Session。
+     * Electron 使用 file:// 打开页面时，跨域 Session 与浏览器不一致，仅用 Session 会误报「请先验证验证码」。
+     */
+    private static final String LOGIN_CAPTCHA_OK_PREFIX = "loginCaptchaOk:";
+    /**
+     * 图形验证码画布与干扰线数量。干扰线原配置为 300，绘制与 JPEG 编码耗时高，首屏拉取 Base64 明显变慢；
+     * 适度缩小画布并降低干扰线，在可读性与机器识别难度之间折中。
+     */
+    private static final int CAPTCHA_WIDTH = 140;
+    private static final int CAPTCHA_HEIGHT = 44;
+    private static final int CAPTCHA_CODE_COUNT = 4;
+    private static final int CAPTCHA_INTERFERE_COUNT = 28;
 
     @Resource
     private StringRedisTemplate stringRedisTemplate;
@@ -87,10 +118,16 @@ public class AuthServiceImpl implements IAuthService {
     @SneakyThrows(JsonProcessingException.class)
     @Override
     public Result<String> login(HttpServletRequest request, LoginForm loginForm) {
-        // 先判断用户是否通过校验
-        String s = stringRedisTemplate.opsForValue().get("isVerifyCode" + request.getSession().getId());
-        if (StringUtils.isBlank(s) && captchaEnabled) {
-            throw new ServiceRuntimeException("请先验证验证码");
+        // 图形验证码：必须通过 verifyCode，且在 Redis 中为本次 captchaId 记下「已通过」（与 Session 解耦，兼容 Electron file://）
+        if (captchaEnabled) {
+            if (StringUtils.isBlank(loginForm.getCaptchaId())) {
+                throw new ServiceRuntimeException("请先验证验证码");
+            }
+            String okKey = LOGIN_CAPTCHA_OK_PREFIX + loginForm.getCaptchaId();
+            if (!"1".equals(stringRedisTemplate.opsForValue().get(okKey))) {
+                throw new ServiceRuntimeException("请先验证验证码");
+            }
+            stringRedisTemplate.delete(okKey);
         }
         // 根据用户名获取用户信息
         LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
@@ -137,10 +174,6 @@ public class AuthServiceImpl implements IAuthService {
 
         // 用户信息存放进上下文
         SecurityContextHolder.getContext().setAuthentication(usernamePasswordAuthenticationToken);
-        // 用户信息放入
-        // 清除redis通过校验表示
-        stringRedisTemplate.delete("isVerifyCode" + request.getSession().getId());
-
         // 记录日志
         String device = httpServletRequest.getHeader("User-Agent");
         String ipRegion = Optional.ofNullable(IPUtils.getIPRegion(httpServletRequest)).orElse("暂无信息");
@@ -178,20 +211,61 @@ public class AuthServiceImpl implements IAuthService {
         HttpSession session = request.getSession(false);
         String token = request.getHeader("Authorization");
         if (StringUtils.isNotBlank(token) && session != null) {
-            // 记录日志
+            // 记录日志：JWT 未通过过滤器落到 SysUserDetails 时 principal 可能为匿名 String，不可强转
+            Integer userIdForLog = resolveUserIdForLogout(token);
             String device = httpServletRequest.getHeader("User-Agent");
             String ipRegion = Optional.ofNullable(IPUtils.getIPRegion(httpServletRequest)).orElse("暂无信息");
-            Log log = Log.builder()
+            Log logEntry = Log.builder()
                     .place(ipRegion)
                     .device(extractDeviceType(device))
                     .behavior("设备登出")
-                    .userId(SecurityUtil.getUserId()).build();
-            logService.add(log);
-            token = token.substring(7);
+                    .userId(userIdForLog).build();
+            logService.add(logEntry);
+            token = stripBearerPrefix(token);
             stringRedisTemplate.delete("token:" + request.getSession().getId());
             session.invalidate();
         }
         return Result.success("退出成功");
+    }
+
+    /**
+     * 登出写日志用的用户 ID：优先 {@link SysUserDetails}，否则从 Authorization JWT 解析。
+     */
+    private Integer resolveUserIdForLogout(String authorizationHeader) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof SysUserDetails) {
+            return ((SysUserDetails) authentication.getPrincipal()).getUser().getId();
+        }
+        try {
+            String raw = stripBearerPrefix(authorizationHeader);
+            String userInfo = jwtUtil.getUser(raw);
+            if (StringUtils.isNotBlank(userInfo)) {
+                User u = objectMapper.readValue(userInfo, User.class);
+                return u.getId();
+            }
+        } catch (Exception e) {
+            log.warn("logout: parse userId from token failed: {}", e.getMessage());
+        }
+        return null;
+    }
+
+    /** 创建线段干扰型图形验证码（参数见类内 {@code CAPTCHA_*} 常量）。 */
+    private static LineCaptcha newLineCaptcha() {
+        return CaptchaUtil.createLineCaptcha(
+                CAPTCHA_WIDTH, CAPTCHA_HEIGHT, CAPTCHA_CODE_COUNT, CAPTCHA_INTERFERE_COUNT);
+    }
+
+    /** 去掉 Authorization 上的 Bearer 前缀（忽略大小写）；无前缀则返回 trim 后的原串。 */
+    private static String stripBearerPrefix(String value) {
+        if (value == null) {
+            return null;
+        }
+        String v = value.trim();
+        final int len = "Bearer ".length();
+        if (v.length() >= len && v.regionMatches(true, 0, "Bearer ", 0, len)) {
+            return v.substring(len).trim();
+        }
+        return v;
     }
 
     /**
@@ -200,9 +274,7 @@ public class AuthServiceImpl implements IAuthService {
     @SneakyThrows(IOException.class)
     @Override
     public void getCaptcha(HttpServletRequest request, HttpServletResponse response) {
-        // 生成线性图形验证码的静态方法，参数：图片宽，图片高，验证码字符个数 干扰个数
-        LineCaptcha captcha = CaptchaUtil
-                .createLineCaptcha(200, 100, 4, 300);
+        LineCaptcha captcha = newLineCaptcha();
 
         // 把验证码存放进redis
         // 获取验证码
@@ -210,18 +282,45 @@ public class AuthServiceImpl implements IAuthService {
         String key = "code" + request.getSession().getId();
         stringRedisTemplate.opsForValue().set(key, code, 5, TimeUnit.MINUTES);
         // 把图片响应到输出流
-        response.setContentType("image/jpeg");
+        // Hutool AbstractCaptcha 使用 PNG 编码写出，须与 Content-Type 一致，否则浏览器可能无法正确显示
+        response.setContentType("image/png");
         ServletOutputStream os = response.getOutputStream();
         captcha.write(os);
         os.close();
     }
 
     /**
+     * 生成图形码并写入 Redis（键为 captchaId）；图片以 Base64 返回，前端用 axios 拉取以保证与校验、登录共用会话。
+     */
+    @Override
+    public Result<CaptchaVO> getCaptchaJson(HttpServletRequest request) {
+        // 验证码答案仅依赖 captchaId + Redis，无需强制创建 HttpSession，可减少冷启动首包延迟
+        LineCaptcha captcha = newLineCaptcha();
+        String code = captcha.getCode();
+        String captchaId = UUID.randomUUID().toString();
+        stringRedisTemplate.opsForValue().set(CAPTCHA_CODE_KEY_PREFIX + captchaId, code, 10, TimeUnit.MINUTES);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        captcha.write(baos);
+        String imageBase64 = Base64.getEncoder().encodeToString(baos.toByteArray());
+        CaptchaVO vo = new CaptchaVO();
+        vo.setCaptchaId(captchaId);
+        vo.setImageBase64(imageBase64);
+        return Result.success("ok", vo);
+    }
+
+    /**
      * 校验图形验证码：通过后删除验证码键并写入 {@code isVerifyCode+sessionId}，供登录/注册阶段校验。
      */
     @Override
-    public Result<String> verifyCode(HttpServletRequest request, String code) {
-        String key = "code" + request.getSession().getId();
+    public Result<String> verifyCode(HttpServletRequest request, VerifyCodeForm form) {
+        if (form == null || StringUtils.isBlank(form.getCode())) {
+            throw new ServiceRuntimeException("请输入验证码");
+        }
+        if (StringUtils.isBlank(form.getCaptchaId())) {
+            throw new ServiceRuntimeException("请重新获取验证码");
+        }
+        String code = form.getCode().trim();
+        String key = CAPTCHA_CODE_KEY_PREFIX + form.getCaptchaId();
         String rightCode = stringRedisTemplate.opsForValue().get(key);
         if (StringUtils.isBlank(rightCode)) {
             throw new ServiceRuntimeException("验证码已过期");
@@ -231,8 +330,8 @@ public class AuthServiceImpl implements IAuthService {
         }
         // 验证码校验后redis清除验证码，避免重复使用
         stringRedisTemplate.delete(key);
-        // 验证码校验后redis存入校验成功，避免用户登录和注册时不验证验证码直接提交
-        stringRedisTemplate.opsForValue().set("isVerifyCode" + request.getSession().getId(), "1", 5, TimeUnit.MINUTES);
+        // 同一 captchaId 标记已通过校验（登录/注册请求 Body 携带 captchaId；不依赖 Session Cookie）
+        stringRedisTemplate.opsForValue().set(LOGIN_CAPTCHA_OK_PREFIX + form.getCaptchaId(), "1", 5, TimeUnit.MINUTES);
         return Result.success("验证码校验成功");
     }
 
@@ -241,10 +340,15 @@ public class AuthServiceImpl implements IAuthService {
      */
     @Override
     public Result<String> register(HttpServletRequest request, UserForm userForm) {
-        // 判断验证码
-        String s = stringRedisTemplate.opsForValue().get("isVerifyCode" + request.getSession().getId());
-        if (StringUtils.isBlank(s)) {
-            throw new ServiceRuntimeException("请先验证验证码");
+        if (captchaEnabled) {
+            if (StringUtils.isBlank(userForm.getCaptchaId())) {
+                throw new ServiceRuntimeException("请先验证验证码");
+            }
+            String regOkKey = LOGIN_CAPTCHA_OK_PREFIX + userForm.getCaptchaId();
+            if (!"1".equals(stringRedisTemplate.opsForValue().get(regOkKey))) {
+                throw new ServiceRuntimeException("请先验证验证码");
+            }
+            stringRedisTemplate.delete(regOkKey);
         }
         // 判断两次密码是否一致
         if (!SecretUtils.desEncrypt(userForm.getPassword()).equals(SecretUtils.desEncrypt(userForm.getCheckedPassword()))) {
@@ -254,8 +358,6 @@ public class AuthServiceImpl implements IAuthService {
         user.setPassword(new BCryptPasswordEncoder().encode(SecretUtils.desEncrypt(user.getPassword())));
         user.setRoleId(1);
         userMapper.insert(user);
-        // 注册成功把redis的是否通过校验验证码删除，防止用户注册后立马登录，还可以使用
-        stringRedisTemplate.delete("isVerifyCode" + request.getSession().getId());
         return Result.success("注册成功");
     }
 

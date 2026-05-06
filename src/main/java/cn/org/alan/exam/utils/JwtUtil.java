@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -52,12 +53,13 @@ public class JwtUtil {
         Map<String, Object> headerClaims = new HashMap<>();
         headerClaims.put("alg", "HS256"); // 算法
         headerClaims.put("typ", "JWT"); // 类型只能是jwt
+        List<String> safeAuthList = authList != null ? authList : Collections.emptyList();
         return JWT.create().withHeader(headerClaims)
                 .withIssuer("wj") // 签发人
                 .withIssuedAt(issDate) // 签发时间
                 .withExpiresAt(expireDate) // 过期时间
                 .withClaim("userInfo", userInfo) // 自定义声明
-                .withClaim("authList", authList)
+                .withClaim("authList", safeAuthList)
                 .sign(Algorithm.HMAC256(secret)); // 使用HS256作为签名，SECRET作为密钥
     }
 
@@ -87,6 +89,9 @@ public class JwtUtil {
             if (shouldRefresh(jwt)) {
                 String userInfo = jwt.getClaim("userInfo").asString();
                 List<String> authList = jwt.getClaim("authList").asList(String.class);
+                if (authList == null) {
+                    authList = Collections.emptyList();
+                }
                 return createJwt(userInfo, authList);
             }
             return token;

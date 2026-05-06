@@ -3,6 +3,7 @@ package cn.org.alan.exam.utils.file.impl;
 import cn.org.alan.exam.utils.file.FileService;
 import io.minio.MinioClient;
 import io.minio.PutObjectOptions;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
@@ -11,15 +12,14 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.UUID;
 
 /**
- * Minio文件服务工具类
- *
- * @author 赵浩森
- * @version 1.0
- * @since 2025/2/5 11:49
+ * MinIO 文件上传。注意：{@link MultipartFile#getInputStream()}{@code .available()} 通常不能代表文件长度，
+ * 必须使用 {@link MultipartFile#getSize()} 作为 {@link PutObjectOptions} 的 objectSize，否则上传会失败并返回空 URL。
  */
+@Slf4j
 @Service
 @ConditionalOnProperty(name = "online-exam.storage.type", havingValue = "minio")
 public class MinioUtil implements FileService {
@@ -34,55 +34,57 @@ public class MinioUtil implements FileService {
 
     @Override
     public String upload(MultipartFile file) throws IOException {
-        // 获取上传的文件的输入流
-        InputStream inputStream = file.getInputStream();
+        String originalFilename = Objects.requireNonNull(file.getOriginalFilename(), "文件名为空");
+        int dot = originalFilename.lastIndexOf('.');
+        if (dot < 0) {
+            throw new IOException("文件名缺少扩展名");
+        }
+        String fileName = UUID.randomUUID().toString().replace("-", "") + originalFilename.substring(dot);
 
-        // 避免文件覆盖
-        String originalFilename = file.getOriginalFilename();
-        assert originalFilename != null : "上传文件时获取文件名失败，为null";
-        String fileName = UUID.randomUUID() + originalFilename.substring(originalFilename.lastIndexOf("."));
-
-        //上传文件到 MINIO
-        try {
-            MinioClient client = new MinioClient(endpoint, accessKey, accessKeySecret);
-
-            client.putObject(bucketName, fileName, inputStream, new PutObjectOptions(inputStream.available(), -1));
-        } catch (Exception e) {
-            // 打印异常
-            e.printStackTrace();
-            return "";
-        } finally {
-            // 确保输入流被关闭
-            inputStream.close();
+        long size = file.getSize();
+        if (size <= 0) {
+            throw new IOException("空文件或无法读取大小，请重新选择图片");
         }
 
+        try {
+            MinioClient client = new MinioClient(endpoint, accessKey, accessKeySecret);
+            try {
+                if (!client.bucketExists(bucketName)) {
+                    client.makeBucket(bucketName);
+                    log.info("已自动创建 MinIO 桶: {}", bucketName);
+                }
+            } catch (Exception e) {
+                log.warn("检查/创建 MinIO 桶失败（仍将尝试上传）: {}", e.getMessage());
+            }
 
-        //文件访问路径
-        String url = endpoint + "/" + bucketName + "/" + fileName;
-
-        // 把上传到MINIO的路径返回
-        return url;
+            // PutObjectOptions(对象总字节数, 分片大小；-1 表示分片大小由客户端按默认策略处理)
+            PutObjectOptions options = new PutObjectOptions(size, -1);
+            try (InputStream inputStream = file.getInputStream()) {
+                client.putObject(bucketName, fileName, inputStream, options);
+            }
+            return buildObjectUrl(fileName);
+        } catch (Exception e) {
+            log.error("MinIO 上传失败 bucket={} object={}", bucketName, fileName, e);
+            throw new IOException("MinIO 上传失败，请确认 MinIO 已启动且账号/桶配置正确: " + e.getMessage(), e);
+        }
     }
 
-    /**
-     * 判断是否为常见图片格式
-     *
-     * @param filename 文件名
-     * @return 结果
-     */
+    private String buildObjectUrl(String fileName) {
+        String ep = endpoint.endsWith("/") ? endpoint.substring(0, endpoint.length() - 1) : endpoint;
+        return ep + "/" + bucketName + "/" + fileName;
+    }
+
     @Override
     public boolean isImage(String filename) {
-        String lastName = filename.substring(filename.lastIndexOf(".") + 1);
+        int dot = filename.lastIndexOf('.');
+        if (dot < 0 || dot == filename.length() - 1) {
+            return false;
+        }
+        String lastName = filename.substring(dot + 1).toLowerCase();
         String[] lastnames = {"png", "jpg", "jpeg", "bmp"};
         return Arrays.asList(lastnames).contains(lastName);
     }
 
-    /**
-     * 判断文件是否大于50KB
-     *
-     * @param file 文件
-     * @return 结果
-     */
     @Override
     public boolean isOverSize(MultipartFile file) {
         return file.getSize() > 20 * 1024 * 1024;

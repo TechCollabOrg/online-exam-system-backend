@@ -5,7 +5,15 @@ import cn.org.alan.exam.utils.security.SysUserDetails;
 import cn.org.alan.exam.utils.JwtUtil;
 import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import javax.annotation.Resource;
+import javax.servlet.FilterChain;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -13,22 +21,21 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-import javax.servlet.FilterChain;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+
 import java.io.IOException;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 /**
  * JWT 校验过滤器：每个请求最多执行一次（{@link OncePerRequestFilter}）。
  * <p>
- * 流程概要：读取请求头 {@code Authorization}（支持 Bearer 前缀）→ 与 Redis 中当前会话绑定的 token 比对 →
+ * 流程概要：读取请求头 {@code Authorization}（大小写不敏感；支持 {@code Bearer} 前缀，忽略大小写）→
  * 调用 {@link JwtUtil#verifyAndRefreshToken(String)} 校验并可能在临近过期时续签 → 将 JWT 中的用户与权限
  * 反序列化后写入 {@link SecurityContextHolder}，供 {@code @PreAuthorize} 等方法级鉴权使用。
- * 若 token 缺失、与 Redis 不一致或校验失败，则放行交由后续链路处理（当前实现未直接返回 401 JSON）。
+ * 若 token 缺失或校验失败，则放行交由后续链路处理（由 {@link cn.org.alan.exam.config.SecurityConfig} 的
+ * {@code authenticationEntryPoint} 等对未认证请求统一返回）。
+ * </p>
+ * <p>
+ * 说明：学生端 Electron 常以 {@code file://} 打开页面，JSESSIONID 可能不稳定；鉴权以 JWT 为准，
+ * 不再要求 Redis 中 {@code token:{sessionId}} 与请求头一致（Redis 仅作续签后的兼容写入）。
  * </p>
  *
  * @author WeiJin
@@ -36,88 +43,102 @@ import java.util.stream.Collectors;
 @Slf4j
 @Component
 public class VerifyTokenFilter extends OncePerRequestFilter {
-    /**
-     * JWT工具类
-     */
+    private static final int BEARER_LEN = "Bearer ".length();
+
     @Resource
     private JwtUtil jwtUtil;
-    /**
-     * Redis服务
-     */
+
     @Resource
     private StringRedisTemplate stringRedisTemplate;
 
     @Resource
     private ObjectMapper objectMapper;
 
-    /**
-     * 单次请求内的过滤逻辑：解析并校验 Token，构建 {@link SysUserDetails} 与权限列表后注入安全上下文，最后放行 FilterChain。
-     *
-     * @param request     当前 HTTP 请求（含 Header、Session）
-     * @param response    响应；若 Token 续签成功可能写入 {@code Authorization} 响应头
-     * @param filterChain 后续过滤器链
-     */
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
-        // 获取token
-        String token = request.getHeader("Authorization");
+        String rawHeader = resolveAuthorizationHeader(request);
+        if (StringUtils.isBlank(rawHeader)) {
+            filterChain.doFilter(request, response);
+            return;
+        }
 
-        // 判断是否为空
+        String token = stripBearerPrefix(rawHeader.trim());
         if (StringUtils.isBlank(token)) {
-            // throw new RuntimeException("缺少有效的 Token，请先登录！");
             filterChain.doFilter(request, response);
-            // responseUtil.response(response, Result.failed("Authorization为空，请先登录"), 401);
             return;
         }
 
-        // 去除 "Bearer " 前缀
-        if (token.startsWith("Bearer ")) {
-            token = token.substring(7);
-        }
-        // 从Redis中获取存储的JWT
-        String sessionId = request.getSession().getId();
-        String storedToken = stringRedisTemplate.opsForValue().get("token:" + sessionId);
-        if (StringUtils.isBlank(storedToken) ||!token.equals(storedToken)) {
-            filterChain.doFilter(request, response);
-            // responseUtil.response(response, Result.failed("token无效，请重新登录"), 401);
-            return;
-        }
-        // 验证并尝试续签 Token
         String refreshedToken = jwtUtil.verifyAndRefreshToken(token);
         if (refreshedToken == null) {
             filterChain.doFilter(request, response);
-            // responseUtil.response(response, Result.failed("token无效或已过期，请重新登录"), 401);
             return;
         }
-        // 如果 Token 已续签，更新 Redis 中的 Token 并设置到响应头
+
         if (!refreshedToken.equals(token)) {
-            stringRedisTemplate.opsForValue().set("token" + request.getSession().getId(), refreshedToken, 30, TimeUnit.MINUTES);
+            try {
+                stringRedisTemplate.opsForValue().set(
+                        "token:" + request.getSession().getId(), refreshedToken, 30, TimeUnit.MINUTES);
+            } catch (Exception e) {
+                log.warn("续签后写入 Redis 会话 token 失败（不影响本次 JWT 鉴权）: {}", e.getMessage());
+            }
             response.setHeader("Authorization", "Bearer " + refreshedToken);
         }
 
-        // 从续签后的 Token 中获取用户信息和权限
-        String userInfo = jwtUtil.getUser(refreshedToken);
-        List<String> authList = jwtUtil.getAuthList(refreshedToken);
+        try {
+            String userInfo = jwtUtil.getUser(refreshedToken);
+            if (StringUtils.isBlank(userInfo)) {
+                log.warn("JWT 中 userInfo 为空，跳过安全上下文注入");
+                filterChain.doFilter(request, response);
+                return;
+            }
+            List<String> authList = jwtUtil.getAuthList(refreshedToken);
+            if (authList == null) {
+                authList = Collections.emptyList();
+            }
 
-        // 反序列化 jwtToken 获取用户信息
-        User sysUser = objectMapper.readValue(userInfo, User.class);
+            User sysUser = objectMapper.readValue(userInfo, User.class);
+            List<SimpleGrantedAuthority> permissions = authList.stream()
+                    .filter(StringUtils::isNotBlank)
+                    .map(SimpleGrantedAuthority::new)
+                    .collect(Collectors.toList());
 
-        // 权限转型
-        List<SimpleGrantedAuthority> permissions = authList.stream()
-                .map(SimpleGrantedAuthority::new)
-                .collect(Collectors.toList());
+            SysUserDetails securityUser = new SysUserDetails(sysUser);
+            securityUser.setPermissions(permissions);
 
-        // 创建登录用户
-        SysUserDetails securityUser = new SysUserDetails(sysUser);
-        securityUser.setPermissions(permissions);
+            UsernamePasswordAuthenticationToken authenticationToken =
+                    new UsernamePasswordAuthenticationToken(securityUser, null, permissions);
+            SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+        } catch (Exception e) {
+            log.warn("解析 JWT 并注入安全上下文失败: {}", e.getMessage());
+        }
 
-        // 创建权限授权的 token 参数：用户，密码，权限 不给密码因为已经登录了
-        UsernamePasswordAuthenticationToken authenticationToken =
-                new UsernamePasswordAuthenticationToken(securityUser, null, permissions);
+        filterChain.doFilter(request, response);
+    }
 
-        // 通过安全上下文设置授权 token
-        SecurityContextHolder.getContext().setAuthentication(authenticationToken);
-        doFilter(request, response, filterChain);
+    /**
+     * Servlet 规范下 {@link HttpServletRequest#getHeader(String)} 对名称大小写不敏感；此处仍兼容部分网关
+     * 只转发小写 {@code authorization} 的场景。
+     */
+    private static String resolveAuthorizationHeader(HttpServletRequest request) {
+        String v = request.getHeader("Authorization");
+        if (StringUtils.isNotBlank(v)) {
+            return v;
+        }
+        return request.getHeader("authorization");
+    }
+
+    /**
+     * 去掉 Bearer 前缀（忽略大小写、忽略首尾空格）；无前缀则返回已 trim 的原串。
+     */
+    private static String stripBearerPrefix(String value) {
+        if (value == null) {
+            return null;
+        }
+        String v = value.trim();
+        if (v.length() >= BEARER_LEN && v.regionMatches(true, 0, "Bearer ", 0, BEARER_LEN)) {
+            return v.substring(BEARER_LEN).trim();
+        }
+        return v;
     }
 }

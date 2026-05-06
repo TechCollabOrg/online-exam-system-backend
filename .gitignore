@@ -49,3 +49,11 @@ mvnw.cmd
 **/out/
 .DS_Store
 /deploy/
+
+# 本地密钥与覆盖配置（勿提交）
+.env
+application-local.yml
+**/application-local.yml
+
+# 本地磁盘模式上传的文件（storage.type=local）
+uploads/

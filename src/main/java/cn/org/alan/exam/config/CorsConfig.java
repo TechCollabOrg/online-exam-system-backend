@@ -7,11 +7,9 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
 
-import java.util.Collections;
-
 /**
  * 浏览器跨域（CORS）配置：注册全局 {@link CorsFilter}，允许任意来源与常用 HTTP 方法。
- * <p>注意：{@code allowCredentials=true} 与 {@code allowedOrigin=*} 的组合在部分浏览器规范下存在争议，生产环境建议改为白名单域名。</p>
+ * <p>注意：CORS 规范下 {@code allowCredentials=true} 时不能使用 {@code Access-Control-Allow-Origin: *}，否则浏览器不会携带 Cookie。</p>
  *
  * @author Alan
  */
@@ -26,7 +24,12 @@ public class CorsConfig {
     @Bean
     public CorsFilter corsFilter() {
         CorsConfiguration config = new CorsConfiguration();
-        config.addAllowedOrigin("*");
+        // 不可使用 addAllowedOrigin("*") 与 allowCredentials(true) 同时生效；列出本地开发与 Electron file://（Origin: null）
+        config.addAllowedOrigin("http://127.0.0.1:9527");
+        config.addAllowedOrigin("http://localhost:9527");
+        config.addAllowedOrigin("http://127.0.0.1:8080");
+        config.addAllowedOrigin("http://localhost:8080");
+        config.addAllowedOrigin("null");
         config.setAllowCredentials(true);
         config.addAllowedMethod("OPTIONS");
         config.addAllowedMethod("HEAD");
@@ -36,6 +39,9 @@ public class CorsConfig {
         config.addAllowedMethod("DELETE");
         config.addAllowedMethod("PATCH");
         config.addAllowedHeader("*");
+        // 续签 JWT 时后端在响应头返回 Authorization；浏览器 CORS 下须显式暴露，否则 axios 读不到新 Token
+        config.addExposedHeader("Authorization");
+        config.addExposedHeader("authorization");
         UrlBasedCorsConfigurationSource configurationSource = new UrlBasedCorsConfigurationSource();
         configurationSource.registerCorsConfiguration("/**", config);
         return new CorsFilter(configurationSource);

@@ -72,7 +72,11 @@ public class AliOSSUtil implements FileService {
      */
     @Override
     public boolean isImage(String filename) {
-        String lastName = filename.substring(filename.lastIndexOf(".") + 1);
+        int dot = filename.lastIndexOf('.');
+        if (dot < 0 || dot == filename.length() - 1) {
+            return false;
+        }
+        String lastName = filename.substring(dot + 1).toLowerCase();
         String[] lastnames = {"png", "jpg", "jpeg", "bmp"};
         return Arrays.asList(lastnames).contains(lastName);
     }

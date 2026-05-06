@@ -57,4 +57,7 @@ public class UserForm {
     @NotBlank(groups = {UserGroup.UpdatePasswordGroup.class, UserGroup.RegisterGroup.class}, message = "校验密码不能为空")
     private String checkedPassword;
 
+    /** 注册前须通过 verifyCode；与 {@link #getCaptchaJson} 返回的 captchaId 一致 */
+    private String captchaId;
+
 }

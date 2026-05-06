@@ -4,6 +4,8 @@ import cn.org.alan.exam.common.exception.ServiceRuntimeException;
 import cn.org.alan.exam.common.result.Result;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -105,15 +107,17 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * Spring Security 鉴权通过但授权失败（如无对应角色/权限访问接口），返回固定无权限文案。
+     * 方法安全等抛出的访问拒绝（如 {@code @PreAuthorize} 不满足）：与 {@code SecurityConfig} 中过滤器链的
+     * {@code accessDeniedHandler} 一致，返回 HTTP 403 + 统一 JSON，便于 axios 按状态码区分「未登录」与「无权限」。
      *
      * @param e 访问被拒绝异常
-     * @return 失败响应
+     * @return HTTP 403 与 {@link Result#failed(String)} 体
      */
     @ExceptionHandler(AccessDeniedException.class)
-    public Result<String> handleAccessDeniedException(AccessDeniedException e) {
+    public ResponseEntity<Result<String>> handleAccessDeniedException(AccessDeniedException e) {
         log.error(e.getMessage(), e.getClass());
-        return Result.failed("你没有该资源的访问权限");
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(Result.failed("你没有该资源的访问权限"));
     }
 
 

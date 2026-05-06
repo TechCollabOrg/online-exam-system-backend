@@ -2,7 +2,9 @@ package cn.org.alan.exam.service;
 
 import cn.org.alan.exam.common.result.Result;
 import cn.org.alan.exam.model.form.auth.LoginForm;
+import cn.org.alan.exam.model.form.auth.VerifyCodeForm;
 import cn.org.alan.exam.model.form.user.UserForm;
+import cn.org.alan.exam.model.vo.auth.CaptchaVO;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -42,13 +44,21 @@ public interface IAuthService {
     void getCaptcha(HttpServletRequest request, HttpServletResponse response);
 
     /**
-     * 校验验证码
+     * 获取图片验证码（JSON，含 captchaId 与 Base64 图）：与 axios 同通道，避免 img 与 XHR 会话不一致。
      *
-     * @param request request对象获取sessionId
-     * @param code    用户输入的验证码
+     * @param request 当前请求（用于创建会话，供后续 isVerifyCode 写入）
+     * @return captchaId + imageBase64
+     */
+    Result<CaptchaVO> getCaptchaJson(HttpServletRequest request);
+
+    /**
+     * 校验验证码（依赖 {@link #getCaptchaJson} 返回的 captchaId 与当前会话）。
+     *
+     * @param request 当前请求
+     * @param form    验证码与 captchaId
      * @return 响应结果
      */
-    Result<String> verifyCode(HttpServletRequest request, String code);
+    Result<String> verifyCode(HttpServletRequest request, VerifyCodeForm form);
 
     /**
      * 用户注册，只能注册学生

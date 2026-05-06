@@ -1,6 +1,7 @@
 package cn.org.alan.exam.utils;
 
 import org.apache.tomcat.util.codec.binary.Base64;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.Cipher;
@@ -8,17 +9,26 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 /**
- * AES/CBC/NoPadding + Base64 编解码的简化封装；密钥与 IV 写死在类内（适合与遗留客户端对齐，生产建议改为配置中心）。
+ * AES/CBC/NoPadding + Base64 编解码；密钥来自 {@code online-exam.crypto.*}（可用环境变量覆盖），须与前端
+ * {@code VUE_APP_CRYPTO_KEY} / {@code VUE_APP_CRYPTO_IV} 一致。
  *
  * @author Alan
  */
 @Component
 public class SecretUtils {
-    /** 16 字节 AES 密钥（与 IV 相同长度要求）。 */
-    private static String KEY = "63eeac68cf074c8c";
+    private static volatile String KEY = "changeme16byte!!";
 
-    /** CBC 模式初始化向量。 */
-    private static String IV = "63eeac68cf074c8c";
+    private static volatile String IV = "changeme16byte!!";
+
+    @Value("${online-exam.crypto.aes-key:changeme16byte!!}")
+    public void setAesKey(String key) {
+        KEY = key;
+    }
+
+    @Value("${online-exam.crypto.aes-iv:changeme16byte!!}")
+    public void setAesIv(String iv) {
+        IV = iv;
+    }
 
     /**
      * 使用内置 KEY/IV 加密明文，明文长度会被填充到块大小的整数倍。

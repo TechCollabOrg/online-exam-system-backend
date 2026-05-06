@@ -3,7 +3,9 @@ package cn.org.alan.exam.controller;
 import cn.org.alan.exam.common.group.UserGroup;
 import cn.org.alan.exam.common.result.Result;
 import cn.org.alan.exam.model.form.auth.LoginForm;
+import cn.org.alan.exam.model.form.auth.VerifyCodeForm;
 import cn.org.alan.exam.model.form.user.UserForm;
+import cn.org.alan.exam.model.vo.auth.CaptchaVO;
 import cn.org.alan.exam.service.IAuthService;
 
 import javax.annotation.Resource;
@@ -59,23 +61,36 @@ public class AuthController {
         return iAuthService.register(request, userForm);
     }
 
-    /** GET 输出 JPEG 验证码图片（验证码文本存 Redis，键与 Session 绑定）。 */
+    /** GET 输出 JPEG 验证码图片（验证码文本存 Redis，键与 Session 绑定；兼容旧客户端与文档直连）。 */
     @ApiOperation("获取图片验证码")
     @GetMapping("/captcha")
     public void getCaptcha(HttpServletRequest request, HttpServletResponse response) {
         iAuthService.getCaptcha(request, response);
     }
 
+    /** GET 返回 captchaId + Base64 图片，供 Web/Electron 与校验请求共用 axios 会话，避免「验证码已过期」误报。 */
+    @ApiOperation("获取图片验证码JSON")
+    @GetMapping("/captcha/json")
+    public Result<CaptchaVO> getCaptchaJson(HttpServletRequest request) {
+        if (!captchaEnabled) {
+            CaptchaVO vo = new CaptchaVO();
+            vo.setCaptchaId("");
+            vo.setImageBase64("");
+            return Result.success("验证码已关闭", vo);
+        }
+        return iAuthService.getCaptchaJson(request);
+    }
+
     /**
-     * POST 校验图形码：路径可选 {@code /verifyCode/{code}}；全局关闭验证码时直接成功。
+     * POST 校验图形码：Body 为 {@link VerifyCodeForm}；全局关闭验证码时直接成功。
      */
     @ApiOperation("校验验证码")
-    @PostMapping(value = {"/verifyCode/{code}", "/verifyCode/"})
-    public Result<String> verifyCode(HttpServletRequest request, @PathVariable(value = "code", required = false) String code) {
+    @PostMapping("/verifyCode")
+    public Result<String> verifyCode(HttpServletRequest request, @RequestBody(required = false) VerifyCodeForm form) {
         if (!captchaEnabled) {
             return Result.success();
         }
-        return iAuthService.verifyCode(request, code);
+        return iAuthService.verifyCode(request, form);
     }
 
     /** POST 学生端心跳/在线时长上报（仅角色为学生时累计时长）。 */

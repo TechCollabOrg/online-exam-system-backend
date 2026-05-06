@@ -63,19 +63,22 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                         // 其他需要允许匿名访问的路径，如文档页面、WebSocket 相关路径等
                         "/doc.html",
                         "/ws/**",
-                        "/ws-app/**"
+                        "/ws-app/**",
+                        // 本地磁盘存储（storage.type=local）时，头像/题干图片通过该路径匿名读取
+                        "/api/upload/files/**"
                 )
                 // 这些路径允许所有请求访问，无需进行身份验证
                 .permitAll()
                 // 除了上述允许匿名访问的路径外，其他任何请求都必须经过身份验证才能访问
                 .anyRequest().authenticated();
 
-        // 配置异常处理器，当用户访问没有权限的资源时，会调用该处理器进行处理
+        // 未携带有效 JWT 的受保护接口：返回 401 JSON，便于前端 axios 统一跳转登录
+        // 已登录但权限不足（含 @PreAuthorize 拒绝）：返回 403 JSON
         http.exceptionHandling()
+                .authenticationEntryPoint((request, response, authException) ->
+                        responseUtil.response(response, Result.failed("请先登录或登录已失效"), 401))
                 .accessDeniedHandler((request, response, accessDeniedException) ->
-                        // 使用响应体封装工具类将错误信息封装成特定的结果返回给客户端
-                        responseUtil.response(response, Result.failed("你没有该资源的访问权限"))
-                );
+                        responseUtil.response(response, Result.failed("你没有该资源的访问权限"), 403));
 
         // 禁用 Spring Security 自带的基于表单的登录页面
         http.formLogin().disable();
