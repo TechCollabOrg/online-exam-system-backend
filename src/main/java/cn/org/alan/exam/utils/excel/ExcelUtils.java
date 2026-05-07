@@ -145,8 +145,8 @@ public class ExcelUtils {
                 uniqueMap.put(rowNum, uniqueBuilder.toString());
             }
         }
-        // 失败处理
-        if (errMsgList.isEmpty() && !hasRowTipsField) {
+        // 解析/校验失败：无 rowTips 字段的导入类不能直接吞掉错误，否则会出现字段为默认空值、后续业务误判
+        if (errMsgList.isEmpty()) {
             return t;
         }
         StringBuilder sb = new StringBuilder();
@@ -158,14 +158,54 @@ public class ExcelUtils {
                 sb.append(errMsgList.get(i)).append(";");
             }
         }
-        // 设置错误信息
-        for (Field field : fields) {
-            if (field.getName().equals(ROW_TIPS)) {
-                field.setAccessible(true);
-                field.set(t, sb.toString());
+        if (hasRowTipsField) {
+            for (Field field : fields) {
+                if (field.getName().equals(ROW_TIPS)) {
+                    field.setAccessible(true);
+                    field.set(t, sb.toString());
+                }
             }
+            return t;
         }
-        return t;
+        throw new IllegalArgumentException(sb.toString());
+    }
+
+    /**
+     * 「是否正确」类整型列：允许 0/1 及常见等价写法（Excel 布尔、中英文），避免静默解析失败。
+     */
+    private static String normalizeZeroOneFlag(String raw) {
+        if (raw == null) {
+            return null;
+        }
+        String val = raw.trim();
+        if (val.isEmpty()) {
+            return null;
+        }
+        if ("0".equals(val) || "1".equals(val)) {
+            return val;
+        }
+        String lower = val.toLowerCase(Locale.ROOT);
+        switch (lower) {
+            case "true":
+            case "yes":
+            case "y":
+            case "是":
+            case "正确":
+            case "对":
+            case "√":
+                return "1";
+            case "false":
+            case "no":
+            case "n":
+            case "否":
+            case "错误":
+            case "错":
+            case "×":
+            case "x":
+                return "0";
+            default:
+                return null;
+        }
     }
 
     private static <T> void setFieldValue(T t, Field field, JSONObject obj, StringBuilder uniqueBuilder, List<String> errMsgList) {
@@ -234,7 +274,17 @@ public class ExcelUtils {
                 try {
                     field.set(t, Integer.valueOf(val));
                 } catch (NumberFormatException e) {
-                    errMsgList.add(String.format("[%s]的值格式不正确(当前值为%s)", cname, val));
+                    if (cname.contains("是否正确")) {
+                        String repaired = normalizeZeroOneFlag(val);
+                        if (repaired != null) {
+                            field.set(t, Integer.valueOf(repaired));
+                        } else {
+                            errMsgList.add(String.format(
+                                    "[%s]只能填 0 / 1（或：是、否、正确、错误等）(当前值为%s)", cname, val));
+                        }
+                    } else {
+                        errMsgList.add(String.format("[%s]的值格式不正确(当前值为%s)", cname, val));
+                    }
                 }
             } else if ("double".equalsIgnoreCase(fieldClassName)) {
                 field.set(t, Double.valueOf(val));
@@ -357,7 +407,10 @@ public class ExcelUtils {
                     String val = getCellValue(eachRow.getCell(k));
                     // 所有数据添加到里面，用于判断该行是否为空
                     sb.append(val);
-                    obj.put(keyMap.get(k), val);
+                    String headerKey = keyMap.get(k);
+                    if (headerKey != null && !headerKey.isEmpty()) {
+                        obj.put(headerKey, val);
+                    }
                 }
             }
             if (sb.length() > 0) {
