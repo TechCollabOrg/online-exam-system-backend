@@ -226,6 +226,10 @@ public class ExcelUtils {
         if (val == null) {
             return;
         }
+        // 「是否正确」列留空表示未填；无选项时不必填，有选项时由 QuestionExcelFrom 等业务再校验
+        if (cname.contains("是否正确") && val.trim().isEmpty()) {
+            return;
+        }
         field.setAccessible(true);
         // 判断是否必填
         boolean require = annotation.required();
