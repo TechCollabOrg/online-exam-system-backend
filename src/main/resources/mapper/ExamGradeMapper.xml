@@ -64,4 +64,22 @@
         </if>
     </select>
 
+    <!-- 教师：仅本人创建的试卷（与教师端「试卷管理」口径一致） -->
+    <select id="selectTeacherClassExam" resultType="cn.org.alan.exam.model.vo.exam.ExamGradeListVO">
+        select *
+        from t_exam
+        where is_deleted = 0
+        and user_id = #{userId}
+        <if test="title != null">
+            and title like concat('%',#{title},'%')
+        </if>
+        order by create_time
+        <if test="isASC == true">
+            asc
+        </if>
+        <if test="isASC != true">
+            desc
+        </if>
+    </select>
+
 </mapper>

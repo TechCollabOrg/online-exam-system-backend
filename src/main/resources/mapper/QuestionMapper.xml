@@ -22,6 +22,7 @@
         q.analysis,
         q.qu_type,
         q.repo_id,
+        q.parent_qu_id as parentQuId,
         r.title as repoTitle
         from t_question as q
         join t_repo as r on q.repo_id = r.id
@@ -51,6 +52,7 @@
         q.image,
         q.repo_id,
         q.qu_type,
+        q.parent_qu_id as parentQuId,
         r.title as repoTitle
         from t_question as q
         join t_repo as r on q.repo_id = r.id

@@ -59,4 +59,15 @@ public interface ExamGradeMapper extends BaseMapper<ExamGrade> {
      */
     IPage<ExamGradeListVO> selectAdminClassExam(IPage<ExamGradeListVO> examPage, Integer userId, String title, Boolean isASC);
 
+    /**
+     * 教师查看本人创建的、已发布到班级的考试分页（与 {@link #selectClassExam} 学生视角区分）。
+     *
+     * @param examPage 分页
+     * @param userId   教师用户 id（对应 {@code t_exam.user_id}）
+     * @param title    标题模糊
+     * @param isASC    创建时间排序
+     * @return 分页结果
+     */
+    IPage<ExamGradeListVO> selectTeacherClassExam(IPage<ExamGradeListVO> examPage, Integer userId, String title, Boolean isASC);
+
 }

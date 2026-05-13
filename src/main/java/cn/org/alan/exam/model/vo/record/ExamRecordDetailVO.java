@@ -47,4 +47,11 @@ public class ExamRecordDetailVO {
      */
     private Integer quType;
 
+    /** 共用题干正文 */
+    private String stemContent;
+    /** 共用题干附图 */
+    private String stemImage;
+    /** 父题 id */
+    private Integer parentQuId;
+
 }

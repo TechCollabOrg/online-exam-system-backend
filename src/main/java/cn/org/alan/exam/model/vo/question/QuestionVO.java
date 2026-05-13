@@ -32,4 +32,11 @@ public class QuestionVO {
     private LocalDateTime createTime;
     // 选项列表
     private List<Option> options;
+
+    /** 本题在库中的 parent_qu_id */
+    private Integer parentQuId;
+    /** 父题题干（材料） */
+    private String stemContent;
+    /** 父题附图 */
+    private String stemImage;
 }

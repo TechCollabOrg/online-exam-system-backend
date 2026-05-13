@@ -52,4 +52,10 @@ public class Question implements Serializable {
     @TableLogic
     @ApiModelProperty("逻辑删除字段")
     private Integer isDeleted;
+
+    /**
+     * 指向「共用题干」所在试题（同表）；为空表示独立题。小题题干仅存本小问文字，材料由父题 content/image 提供。
+     */
+    @ApiModelProperty("共用题干父题 id")
+    private Integer parentQuId;
 }

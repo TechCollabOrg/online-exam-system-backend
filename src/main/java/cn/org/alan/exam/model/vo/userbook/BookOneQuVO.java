@@ -34,4 +34,8 @@ public class BookOneQuVO {
      * 答案内容
      */
     private List<Option> answerList;
+
+    private String stemContent;
+    private String stemImage;
+    private Integer parentQuId;
 }

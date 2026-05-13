@@ -4,16 +4,16 @@
 
     <!-- 批量添加选型 -->
     <insert id="insertBatch">
-        insert into t_option
+        insert into t_option (qu_id, is_right, image, content, analysis, sort, is_deleted)
         values
         <foreach collection="options" item="option" separator="," index="i">
-            (null,#{option.quId},#{option.isRight},#{option.image},#{option.content},#{i},0)
+            (#{option.quId},#{option.isRight},#{option.image},#{option.content},#{option.analysis},#{i},0)
         </foreach>
     </insert>
 
     <!-- 根据试题id获取所有选项 -->
     <select id="selectAllByQuestionId" resultType="cn.org.alan.exam.model.entity.Option">
-        select id, qu_id, is_right, image, content, sort
+        select id, qu_id, is_right, image, content, analysis, sort
         from t_option
         where qu_id = #{id}
     </select>

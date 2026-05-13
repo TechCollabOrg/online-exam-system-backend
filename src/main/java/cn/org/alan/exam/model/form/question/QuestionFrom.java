@@ -60,4 +60,9 @@ public class QuestionFrom {
      */
     private List<Option> options;
 
+    /**
+     * 非空时本题仅为某共用题干下的小题；父题在同一题库中且 content/image 为材料区。
+     */
+    private Integer parentQuId;
+
 }

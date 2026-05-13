@@ -80,6 +80,14 @@ public class UserBookServiceImpl extends ServiceImpl<UserBookMapper, UserBook> i
         bookOneQuVO.setImage(quById.getImage());
         bookOneQuVO.setContent(quById.getContent());
         bookOneQuVO.setQuType(quById.getQuType());
+        if (quById.getParentQuId() != null) {
+            Question stem = questionMapper.selectById(quById.getParentQuId());
+            if (stem != null) {
+                bookOneQuVO.setParentQuId(quById.getParentQuId());
+                bookOneQuVO.setStemContent(stem.getContent());
+                bookOneQuVO.setStemImage(stem.getImage());
+            }
+        }
         // 答案列表
         LambdaQueryWrapper<Option> optionLambdaQuery = new LambdaQueryWrapper<>();
         optionLambdaQuery.eq(Option::getQuId, quId);
@@ -122,6 +130,7 @@ public class UserBookServiceImpl extends ServiceImpl<UserBookMapper, UserBook> i
         } else {
             addBookAnswerVO.setRightAnswers(result);
         }
+        addBookAnswerVO.setOptions(options);
 
         // 判断是否正确并移除正确试题
         switch (quType) {

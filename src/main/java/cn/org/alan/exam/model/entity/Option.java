@@ -47,9 +47,12 @@ public class Option implements Serializable {
     @ApiModelProperty("图片地址")
     private String image;
 
-    @ApiModelProperty("选项内容")
+    @ApiModelProperty("选项内容（客观题为文字/简答题可为含多图的 HTML 参考答案）")
     @NotBlank(message = "选型内容(content)不能为空")
     private String content;
+
+    @ApiModelProperty("该选项答案解析（选填，可与整题解析并存）")
+    private String analysis;
 
     @ApiModelProperty("排序")
     private Integer sort;

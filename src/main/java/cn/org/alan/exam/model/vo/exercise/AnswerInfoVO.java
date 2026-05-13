@@ -28,4 +28,8 @@ public class AnswerInfoVO {
 
 
     private List<Option> options;
+
+    private Integer parentQuId;
+    private String stemContent;
+    private String stemImage;
 }

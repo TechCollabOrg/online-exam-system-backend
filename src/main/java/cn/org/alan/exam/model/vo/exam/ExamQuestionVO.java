@@ -36,4 +36,7 @@ public class ExamQuestionVO {
      * 类型
      */
     private Boolean checkout;
+
+    /** 若非空，本题与卷内其它同 parentQuId 的小题共用该父题题干 */
+    private Integer parentQuId;
 }

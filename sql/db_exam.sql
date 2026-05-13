@@ -547,8 +547,9 @@ CREATE TABLE `t_option` (
   `id` int(11) NOT NULL AUTO_INCREMENT COMMENT 'id   选项答案表',
   `qu_id` int(11) NOT NULL COMMENT '试题id',
   `is_right` int(11) DEFAULT NULL COMMENT '是否正确',
-  `image` varchar(255) COLLATE utf8mb4_bin DEFAULT NULL COMMENT '图片地址   0错误 1正确',
-  `content` text COLLATE utf8mb4_bin NOT NULL COMMENT '选项内容',
+  `image` mediumtext COLLATE utf8mb4_bin COMMENT '选项图片（单张 URL 或多张以 ### 拼接）',
+  `content` mediumtext COLLATE utf8mb4_bin NOT NULL COMMENT '选项内容（简答题参考答案可为含多图的 HTML）',
+  `analysis` mediumtext COLLATE utf8mb4_bin COMMENT '该选项答案解析（HTML，可内嵌多图；刷题预习接口不返回）',
   `sort` int(11) DEFAULT NULL COMMENT '排序',
   `is_deleted` int(11) NOT NULL DEFAULT '0' COMMENT '逻辑删除：0代表未删除，1代表删除',
   PRIMARY KEY (`id`) USING BTREE
@@ -591,13 +592,14 @@ DROP TABLE IF EXISTS `t_question`;
 CREATE TABLE `t_question` (
   `id` int(11) NOT NULL AUTO_INCREMENT COMMENT 'id   试题表',
   `qu_type` varchar(255) COLLATE utf8mb4_bin NOT NULL COMMENT '试题类型',
-  `image` varchar(255) COLLATE utf8mb4_bin DEFAULT NULL COMMENT '试题图片',
+  `image` mediumtext COLLATE utf8mb4_bin COMMENT '试题图片（单张 URL 或多张以 ### 拼接）',
   `content` text COLLATE utf8mb4_bin NOT NULL COMMENT '题干',
   `create_time` datetime NOT NULL COMMENT '创建时间',
   `analysis` text COLLATE utf8mb4_bin COMMENT '题目分析',
   `repo_id` int(11) DEFAULT NULL COMMENT '题库id',
   `user_id` int(11) DEFAULT NULL COMMENT '用户id',
   `is_deleted` int(11) NOT NULL DEFAULT '0' COMMENT '逻辑删除：0代表未删除，1代表删除',
+  `parent_qu_id` int(11) DEFAULT NULL COMMENT '共用题干所属题目 id（t_question.id）；非空表示本题为该题干下的小题',
   PRIMARY KEY (`id`) USING BTREE
 ) ENGINE=InnoDB AUTO_INCREMENT=730 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin ROW_FORMAT=DYNAMIC;
 

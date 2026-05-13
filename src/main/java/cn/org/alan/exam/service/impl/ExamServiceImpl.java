@@ -32,6 +32,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 /**
@@ -391,6 +392,7 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
                 examQuestionListVO.setSaqList(examQuestionVOS);
             }
         }
+        enrichExamQuestionParentQuIds(examQuestionListVO);
         return Result.success("查询成功", examQuestionListVO);
     }
 
@@ -415,6 +417,7 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
         examQuDetailVO.setImage(quById.getImage());
         examQuDetailVO.setContent(quById.getContent());
         examQuDetailVO.setQuType(quById.getQuType());
+        fillCompoundStemForExamDetail(quById, examQuDetailVO);
         // 答案列表
         LambdaQueryWrapper<Option> optionLambdaQuery = new LambdaQueryWrapper<>();
         optionLambdaQuery.eq(Option::getQuId, quId);
@@ -500,6 +503,7 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
             examQuCollectVO.setQuType(temp.getQuType());
             // 设置题目ID
             examQuCollectVO.setId(temp.getId());
+            fillCompoundStemForCollect(temp, examQuCollectVO);
 
             // 查询试题选项
             LambdaQueryWrapper<Option> optionWrapper = new LambdaQueryWrapper<>();
@@ -841,13 +845,39 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
     }
 
     /**
-     * 考后查看解析：每题题干、选项、正确答案展示串、解析说明等（不区分是否本人，由上层接口控制权限）。
+     * 考后查看解析：每题题干、选项、正确答案展示串、解析说明等。
+     * <p>数据权限：教师仅可查看本人创建的试卷；学生仅可在已交卷（成绩记录 state≠进行中）后查看，防止标答泄露；
+     * 管理员可查看全部。</p>
      */
     @Override
     public Result<List<ExamRecordDetailVO>> details(Integer examId) {
+        Exam exam = this.getById(examId);
+        if (exam == null) {
+            return Result.failed("试卷不存在或已删除");
+        }
+        String role = SecurityUtil.getRole();
+        Integer uid = SecurityUtil.getUserId();
+        if ("role_teacher".equals(role)) {
+            if (!Objects.equals(exam.getUserId(), uid)) {
+                return Result.failed("无权限查看该试卷");
+            }
+        } else if ("role_student".equals(role)) {
+            LambdaQueryWrapper<UserExamsScore> scoreQw = new LambdaQueryWrapper<>();
+            scoreQw.eq(UserExamsScore::getUserId, uid).eq(UserExamsScore::getExamId, examId);
+            UserExamsScore score = userExamsScoreMapper.selectOne(scoreQw);
+            if (score == null) {
+                return Result.failed("无权限查看该试卷");
+            }
+            if (score.getState() != null && score.getState() == 0) {
+                return Result.failed("考试进行中，暂不可查看完整试卷与标答");
+            }
+        } else if (!"role_admin".equals(role)) {
+            return Result.failed("无权限查看该试卷");
+        }
+
         // 1、题干 2、选项 3、自己的答案 4、正确的答案 5、是否正确 6、试题分析
         List<ExamRecordDetailVO> examRecordDetailVOS = new ArrayList<>();
-        // 查询该考试的试题
+        // 查询该考试的试题（按试卷内顺序）
         LambdaQueryWrapper<ExamQuestion> examQuestionWrapper = new LambdaQueryWrapper<>();
         examQuestionWrapper.eq(ExamQuestion::getExamId, examId)
                 .orderByAsc(ExamQuestion::getSort);
@@ -855,41 +885,35 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
         List<Integer> quIds = examQuestions.stream()
                 .map(ExamQuestion::getQuestionId)
                 .collect(Collectors.toList());
-        // 查询题干列表
+        if (quIds.isEmpty()) {
+            return Result.success("查询考试的信息成功", examRecordDetailVOS);
+        }
         List<Question> questions = questionMapper.selectBatchIds(quIds);
-        for (Question temp : questions) {
-            // 创建返回对象
+        Map<Integer, Question> questionMap = questions.stream()
+                .collect(Collectors.toMap(Question::getId, q -> q, (a, b) -> a));
+        List<Question> orderedQuestions = new ArrayList<>();
+        for (ExamQuestion eq : examQuestions) {
+            Question q = questionMap.get(eq.getQuestionId());
+            if (q != null) {
+                orderedQuestions.add(q);
+            }
+        }
+        for (Question temp : orderedQuestions) {
             ExamRecordDetailVO examRecordDetailVO = new ExamRecordDetailVO();
-            // 设置标题
             examRecordDetailVO.setImage(temp.getImage());
             examRecordDetailVO.setTitle(temp.getContent());
             examRecordDetailVO.setQuType(temp.getQuType());
-            // 设置分析
             examRecordDetailVO.setAnalyse(temp.getAnalysis());
-            // 查询试题选项
+            fillCompoundStemForRecordDetail(temp, examRecordDetailVO);
             LambdaQueryWrapper<Option> optionWrapper = new LambdaQueryWrapper<>();
-            optionWrapper.eq(Option::getQuId, temp.getId());
+            optionWrapper.eq(Option::getQuId, temp.getId()).orderByAsc(Option::getSort);
             List<Option> options = optionMapper.selectList(optionWrapper);
-            if (temp.getQuType() == 4) {
-                examRecordDetailVO.setOption(null);
-            } else {
-                examRecordDetailVO.setOption(options);
-            }
+            // 简答题同样需要返回选项行（参考答案文本 + 附图等多图），教师「查看试卷」页依赖 option[0].image
+            examRecordDetailVO.setOption(options);
 
-            // 查询试题类型
-            LambdaQueryWrapper<Question> QuWrapper = new LambdaQueryWrapper<>();
-            QuWrapper.eq(Question::getId, temp.getId());
-            Question qu = questionMapper.selectOne(QuWrapper);
-            Integer quType = qu.getQuType();
-            // 设置正确答案
-            LambdaQueryWrapper<Option> opWrapper = new LambdaQueryWrapper<>();
-            opWrapper.eq(Option::getQuId, temp.getId());
-            List<Option> opList = optionMapper.selectList(opWrapper);
-
-            if (temp.getQuType() == 4 && opList.size() > 0) {
-                examRecordDetailVO.setRightOption(opList.get(0).getContent());
+            if (temp.getQuType() == 4 && !options.isEmpty()) {
+                examRecordDetailVO.setRightOption(options.get(0).getContent());
             } else {
-                String current = "";
                 ArrayList<Integer> strings = new ArrayList<>();
                 for (Option temp1 : options) {
                     if (temp1.getIsRight() == 1) {
@@ -898,13 +922,9 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
                 }
                 List<String> stringList = strings.stream().map(String::valueOf).collect(Collectors.toList());
                 String result = String.join(",", stringList);
-
                 examRecordDetailVO.setRightOption(result);
             }
             examRecordDetailVOS.add(examRecordDetailVO);
-        }
-        if (examRecordDetailVOS == null) {
-            throw new ServiceRuntimeException("查询考试的信息失败");
         }
         return Result.success("查询考试的信息成功", examRecordDetailVOS);
 
@@ -926,6 +946,10 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
             examGradeMapper.selectClassExam(examPage, userId, title, isASC);
         } else if ("role_admin".equals(role)) {
             examGradeMapper.selectAdminClassExam(examPage, userId, title, isASC);
+        } else if ("role_teacher".equals(role)) {
+            examGradeMapper.selectTeacherClassExam(examPage, userId, title, isASC);
+        } else {
+            return Result.failed("当前角色不支持按班级查询考试列表");
         }
         // 根据考试id查找考试
         return Result.success("查询成功", examPage);
@@ -1120,5 +1144,86 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
         UserExamsScore userExamsScore = userExamsScoreMapper.selectOne(userExamsScoreLambdaQueryWrapper);
         LocalDateTime createTime = userExamsScore.getCreateTime();
         return createTime;
+    }
+
+    /** 小题挂载共用题干：写入考试单题 VO 的 stem 与 parentQuId。 */
+    private void fillCompoundStemForExamDetail(Question child, ExamQuDetailVO vo) {
+        if (child == null || child.getParentQuId() == null) {
+            return;
+        }
+        Question stem = questionMapper.selectById(child.getParentQuId());
+        if (stem == null) {
+            return;
+        }
+        vo.setParentQuId(child.getParentQuId());
+        vo.setStemContent(stem.getContent());
+        vo.setStemImage(stem.getImage());
+    }
+
+    private void fillCompoundStemForCollect(Question child, ExamQuCollectVO vo) {
+        if (child == null || child.getParentQuId() == null) {
+            return;
+        }
+        Question stem = questionMapper.selectById(child.getParentQuId());
+        if (stem == null) {
+            return;
+        }
+        vo.setParentQuId(child.getParentQuId());
+        vo.setStemContent(stem.getContent());
+        vo.setStemImage(stem.getImage());
+    }
+
+    private void fillCompoundStemForRecordDetail(Question child, ExamRecordDetailVO vo) {
+        if (child == null || child.getParentQuId() == null) {
+            return;
+        }
+        Question stem = questionMapper.selectById(child.getParentQuId());
+        if (stem == null) {
+            return;
+        }
+        vo.setParentQuId(child.getParentQuId());
+        vo.setStemContent(stem.getContent());
+        vo.setStemImage(stem.getImage());
+    }
+
+    /** 答题卡各题项标注 parentQuId，便于前端提示「同一大题」。 */
+    private void enrichExamQuestionParentQuIds(ExamQuestionListVO examQuestionListVO) {
+        Set<Integer> questionIds = new LinkedHashSet<>();
+        addQuestionIds(examQuestionListVO.getRadioList(), questionIds);
+        addQuestionIds(examQuestionListVO.getMultiList(), questionIds);
+        addQuestionIds(examQuestionListVO.getJudgeList(), questionIds);
+        addQuestionIds(examQuestionListVO.getSaqList(), questionIds);
+        if (questionIds.isEmpty()) {
+            return;
+        }
+        List<Question> questions = questionMapper.selectBatchIds(new ArrayList<>(questionIds));
+        Map<Integer, Question> byId = questions.stream()
+                .collect(Collectors.toMap(Question::getId, q -> q, (a, b) -> a));
+        Consumer<List<ExamQuestionVO>> enrich = list -> {
+            if (list == null) {
+                return;
+            }
+            for (ExamQuestionVO row : list) {
+                Question q = byId.get(row.getQuestionId());
+                if (q != null && q.getParentQuId() != null) {
+                    row.setParentQuId(q.getParentQuId());
+                }
+            }
+        };
+        enrich.accept(examQuestionListVO.getRadioList());
+        enrich.accept(examQuestionListVO.getMultiList());
+        enrich.accept(examQuestionListVO.getJudgeList());
+        enrich.accept(examQuestionListVO.getSaqList());
+    }
+
+    private static void addQuestionIds(List<ExamQuestionVO> list, Set<Integer> out) {
+        if (list == null) {
+            return;
+        }
+        for (ExamQuestionVO row : list) {
+            if (row.getQuestionId() != null) {
+                out.add(row.getQuestionId());
+            }
+        }
     }
 }

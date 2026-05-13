@@ -57,6 +57,12 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
         if (questionFrom.getQuType() != 4 && (Objects.isNull(options) || options.size() < 2)) {
             return Result.failed("非简答题的试题选项不能少于两个");
         }
+        if (questionFrom.getParentQuId() != null) {
+            Question parent = questionMapper.selectById(questionFrom.getParentQuId());
+            if (parent == null) {
+                return Result.failed("「共用材料父题 ID」不存在，请先在题库中新建材料题并填写正确 id");
+            }
+        }
         Question question = questionConverter.fromToEntity(questionFrom);
         // 开始添加题干
         questionMapper.insert(question);
@@ -74,8 +80,19 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
             });
             optionMapper.insertBatch(options);
         }
-        return Result.success("单题添加成功");
+        return Result.success("单题添加成功", String.valueOf(question.getId()));
+    }
 
+    private void fillCompoundStemOnQuestionVo(QuestionVO vo) {
+        if (vo == null || vo.getParentQuId() == null) {
+            return;
+        }
+        Question stem = questionMapper.selectById(vo.getParentQuId());
+        if (stem == null) {
+            return;
+        }
+        vo.setStemContent(stem.getContent());
+        vo.setStemImage(stem.getImage());
     }
 
     /** 批量删除试题：先清关联刷题记录与选项，再删题干（与 Mapper 入参语义一致）。 */
@@ -110,6 +127,7 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
     @Override
     public Result<QuestionVO> querySingle(Integer id) {
         QuestionVO result = questionMapper.selectSingle(id);
+        fillCompoundStemOnQuestionVo(result);
         return Result.success("根据试题id获取单题详情成功", result);
     }
 
@@ -117,6 +135,12 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
     @Override
     @Transactional
     public Result<String> updateQuestion(QuestionFrom questionFrom) {
+        if (questionFrom.getParentQuId() != null) {
+            Question parent = questionMapper.selectById(questionFrom.getParentQuId());
+            if (parent == null) {
+                return Result.failed("「共用材料父题 ID」不存在");
+            }
+        }
         // 修改试题
         Question question = questionConverter.fromToEntity(questionFrom);
         questionMapper.updateById(question);
@@ -129,7 +153,8 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
     }
 
     /**
-     * 将 Excel 模板试题导入指定题库 {@code id}：逐题插入并批量插入选项，简答题选项默认标记为正确。
+     * 将 Excel 模板试题导入指定题库 {@code id}：逐题插入并批量插入选项，简答题选项默认标记为正确；
+     * 支持「材料组编号 + 共用材料题干」多行导入为同一父题下多个小题。
      */
     @SneakyThrows(Exception.class)
     @Override
@@ -138,41 +163,87 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
         if (!ExcelUtils.isExcel(Objects.requireNonNull(file.getOriginalFilename()))) {
             throw new ServiceRuntimeException("该文件不是一个合法的Excel文件");
         }
-        
+
         try {
-            List<QuestionExcelFrom> questionExcelFroms = ExcelUtils.readMultipartFile(file, QuestionExcelFrom.class);
-            // 类型转换
-            List<QuestionFrom> list = QuestionExcelFrom.converterQuestionFrom(questionExcelFroms);
-            
-            for (QuestionFrom questionFrom : list) {
-                Question question = questionConverter.fromToEntity(questionFrom);
-                question.setRepoId(id);
-                // 添加单题获取Id
-                questionMapper.insert(question);
-                // 批量添加选项
-                List<Option> options = questionFrom.getOptions();
-                final int[] count = {0};
-                options.forEach(option -> {
-                    // 简答题答案默认给正确
-                    if (question.getQuType() == 4) {
-                        option.setIsRight(1);
-                    }
-                    option.setSort(++count[0]);
-                    option.setQuId(question.getId());
-                });
-                // 避免简答题没有答案
-                if (!options.isEmpty()) {
-                    optionMapper.insertBatch(options);
+            List<QuestionExcelFrom> rows = ExcelUtils.readMultipartFile(file, QuestionExcelFrom.class);
+            Map<String, Integer> stemParentIdByGroup = new LinkedHashMap<>();
+            int rowIndex = 0;
+            for (QuestionExcelFrom excelRow : rows) {
+                rowIndex++;
+                String groupCode = QuestionExcelFrom.normalizeStemGroupCode(excelRow.getStemGroupCode());
+                if (groupCode == null) {
+                    QuestionFrom qf = excelRow.toQuestionFrom();
+                    qf.setParentQuId(null);
+                    persistImportedQuestion(qf, id);
+                    continue;
                 }
+                if (!stemParentIdByGroup.containsKey(groupCode)) {
+                    if (StringUtils.isBlank(excelRow.getSharedStemContent())) {
+                        throw new ServiceRuntimeException(String.format(
+                                "Excel 第 %d 条：已填材料组编号「%s」，本组第一行必须填写「共用材料题干」",
+                                rowIndex, groupCode));
+                    }
+                    Integer parentId = insertStemParentQuestion(
+                            excelRow.getSharedStemContent().trim(),
+                            StringUtils.isNotBlank(excelRow.getSharedStemImage())
+                                    ? excelRow.getSharedStemImage().trim()
+                                    : null,
+                            id);
+                    stemParentIdByGroup.put(groupCode, parentId);
+                }
+                QuestionFrom qf = excelRow.toQuestionFrom();
+                qf.setParentQuId(stemParentIdByGroup.get(groupCode));
+                persistImportedQuestion(qf, id);
             }
-            
+
             return Result.success("导入试题成功");
         } catch (ServiceRuntimeException e) {
-            // 捕获并返回业务异常，保留详细错误信息
             return Result.failed(e.getMessage());
         } catch (Exception e) {
-            // 捕获其他异常
             return Result.failed("导入试题失败：" + e.getMessage());
+        }
+    }
+
+    /**
+     * 插入仅作共用材料的父题（简答题占位 + 一条参考答案选项），不入卷也可被 {@code parent_qu_id} 引用。
+     */
+    private Integer insertStemParentQuestion(String stemContent, String stemImage, Integer repoId) {
+        Question q = new Question();
+        q.setQuType(4);
+        q.setContent(stemContent);
+        q.setRepoId(repoId);
+        q.setImage(stemImage);
+        q.setAnalysis(null);
+        q.setParentQuId(null);
+        int r = questionMapper.insert(q);
+        if (r <= 0) {
+            throw new ServiceRuntimeException("创建共用材料父题失败");
+        }
+        Option o = new Option();
+        o.setQuId(q.getId());
+        o.setContent("（本行为共用材料题干，组卷请只勾选下方各小题，勿单独选本题）");
+        o.setIsRight(1);
+        o.setSort(1);
+        o.setImage(null);
+        optionMapper.insert(o);
+        return q.getId();
+    }
+
+    private void persistImportedQuestion(QuestionFrom questionFrom, Integer repoId) {
+        Question question = questionConverter.fromToEntity(questionFrom);
+        question.setRepoId(repoId);
+        questionMapper.insert(question);
+        List<Option> options = questionFrom.getOptions();
+        final int[] count = {0};
+        options.forEach(option -> {
+            if (question.getQuType() == 4) {
+                option.setIsRight(1);
+            }
+            option.setSort(++count[0]);
+            option.setQuId(question.getId());
+        });
+        if (!options.isEmpty()) {
+            optionMapper.insertBatch(options);
         }
     }
 

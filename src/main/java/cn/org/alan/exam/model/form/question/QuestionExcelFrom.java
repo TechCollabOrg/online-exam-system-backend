@@ -10,186 +10,143 @@ import java.util.List;
 
 /**
  * Excel 批量导入试题时单行映射字段。
+ * <p>支持「材料题 / 多小问」：同一 {@link #stemGroupCode} 的多行共用首行 {@link #sharedStemContent}，
+ * 每行 {@link #content} 写单个小问（如 (1)…、(2)…），导入后自动写入 {@code parent_qu_id}。</p>
  *
  * @author WeiJin
  * @since 2024/4/8
  */
 @Data
 public class QuestionExcelFrom {
-    @ExcelImport(value = "试题类型",required = true)
+    @ExcelImport(value = "试题类型", required = true)
     private Integer quType;
-    @ExcelImport(value = "题干",required = true,unique = true)
+    @ExcelImport(value = "题干", required = true, unique = true)
     private String content;
     @ExcelImport(value = "解析")
     private String analysis;
-    
-    // 添加题干图片字段
+
     @ExcelImport(value = "题干图片")
     private String image;
-    
+
     @ExcelImport(value = "选项一内容")
     private String option1;
     @ExcelImport(value = "选项一是否正确")
     private Integer righted1;
-    // 添加选项一图片字段
     @ExcelImport(value = "选项一图片")
     private String image1;
-    
+
     @ExcelImport(value = "选项二内容")
     private String option2;
     @ExcelImport(value = "选项二是否正确")
     private Integer righted2;
-    // 添加选项二图片字段
     @ExcelImport(value = "选项二图片")
     private String image2;
-    
+
     @ExcelImport(value = "选项三内容")
     private String option3;
     @ExcelImport(value = "选项三是否正确")
     private Integer righted3;
-    // 添加选项三图片字段
     @ExcelImport(value = "选项三图片")
     private String image3;
-    
+
     @ExcelImport(value = "选项四内容")
     private String option4;
     @ExcelImport(value = "选项四是否正确")
     private Integer righted4;
-    // 添加选项四图片字段
     @ExcelImport(value = "选项四图片")
     private String image4;
-    
+
     @ExcelImport(value = "选项五内容")
     private String option5;
     @ExcelImport(value = "选项五是否正确")
     private Integer righted5;
-    // 添加选项五图片字段
     @ExcelImport(value = "选项五图片")
     private String image5;
-    
+
     @ExcelImport(value = "选项六内容")
     private String option6;
     @ExcelImport(value = "选项六是否正确")
     private Integer righted6;
-    // 添加选项六图片字段
     @ExcelImport(value = "选项六图片")
     private String image6;
 
+    /** 同一编号的多行视为同一道大题下的多个小题；首行须填「共用材料题干」 */
+    @ExcelImport(value = "材料组编号")
+    private String stemGroupCode;
+    /** 仅本组第一行必填：共用材料（文字），上图用「共用材料题干图片」 */
+    @ExcelImport(value = "共用材料题干")
+    private String sharedStemContent;
+    @ExcelImport(value = "共用材料题干图片")
+    private String sharedStemImage;
 
     /**
-     * 类型转换
-     * @param questionExcelFroms 表格获取类型转换成from类型
-     * @return 转换后的结果
+     * 材料组编号去空白；空串视为未分组。
      */
-    public static List<QuestionFrom> converterQuestionFrom(List<QuestionExcelFrom> questionExcelFroms){
-        List<QuestionFrom> list = new ArrayList<>(300);
-        for (QuestionExcelFrom questionExcelFrom : questionExcelFroms) {
-            QuestionFrom questionFrom = new QuestionFrom();
-            questionFrom.setContent(questionExcelFrom.getContent());
-            questionFrom.setQuType(questionExcelFrom.getQuType());
-            questionFrom.setAnalysis(questionExcelFrom.getAnalysis());
-            // 设置题干图片
-            questionFrom.setImage(questionExcelFrom.getImage());
-            
-            List<Option> options = new ArrayList<>();
-            
-            // 验证选项内容和是否正确的一致性
-            if (questionExcelFrom.getQuType() != 4) { // 非简答题需要验证选项
-                // 检查选项一
-                if (questionExcelFrom.getOption1() != null && !questionExcelFrom.getOption1().isEmpty() 
-                    && questionExcelFrom.getRighted1() == null) {
-                    String errorMsg = String.format("导入错误 - 题干为「%s」的试题：选项一内容存在但未设置是否正确，请检查Excel文件中对应行的「选项一是否正确」列", 
-                            questionExcelFrom.getContent());
-                    throw new ServiceRuntimeException(errorMsg);
-                }
-                // 检查选项二
-                if (questionExcelFrom.getOption2() != null && !questionExcelFrom.getOption2().isEmpty() 
-                    && questionExcelFrom.getRighted2() == null) {
-                    String errorMsg = String.format("导入错误 - 题干为「%s」的试题：选项二内容存在但未设置是否正确，请检查Excel文件中对应行的「选项二是否正确」列", 
-                            questionExcelFrom.getContent());
-                    throw new ServiceRuntimeException(errorMsg);
-                }
-                // 检查选项三
-                if (questionExcelFrom.getOption3() != null && !questionExcelFrom.getOption3().isEmpty() 
-                    && questionExcelFrom.getRighted3() == null) {
-                    String errorMsg = String.format("导入错误 - 题干为「%s」的试题：选项三内容存在但未设置是否正确，请检查Excel文件中对应行的「选项三是否正确」列", 
-                            questionExcelFrom.getContent());
-                    throw new ServiceRuntimeException(errorMsg);
-                }
-                // 检查选项四
-                if (questionExcelFrom.getOption4() != null && !questionExcelFrom.getOption4().isEmpty() 
-                    && questionExcelFrom.getRighted4() == null) {
-                    String errorMsg = String.format("导入错误 - 题干为「%s」的试题：选项四内容存在但未设置是否正确，请检查Excel文件中对应行的「选项四是否正确」列", 
-                            questionExcelFrom.getContent());
-                    throw new ServiceRuntimeException(errorMsg);
-                }
-                // 检查选项五
-                if (questionExcelFrom.getOption5() != null && !questionExcelFrom.getOption5().isEmpty() 
-                    && questionExcelFrom.getRighted5() == null) {
-                    String errorMsg = String.format("导入错误 - 题干为「%s」的试题：选项五内容存在但未设置是否正确，请检查Excel文件中对应行的「选项五是否正确」列", 
-                            questionExcelFrom.getContent());
-                    throw new ServiceRuntimeException(errorMsg);
-                }
-                // 检查选项六
-                if (questionExcelFrom.getOption6() != null && !questionExcelFrom.getOption6().isEmpty() 
-                    && questionExcelFrom.getRighted6() == null) {
-                    String errorMsg = String.format("导入错误 - 题干为「%s」的试题：选项六内容存在但未设置是否正确，请检查Excel文件中对应行的「选项六是否正确」列", 
-                            questionExcelFrom.getContent());
-                    throw new ServiceRuntimeException(errorMsg);
-                }
-            }
-            
-            if (questionExcelFrom.getOption1() != null && !questionExcelFrom.getOption1().isEmpty()) {
-                Option option = new Option();
-                option.setContent(questionExcelFrom.getOption1());
-                option.setIsRight(questionExcelFrom.getRighted1());
-                // 设置选项一图片
-                option.setImage(questionExcelFrom.getImage1());
-                options.add(option);
-            }
-            if (questionExcelFrom.getOption2() != null && !questionExcelFrom.getOption2().isEmpty()) {
-                Option option = new Option();
-                option.setContent(questionExcelFrom.getOption2());
-                option.setIsRight(questionExcelFrom.getRighted2());
-                // 设置选项二图片
-                option.setImage(questionExcelFrom.getImage2());
-                options.add(option);
-            }
-            if (questionExcelFrom.getOption3() != null && !questionExcelFrom.getOption3().isEmpty()) {
-                Option option = new Option();
-                option.setContent(questionExcelFrom.getOption3());
-                option.setIsRight(questionExcelFrom.getRighted3());
-                // 设置选项三图片
-                option.setImage(questionExcelFrom.getImage3());
-                options.add(option);
-            }
-            if (questionExcelFrom.getOption4() != null && !questionExcelFrom.getOption4().isEmpty()) {
-                Option option = new Option();
-                option.setContent(questionExcelFrom.getOption4());
-                option.setIsRight(questionExcelFrom.getRighted4());
-                // 设置选项四图片
-                option.setImage(questionExcelFrom.getImage4());
-                options.add(option);
-            }
-            if (questionExcelFrom.getOption5() != null && !questionExcelFrom.getOption5().isEmpty()) {
-                Option option = new Option();
-                option.setContent(questionExcelFrom.getOption5());
-                option.setIsRight(questionExcelFrom.getRighted5());
-                // 设置选项五图片
-                option.setImage(questionExcelFrom.getImage5());
-                options.add(option);
-            }
-            if (questionExcelFrom.getOption6() != null && !questionExcelFrom.getOption6().isEmpty()) {
-                Option option = new Option();
-                option.setContent(questionExcelFrom.getOption6());
-                option.setIsRight(questionExcelFrom.getRighted6());
-                // 设置选项六图片
-                option.setImage(questionExcelFrom.getImage6());
-                options.add(option);
-            }
+    public static String normalizeStemGroupCode(String raw) {
+        if (raw == null) {
+            return null;
+        }
+        String t = raw.trim();
+        return t.isEmpty() ? null : t;
+    }
 
-            questionFrom.setOptions(options);
-            list.add(questionFrom);
+    /**
+     * 将当前 Excel 行转为 {@link QuestionFrom}（不含 {@code parentQuId}，由导入逻辑按组写入）。
+     */
+    public QuestionFrom toQuestionFrom() {
+        QuestionFrom questionFrom = new QuestionFrom();
+        questionFrom.setContent(getContent());
+        questionFrom.setQuType(getQuType());
+        questionFrom.setAnalysis(getAnalysis());
+        questionFrom.setImage(getImage());
+
+        List<Option> options = new ArrayList<>();
+
+        if (getQuType() != 4) {
+            validateOptionRight(1, getOption1(), getRighted1());
+            validateOptionRight(2, getOption2(), getRighted2());
+            validateOptionRight(3, getOption3(), getRighted3());
+            validateOptionRight(4, getOption4(), getRighted4());
+            validateOptionRight(5, getOption5(), getRighted5());
+            validateOptionRight(6, getOption6(), getRighted6());
+        }
+
+        addOptionIfPresent(options, getOption1(), getRighted1(), getImage1());
+        addOptionIfPresent(options, getOption2(), getRighted2(), getImage2());
+        addOptionIfPresent(options, getOption3(), getRighted3(), getImage3());
+        addOptionIfPresent(options, getOption4(), getRighted4(), getImage4());
+        addOptionIfPresent(options, getOption5(), getRighted5(), getImage5());
+        addOptionIfPresent(options, getOption6(), getRighted6(), getImage6());
+
+        questionFrom.setOptions(options);
+        return questionFrom;
+    }
+
+    private void validateOptionRight(int idx, String optText, Integer righted) {
+        if (optText != null && !optText.isEmpty() && righted == null) {
+            throw new ServiceRuntimeException(String.format(
+                    "导入错误 - 题干为「%s」的试题：选项%d内容存在但未设置是否正确，请检查 Excel「选项%d是否正确」列",
+                    getContent(), idx, idx));
+        }
+    }
+
+    private static void addOptionIfPresent(List<Option> options, String text, Integer righted, String img) {
+        if (text != null && !text.isEmpty()) {
+            Option option = new Option();
+            option.setContent(text);
+            option.setIsRight(righted);
+            option.setImage(img);
+            options.add(option);
+        }
+    }
+
+    /**
+     * 兼容旧调用：逐行 {@link #toQuestionFrom()}，不含材料组父题逻辑。
+     */
+    public static List<QuestionFrom> converterQuestionFrom(List<QuestionExcelFrom> questionExcelFroms) {
+        List<QuestionFrom> list = new ArrayList<>(300);
+        for (QuestionExcelFrom row : questionExcelFroms) {
+            list.add(row.toQuestionFrom());
         }
         return list;
     }

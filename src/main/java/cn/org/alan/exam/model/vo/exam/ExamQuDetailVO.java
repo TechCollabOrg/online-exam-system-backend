@@ -35,4 +35,11 @@ public class ExamQuDetailVO {
      */
     private Integer sort;
 
+    /** 共用题干正文（来自 parent_qu_id 指向的父题），无材料题时为 null */
+    private String stemContent;
+    /** 共用题干附图（父题 image） */
+    private String stemImage;
+    /** 父题 id，与试题表 parent_qu_id 一致；无材料题时为 null */
+    private Integer parentQuId;
+
 }

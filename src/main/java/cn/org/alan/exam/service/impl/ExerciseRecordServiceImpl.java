@@ -282,6 +282,7 @@ public class ExerciseRecordServiceImpl extends ServiceImpl<ExerciseRecordMapper,
             exerciseRecordDetailVO.setTitle(temp.getContent());
             exerciseRecordDetailVO.setAnalyse(temp.getAnalysis());
             exerciseRecordDetailVO.setQuType(temp.getQuType());
+            fillCompoundStemOnExerciseRecordDetail(temp, exerciseRecordDetailVO);
             // 查询试题选项
             LambdaQueryWrapper<Option> optionWrapper = new LambdaQueryWrapper<>();
             optionWrapper.eq(Option::getQuId, temp.getId());
@@ -479,6 +480,7 @@ public class ExerciseRecordServiceImpl extends ServiceImpl<ExerciseRecordMapper,
 
         //获取试题信息，返回给用户
         QuestionVO questionVO = questionMapper.selectSingle(exerciseRecord.getQuestionId());
+        fillCompoundStemOnQuestionVo(questionVO);
 
         //针对不同题型做出不同响应
         //主观题响应
@@ -493,6 +495,7 @@ public class ExerciseRecordServiceImpl extends ServiceImpl<ExerciseRecordMapper,
     @Override
     public Result<QuestionVO> getSingle(Integer id) {
         QuestionVO questionVO = questionMapper.selectDetail(id);
+        fillCompoundStemOnQuestionVo(questionVO);
         return Result.success("查询单题成功", questionVO);
     }
 
@@ -502,6 +505,7 @@ public class ExerciseRecordServiceImpl extends ServiceImpl<ExerciseRecordMapper,
     @Override
     public Result<AnswerInfoVO> getAnswerInfo(Integer repoId, Integer quId) {
         QuestionVO questionVO = questionMapper.selectSingle(quId);
+        fillCompoundStemOnQuestionVo(questionVO);
         AnswerInfoVO answerInfoVO = exerciseConverter.quVOToAnswerInfoVO(questionVO);
         LambdaQueryWrapper<ExerciseRecord> exerciseRecordLambdaQueryWrapper = new LambdaQueryWrapper<ExerciseRecord>()
                 .eq(ExerciseRecord::getRepoId, repoId)
@@ -512,5 +516,30 @@ public class ExerciseRecordServiceImpl extends ServiceImpl<ExerciseRecordMapper,
         return exerciseRecord.getIsRight() == 1 ?
                 Result.success("回答正确", answerInfoVO) : Result.success("回答错误", answerInfoVO);
 
+    }
+
+    private void fillCompoundStemOnQuestionVo(QuestionVO vo) {
+        if (vo == null || vo.getParentQuId() == null) {
+            return;
+        }
+        Question stem = questionMapper.selectById(vo.getParentQuId());
+        if (stem == null) {
+            return;
+        }
+        vo.setStemContent(stem.getContent());
+        vo.setStemImage(stem.getImage());
+    }
+
+    private void fillCompoundStemOnExerciseRecordDetail(Question child, ExerciseRecordDetailVO vo) {
+        if (child == null || child.getParentQuId() == null) {
+            return;
+        }
+        Question stem = questionMapper.selectById(child.getParentQuId());
+        if (stem == null) {
+            return;
+        }
+        vo.setParentQuId(child.getParentQuId());
+        vo.setStemContent(stem.getContent());
+        vo.setStemImage(stem.getImage());
     }
 }
