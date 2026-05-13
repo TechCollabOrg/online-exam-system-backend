@@ -44,51 +44,54 @@ public class ExamAddForm {
     @Pattern(regexp = "^\\d+(,\\d+)*$|^\\d+$", message = "班级参数错误，请将传输格式改为 1,2,3,4...且至少包含一个班级ID")
     private String gradeIds;
 
-    // 题库ID
-    private Integer repoId;
+    // 题库ID（支持逗号分隔多题库：1,2,3）
+    @NotBlank(message = "题库ID不能为空")
+    @Pattern(regexp = "^\\d+(,\\d+)*$|^\\d+$", message = "题库参数错误，请使用 1 或 1,2,3 格式")
+    private String repoId;
 
-    // 证书id
-    private Integer certificateId;
+    // 证书id（支持逗号分隔，服务端仅取第一个）
+    @Pattern(regexp = "^$|^\\d+(,\\d+)*$|^\\d+$", message = "证书参数错误，请使用空字符串、1 或 1,2,3 格式")
+    private String certificateId;
 
     // 单选题数量
-    @NotNull(message = "及格分不能为空")
-    @Min(value = 0)
-    private Integer radioCount;
+    @NotBlank(message = "单选题数量不能为空")
+    @Pattern(regexp = "^\\d+(,\\d+)*$|^\\d+$", message = "单选题数量格式错误，请使用 0 或 0,1,2")
+    private String radioCount;
 
     // 单选题分数
-    @NotNull(message = "单选题分数不能为空")
-    @Min(value = 0)
-    private Integer radioScore;
+    @NotBlank(message = "单选题分数不能为空")
+    @Pattern(regexp = "^\\d+(,\\d+)*$|^\\d+$", message = "单选题分数格式错误，请使用 0 或 1,1,1")
+    private String radioScore;
 
     // 多选题数量
-    @NotNull(message = "多选题数量不能为空")
-    @Min(value = 0)
-    private Integer multiCount;
+    @NotBlank(message = "多选题数量不能为空")
+    @Pattern(regexp = "^\\d+(,\\d+)*$|^\\d+$", message = "多选题数量格式错误，请使用 0 或 0,1,2")
+    private String multiCount;
 
     // 多选题分数
-    @NotNull(message = "多选题分数不能为空")
-    @Min(value = 0)
-    private Integer multiScore;
+    @NotBlank(message = "多选题分数不能为空")
+    @Pattern(regexp = "^\\d+(,\\d+)*$|^\\d+$", message = "多选题分数格式错误，请使用 0 或 1,1,1")
+    private String multiScore;
 
     // 判断题数量
-    @NotNull(message = "判断题数量不能为空")
-    @Min(value = 0)
-    private Integer judgeCount;
+    @NotBlank(message = "判断题数量不能为空")
+    @Pattern(regexp = "^\\d+(,\\d+)*$|^\\d+$", message = "判断题数量格式错误，请使用 0 或 0,1,2")
+    private String judgeCount;
 
     // 判断题分数
-    @NotNull(message = "判断题分数不能为空")
-    @Min(value = 0)
-    private Integer judgeScore;
+    @NotBlank(message = "判断题分数不能为空")
+    @Pattern(regexp = "^\\d+(,\\d+)*$|^\\d+$", message = "判断题分数格式错误，请使用 0 或 1,1,1")
+    private String judgeScore;
 
     // 简答题数量
-    @NotNull(message = "简答题数量不能为空")
-    @Min(value = 0)
-    private Integer saqCount;
+    @NotBlank(message = "简答题数量不能为空")
+    @Pattern(regexp = "^\\d+(,\\d+)*$|^\\d+$", message = "简答题数量格式错误，请使用 0 或 0,1,2")
+    private String saqCount;
 
     // 简答题分数
-    @NotNull(message = "简答题分数不能为空")
-    @Min(value = 0)
-    private Integer saqScore;
+    @NotBlank(message = "简答题分数不能为空")
+    @Pattern(regexp = "^\\d+(,\\d+)*$|^\\d+$", message = "简答题分数格式错误，请使用 0 或 1,1,1")
+    private String saqScore;
 
     // 简答题分数
     @NotBlank(message = "添加试题类型不能为空")

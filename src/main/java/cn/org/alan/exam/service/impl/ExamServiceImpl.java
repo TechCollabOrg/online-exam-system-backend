@@ -84,14 +84,48 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
     @Override
     @Transactional
     public Result<String> createExam(ExamAddForm examAddForm) {
-        // 将关于考试相关的实体转换为Exam
-        Exam exam = examConverter.formToEntity(examAddForm);
+        // 解析前端参数：兼容单题库（1）与多题库（1,2,3）随机抽题场景
+        List<Integer> repoIds = parseCsvToIntList(examAddForm.getRepoId(), "题库ID");
+        List<Integer> radioCountsByRepo = expandPerRepoValues(examAddForm.getRadioCount(), repoIds.size(), "单选题数量");
+        List<Integer> multiCountsByRepo = expandPerRepoValues(examAddForm.getMultiCount(), repoIds.size(), "多选题数量");
+        List<Integer> judgeCountsByRepo = expandPerRepoValues(examAddForm.getJudgeCount(), repoIds.size(), "判断题数量");
+        List<Integer> saqCountsByRepo = expandPerRepoValues(examAddForm.getSaqCount(), repoIds.size(), "简答题数量");
+        List<Integer> radioScoresByRepo = expandPerRepoValues(examAddForm.getRadioScore(), repoIds.size(), "单选题分数");
+        List<Integer> multiScoresByRepo = expandPerRepoValues(examAddForm.getMultiScore(), repoIds.size(), "多选题分数");
+        List<Integer> judgeScoresByRepo = expandPerRepoValues(examAddForm.getJudgeScore(), repoIds.size(), "判断题分数");
+        List<Integer> saqScoresByRepo = expandPerRepoValues(examAddForm.getSaqScore(), repoIds.size(), "简答题分数");
+
+        int radioCount = sumList(radioCountsByRepo);
+        int multiCount = sumList(multiCountsByRepo);
+        int judgeCount = sumList(judgeCountsByRepo);
+        int saqCount = sumList(saqCountsByRepo);
+        int radioScore = resolveUnifiedScore(radioCountsByRepo, radioScoresByRepo, "单选题");
+        int multiScore = resolveUnifiedScore(multiCountsByRepo, multiScoresByRepo, "多选题");
+        int judgeScore = resolveUnifiedScore(judgeCountsByRepo, judgeScoresByRepo, "判断题");
+        int saqScore = resolveUnifiedScore(saqCountsByRepo, saqScoresByRepo, "简答题");
+
+        Exam exam = new Exam();
+        exam.setTitle(examAddForm.getTitle());
+        exam.setExamDuration(examAddForm.getExamDuration());
+        exam.setMaxCount(examAddForm.getMaxCount());
+        exam.setPassedScore(examAddForm.getPassedScore());
+        exam.setStartTime(examAddForm.getStartTime());
+        exam.setEndTime(examAddForm.getEndTime());
+        exam.setCertificateId(parseFirstIntOrNull(examAddForm.getCertificateId(), "证书ID"));
+        exam.setRadioCount(radioCount);
+        exam.setRadioScore(radioScore);
+        exam.setMultiCount(multiCount);
+        exam.setMultiScore(multiScore);
+        exam.setJudgeCount(judgeCount);
+        exam.setJudgeScore(judgeScore);
+        exam.setSaqCount(saqCount);
+        exam.setSaqScore(saqScore);
         // 添加考试信息到考试表
         // 计算总分
-        int grossScore = examAddForm.getRadioCount() * examAddForm.getRadioScore()
-                + examAddForm.getMultiCount() * examAddForm.getMultiScore()
-                + examAddForm.getJudgeCount() * examAddForm.getJudgeScore()
-                + examAddForm.getSaqCount() * examAddForm.getSaqScore();
+        int grossScore = radioCount * radioScore
+                + multiCount * multiScore
+                + judgeCount * judgeScore
+                + saqCount * saqScore;
         exam.setGrossScore(grossScore);
         // 添加考试信息到考试表
         int examRows = examMapper.insert(exam);
@@ -109,15 +143,16 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
         if (gradeRows < 1) {
             throw new ServiceRuntimeException("创建失败!");
         }
-        // 设置试卷与题库到关联
-        Integer repoId = examAddForm.getRepoId();
-        ExamRepo examRepo = new ExamRepo();
-        examRepo.setExamId(exam.getId());
-        examRepo.setRepoId(repoId);
-        // 建立试卷与题库到关联
-        int examRepoRows = examRepoMapper.insert(examRepo);
-        if (examRepoRows < 1) {
-            throw new ServiceRuntimeException("创建失败!");
+        // 设置试卷与题库到关联（支持多个题库）
+        int examRepoRows = 0;
+        for (Integer repoId : repoIds) {
+            ExamRepo examRepo = new ExamRepo();
+            examRepo.setExamId(exam.getId());
+            examRepo.setRepoId(repoId);
+            examRepoRows += examRepoMapper.insert(examRepo);
+        }
+        if (examRepoRows < repoIds.size()) {
+            throw new ServiceRuntimeException("创建失败：题库关联写入不完整!");
         }
 
         // <"试题类型"，"试题分数">
@@ -204,48 +239,57 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
         }
         // 随机抽题
         if("1".equals(examAddForm.getAddQuype())){
-            // 开始抽题
-            for (Map.Entry<Integer, Integer> entry : quTypeToCount.entrySet()) {
-                Map<Integer, Integer> questionSortMap = new HashMap<>();
-                // 获取当前试题类型、试题数量、考试id、试题分数
-                Integer quType = entry.getKey();
-                Integer count = entry.getValue();
-                Integer examId = exam.getId();
-                Integer quScore = quTypeToScore.get(quType);
-                // 查询设置题库中，对应类型的试题id
-                LambdaQueryWrapper<Question> typeQueryWrapper = new LambdaQueryWrapper<>();
-                typeQueryWrapper.select(Question::getId)
-                        .eq(Question::getQuType, quType)
-                        .eq(Question::getIsDeleted, 0)
-                        .eq(Question::getRepoId, examAddForm.getRepoId());
-                List<Question> questionsByType = questionMapper.selectList(typeQueryWrapper);
-                if (questionsByType.size() < count) {
-                    throw new ServiceRuntimeException("题库中类型为" + quType + "的题目数量不足" + count + "个！");
-                }
-                List<Integer> typeQuestionIds = questionsByType.stream().map(Question::getId).collect(Collectors.toList());
-                Collections.shuffle(typeQuestionIds);
-                List<Integer> sampledIds = typeQuestionIds.subList(0, count);
-                // 插入试题
-                if (!sampledIds.isEmpty()) {
-                    for (Integer qId : sampledIds) {
-                        questionSortMap.put(qId, sortCounter); // 为每个问题ID分配sort值
-                        sortCounter++; // 每插入一题，sort计数器增加
-                    }
-                    // 准备数据结构以符合Mapper方法的输入要求
-                    List<Map<String, Object>> questionDetails = new ArrayList<>();
-                    for (Map.Entry<Integer, Integer> sortEntry : questionSortMap.entrySet()) {
-                        Map<String, Object> detail = new HashMap<>();
-                        detail.put("questionId", sortEntry.getKey());
-                        detail.put("sort", sortEntry.getValue());
-                        questionDetails.add(detail);
-                    }
-                    // 调整Mapper方法以接受新的参数结构
-                    int examQueRows = examQuestionMapper.insertQuestion(examId, quType, quScore, questionDetails);
-                    if (examQueRows < 1) {
-                        throw new ServiceRuntimeException("创建考试失败");
-                    }
-                }
+            Integer examId = exam.getId();
+            for (int repoIdx = 0; repoIdx < repoIds.size(); repoIdx++) {
+                Integer currentRepoId = repoIds.get(repoIdx);
+                Map<Integer, Integer> countByType = new HashMap<>();
+                countByType.put(1, radioCountsByRepo.get(repoIdx));
+                countByType.put(2, multiCountsByRepo.get(repoIdx));
+                countByType.put(3, judgeCountsByRepo.get(repoIdx));
+                countByType.put(4, saqCountsByRepo.get(repoIdx));
 
+                // 开始抽题（按题库逐行抽取）
+                for (Map.Entry<Integer, Integer> entry : countByType.entrySet()) {
+                    Map<Integer, Integer> questionSortMap = new HashMap<>();
+                    Integer quType = entry.getKey();
+                    Integer count = entry.getValue();
+                    Integer quScore = quTypeToScore.get(quType);
+                    if (count == null || count <= 0) {
+                        continue;
+                    }
+                    // 查询设置题库中，对应类型的试题id
+                    LambdaQueryWrapper<Question> typeQueryWrapper = new LambdaQueryWrapper<>();
+                    typeQueryWrapper.select(Question::getId)
+                            .eq(Question::getQuType, quType)
+                            .eq(Question::getIsDeleted, 0)
+                            .eq(Question::getRepoId, currentRepoId);
+                    List<Question> questionsByType = questionMapper.selectList(typeQueryWrapper);
+                    if (questionsByType.size() < count) {
+                        throw new ServiceRuntimeException("题库 " + currentRepoId + " 中类型为" + quType + "的题目数量不足" + count + "个！");
+                    }
+                    List<Integer> typeQuestionIds = questionsByType.stream().map(Question::getId).collect(Collectors.toList());
+                    Collections.shuffle(typeQuestionIds);
+                    List<Integer> sampledIds = typeQuestionIds.subList(0, count);
+                    // 插入试题
+                    if (!sampledIds.isEmpty()) {
+                        for (Integer qId : sampledIds) {
+                            questionSortMap.put(qId, sortCounter); // 为每个问题ID分配sort值
+                            sortCounter++; // 每插入一题，sort计数器增加
+                        }
+                        // 准备数据结构以符合Mapper方法的输入要求
+                        List<Map<String, Object>> questionDetails = new ArrayList<>();
+                        for (Map.Entry<Integer, Integer> sortEntry : questionSortMap.entrySet()) {
+                            Map<String, Object> detail = new HashMap<>();
+                            detail.put("questionId", sortEntry.getKey());
+                            detail.put("sort", sortEntry.getValue());
+                            questionDetails.add(detail);
+                        }
+                        int examQueRows = examQuestionMapper.insertQuestion(examId, quType, quScore, questionDetails);
+                        if (examQueRows < 1) {
+                            throw new ServiceRuntimeException("创建考试失败");
+                        }
+                    }
+                }
             }
         }
         return Result.success("创建考试成功");
@@ -1225,5 +1269,62 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
                 out.add(row.getQuestionId());
             }
         }
+    }
+
+    private List<Integer> parseCsvToIntList(String raw, String fieldName) {
+        if (StringUtils.isBlank(raw)) {
+            throw new ServiceRuntimeException(fieldName + "不能为空");
+        }
+        try {
+            return Arrays.stream(raw.split(","))
+                    .map(String::trim)
+                    .filter(StringUtils::isNotBlank)
+                    .map(Integer::parseInt)
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            throw new ServiceRuntimeException(fieldName + "格式错误");
+        }
+    }
+
+    private Integer parseFirstIntOrNull(String raw, String fieldName) {
+        if (StringUtils.isBlank(raw)) {
+            return null;
+        }
+        List<Integer> values = parseCsvToIntList(raw, fieldName);
+        return values.isEmpty() ? null : values.get(0);
+    }
+
+    private List<Integer> expandPerRepoValues(String raw, int repoSize, String fieldName) {
+        List<Integer> values = parseCsvToIntList(raw, fieldName);
+        if (values.size() == repoSize) {
+            return values;
+        }
+        if (values.size() == 1) {
+            return Collections.nCopies(repoSize, values.get(0));
+        }
+        throw new ServiceRuntimeException(fieldName + "与题库数量不一致");
+    }
+
+    private int sumList(List<Integer> values) {
+        return values.stream().filter(Objects::nonNull).mapToInt(Integer::intValue).sum();
+    }
+
+    private int resolveUnifiedScore(List<Integer> counts, List<Integer> scores, String typeName) {
+        Integer score = 0;
+        for (int i = 0; i < counts.size(); i++) {
+            Integer count = counts.get(i);
+            Integer currentScore = scores.get(i);
+            if (count != null && count > 0) {
+                if (currentScore == null || currentScore < 0) {
+                    throw new ServiceRuntimeException(typeName + "分值配置错误");
+                }
+                if (score == 0) {
+                    score = currentScore;
+                } else if (!Objects.equals(score, currentScore)) {
+                    throw new ServiceRuntimeException(typeName + "分值必须统一");
+                }
+            }
+        }
+        return score;
     }
 }
