@@ -60,9 +60,21 @@ public class ExcelUtils {
     private static final NumberFormat NUMBER_FORMAT = NumberFormat.getNumberInstance();
 
 
+    /** 按文件名后缀识别 Excel（避免「a.b.xlsx」被误判、并与大小写无关）。 */
     public static boolean isExcel(String filename) {
-        String lastName = filename.substring(filename.indexOf(".") + 1);
-        return lastName.equalsIgnoreCase("xls") || lastName.equalsIgnoreCase("xlsx");
+        if (filename == null || filename.isEmpty()) {
+            return false;
+        }
+        String n = filename.toLowerCase(Locale.ROOT);
+        return n.endsWith(".xls") || n.endsWith(".xlsx");
+    }
+
+    /** 是否为题库导入用 JSON 文件（扩展名 .json，大小写不敏感）。 */
+    public static boolean isJson(String filename) {
+        if (filename == null || filename.isEmpty()) {
+            return false;
+        }
+        return filename.toLowerCase(Locale.ROOT).endsWith(".json");
     }
 
     public static <T> List<T> readFile(File file, Class<T> clazz) throws Exception {

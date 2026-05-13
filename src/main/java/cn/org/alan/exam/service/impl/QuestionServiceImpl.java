@@ -11,11 +11,14 @@ import cn.org.alan.exam.model.entity.Option;
 import cn.org.alan.exam.model.entity.Question;
 import cn.org.alan.exam.model.form.question.QuestionExcelFrom;
 import cn.org.alan.exam.model.form.question.QuestionFrom;
+import cn.org.alan.exam.model.form.question.QuestionJsonImportRow;
 import cn.org.alan.exam.model.vo.question.QuestionVO;
 import cn.org.alan.exam.service.IQuestionService;
-import cn.org.alan.exam.utils.file.FileService;
 import cn.org.alan.exam.utils.SecurityUtil;
 import cn.org.alan.exam.utils.excel.ExcelUtils;
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.StringUtils;
@@ -28,10 +31,11 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 /**
- * 试题全生命周期：录入与选项联动、分页检索、Excel 批量导入、图片题干上传及逻辑删除；
+ * 试题全生命周期：录入与选项联动、分页检索、Excel/JSON 批量导入、图片题干上传及逻辑删除；
  * 权限上区分教师自有题库与管理员。
  *
  * @author WeiJin
@@ -153,55 +157,194 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
     }
 
     /**
-     * 将 Excel 模板试题导入指定题库 {@code id}：逐题插入并批量插入选项，简答题选项默认标记为正确；
-     * 支持「材料组编号 + 共用材料题干」多行导入为同一父题下多个小题。
+     * 将 Excel 或 JSON 模板试题导入指定题库 {@code id}：逐题插入并批量插入选项，简答题选项默认标记为正确；
+     * 支持「材料组编号 + 共用材料题干」多行导入为同一父题下多个小题（Excel 与 JSON 字段语义一致）。
      */
     @SneakyThrows(Exception.class)
     @Override
     @Transactional
     public Result<String> importQuestion(Integer id, MultipartFile file) {
-        if (!ExcelUtils.isExcel(Objects.requireNonNull(file.getOriginalFilename()))) {
-            throw new ServiceRuntimeException("该文件不是一个合法的Excel文件");
+        String filename = file.getOriginalFilename() != null ? file.getOriginalFilename() : "";
+        if (ExcelUtils.isJson(filename)) {
+            try {
+                return importQuestionsFromJson(id, file.getBytes());
+            } catch (IOException e) {
+                return Result.failed("读取上传文件失败：" + e.getMessage());
+            }
+        }
+        if (ExcelUtils.isExcel(filename)) {
+            try {
+                List<QuestionExcelFrom> rows = ExcelUtils.readMultipartFile(file, QuestionExcelFrom.class);
+                Map<String, Integer> stemParentIdByGroup = new LinkedHashMap<>();
+                int rowIndex = 0;
+                for (QuestionExcelFrom excelRow : rows) {
+                    rowIndex++;
+                    String groupCode = QuestionExcelFrom.normalizeStemGroupCode(excelRow.getStemGroupCode());
+                    if (groupCode == null) {
+                        QuestionFrom qf = excelRow.toQuestionFrom();
+                        qf.setParentQuId(null);
+                        persistImportedQuestion(qf, id);
+                        continue;
+                    }
+                    if (!stemParentIdByGroup.containsKey(groupCode)) {
+                        if (StringUtils.isBlank(excelRow.getSharedStemContent())) {
+                            throw new ServiceRuntimeException(String.format(
+                                    "Excel 第 %d 条：已填材料组编号「%s」，本组第一行必须填写「共用材料题干」",
+                                    rowIndex, groupCode));
+                        }
+                        Integer parentId = insertStemParentQuestion(
+                                excelRow.getSharedStemContent().trim(),
+                                StringUtils.isNotBlank(excelRow.getSharedStemImage())
+                                        ? excelRow.getSharedStemImage().trim()
+                                        : null,
+                                id);
+                        stemParentIdByGroup.put(groupCode, parentId);
+                    }
+                    QuestionFrom qf = excelRow.toQuestionFrom();
+                    qf.setParentQuId(stemParentIdByGroup.get(groupCode));
+                    persistImportedQuestion(qf, id);
+                }
+
+                return Result.success("导入试题成功");
+            } catch (ServiceRuntimeException e) {
+                return Result.failed(e.getMessage());
+            } catch (Exception e) {
+                return Result.failed("导入试题失败：" + e.getMessage());
+            }
         }
 
         try {
-            List<QuestionExcelFrom> rows = ExcelUtils.readMultipartFile(file, QuestionExcelFrom.class);
+            byte[] raw = file.getBytes();
+            if (looksLikeJsonUtf8(raw)) {
+                return importQuestionsFromJson(id, raw);
+            }
+        } catch (IOException e) {
+            return Result.failed("读取上传文件失败：" + e.getMessage());
+        }
+        throw new ServiceRuntimeException(
+                "仅支持 Excel（.xls/.xlsx）或 JSON（.json；无扩展名时须为 UTF-8 的 JSON 数组或 {\"questions\":...}）");
+    }
+
+    /**
+     * 跳过空白与 UTF-8 BOM 后，若首字符为 {@code [} 或对象起始符，则视为 JSON 文本（与扩展名无关）。
+     */
+    private static boolean looksLikeJsonUtf8(byte[] raw) {
+        if (raw == null || raw.length == 0) {
+            return false;
+        }
+        int i = 0;
+        if (raw.length >= 3 && (raw[0] & 0xFF) == 0xEF && (raw[1] & 0xFF) == 0xBB && (raw[2] & 0xFF) == 0xBF) {
+            i = 3;
+        }
+        while (i < raw.length) {
+            byte b = raw[i];
+            if (b == ' ' || b == '\n' || b == '\r' || b == '\t') {
+                i++;
+                continue;
+            }
+            return b == '[' || b == '{';
+        }
+        return false;
+    }
+
+    /**
+     * JSON 根为试题对象数组，或 {@code {"questions":[...]}}；单题字段见 {@link QuestionJsonImportRow}。
+     */
+    private Result<String> importQuestionsFromJson(Integer id, byte[] fileBytes) {
+        try {
+            List<QuestionJsonImportRow> rows = parseJsonQuestionRows(fileBytes);
+            if (rows.isEmpty()) {
+                return Result.failed("JSON 中未包含任何试题");
+            }
             Map<String, Integer> stemParentIdByGroup = new LinkedHashMap<>();
             int rowIndex = 0;
-            for (QuestionExcelFrom excelRow : rows) {
+            for (QuestionJsonImportRow jsonRow : rows) {
                 rowIndex++;
-                String groupCode = QuestionExcelFrom.normalizeStemGroupCode(excelRow.getStemGroupCode());
+                String groupCode = QuestionExcelFrom.normalizeStemGroupCode(jsonRow.getStemGroupCode());
                 if (groupCode == null) {
-                    QuestionFrom qf = excelRow.toQuestionFrom();
+                    QuestionFrom qf = jsonRow.toQuestionFrom(rowIndex);
                     qf.setParentQuId(null);
                     persistImportedQuestion(qf, id);
                     continue;
                 }
                 if (!stemParentIdByGroup.containsKey(groupCode)) {
-                    if (StringUtils.isBlank(excelRow.getSharedStemContent())) {
+                    if (StringUtils.isBlank(jsonRow.getSharedStemContent())) {
                         throw new ServiceRuntimeException(String.format(
-                                "Excel 第 %d 条：已填材料组编号「%s」，本组第一行必须填写「共用材料题干」",
+                                "JSON 第 %d 条：已填材料组编号「%s」，本组第一题须填写 sharedStemContent（共用材料题干）",
                                 rowIndex, groupCode));
                     }
                     Integer parentId = insertStemParentQuestion(
-                            excelRow.getSharedStemContent().trim(),
-                            StringUtils.isNotBlank(excelRow.getSharedStemImage())
-                                    ? excelRow.getSharedStemImage().trim()
+                            jsonRow.getSharedStemContent().trim(),
+                            StringUtils.isNotBlank(jsonRow.getSharedStemImage())
+                                    ? jsonRow.getSharedStemImage().trim()
                                     : null,
                             id);
                     stemParentIdByGroup.put(groupCode, parentId);
                 }
-                QuestionFrom qf = excelRow.toQuestionFrom();
+                QuestionFrom qf = jsonRow.toQuestionFrom(rowIndex);
                 qf.setParentQuId(stemParentIdByGroup.get(groupCode));
                 persistImportedQuestion(qf, id);
             }
-
             return Result.success("导入试题成功");
         } catch (ServiceRuntimeException e) {
             return Result.failed(e.getMessage());
         } catch (Exception e) {
             return Result.failed("导入试题失败：" + e.getMessage());
         }
+    }
+
+    private List<QuestionJsonImportRow> parseJsonQuestionRows(byte[] bytes) {
+        String text = new String(bytes, StandardCharsets.UTF_8).trim();
+        if (text.startsWith("\uFEFF")) {
+            text = text.substring(1);
+        }
+        if (text.isEmpty()) {
+            throw new ServiceRuntimeException("JSON 文件为空");
+        }
+        Object parsed = JSON.parse(text);
+        JSONArray arr;
+        if (parsed instanceof JSONArray) {
+            arr = (JSONArray) parsed;
+        } else if (parsed instanceof JSONObject) {
+            JSONArray nested = ((JSONObject) parsed).getJSONArray("questions");
+            if (nested == null) {
+                throw new ServiceRuntimeException("JSON 格式错误：使用对象根节点时须包含 questions 数组字段");
+            }
+            arr = nested;
+        } else {
+            throw new ServiceRuntimeException("JSON 格式错误：根节点须为题对象数组 [...] 或 {\"questions\":[...]}");
+        }
+        List<QuestionJsonImportRow> rows = new ArrayList<>(arr.size());
+        for (int i = 0; i < arr.size(); i++) {
+            JSONObject o = arr.getJSONObject(i);
+            rows.add(parseOneJsonQuestionRow(o));
+        }
+        return rows;
+    }
+
+    private static QuestionJsonImportRow parseOneJsonQuestionRow(JSONObject o) {
+        QuestionJsonImportRow row = new QuestionJsonImportRow();
+        row.setQuType(o.getInteger("quType"));
+        row.setContent(o.getString("content"));
+        row.setAnalysis(o.getString("analysis"));
+        row.setImage(o.getString("image"));
+        row.setStemGroupCode(o.getString("stemGroupCode"));
+        row.setSharedStemContent(o.getString("sharedStemContent"));
+        row.setSharedStemImage(o.getString("sharedStemImage"));
+        JSONArray opts = o.getJSONArray("options");
+        List<QuestionJsonImportRow.JsonOption> list = new ArrayList<>();
+        if (opts != null) {
+            for (int j = 0; j < opts.size(); j++) {
+                JSONObject jo = opts.getJSONObject(j);
+                QuestionJsonImportRow.JsonOption opt = new QuestionJsonImportRow.JsonOption();
+                opt.setContent(jo.getString("content"));
+                opt.setIsRight(QuestionJsonImportRow.normalizeIsRight(jo.get("isRight")));
+                opt.setImage(jo.getString("image"));
+                list.add(opt);
+            }
+        }
+        row.setOptions(list);
+        return row;
     }
 
     /**

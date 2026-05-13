@@ -65,7 +65,7 @@ public interface IQuestionService extends IService<Question> {
      * 批量导入试题
      *
      * @param id   题库Id
-     * @param file Excel文件
+     * @param file Excel（.xls/.xlsx）或 JSON（.json）文件
      * @return 响应结果
      */
     Result<String> importQuestion(Integer id, MultipartFile file);

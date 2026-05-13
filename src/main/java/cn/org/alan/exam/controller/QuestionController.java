@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 /**
- * 试题 CRUD、分页、Excel 导入及题干图片上传；教师与管理员可用。
+ * 试题 CRUD、分页、Excel/JSON 导入及题干图片上传；教师与管理员可用。
  *
  * @author WeiJin
  */
@@ -79,7 +79,7 @@ public class QuestionController {
         return iQuestionService.updateQuestion(questionFrom);
     }
 
-    /** POST 将 Excel 导入至指定题库 {@code id}。 */
+    /** POST 将 Excel（.xls/.xlsx）或 JSON（.json）导入至指定题库 {@code id}。 */
     @ApiOperation("批量导入试题")
     @PostMapping("/import/{id}")
     @PreAuthorize("hasAnyAuthority('role_teacher','role_admin')")
