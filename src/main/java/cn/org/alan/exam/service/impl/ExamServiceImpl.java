@@ -84,16 +84,44 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
     @Override
     @Transactional
     public Result<String> createExam(ExamAddForm examAddForm) {
-        // 解析前端参数：兼容单题库（1）与多题库（1,2,3）随机抽题场景
-        List<Integer> repoIds = parseCsvToIntList(examAddForm.getRepoId(), "题库ID");
-        List<Integer> radioCountsByRepo = expandPerRepoValues(examAddForm.getRadioCount(), repoIds.size(), "单选题数量");
-        List<Integer> multiCountsByRepo = expandPerRepoValues(examAddForm.getMultiCount(), repoIds.size(), "多选题数量");
-        List<Integer> judgeCountsByRepo = expandPerRepoValues(examAddForm.getJudgeCount(), repoIds.size(), "判断题数量");
-        List<Integer> saqCountsByRepo = expandPerRepoValues(examAddForm.getSaqCount(), repoIds.size(), "简答题数量");
-        List<Integer> radioScoresByRepo = expandPerRepoValues(examAddForm.getRadioScore(), repoIds.size(), "单选题分数");
-        List<Integer> multiScoresByRepo = expandPerRepoValues(examAddForm.getMultiScore(), repoIds.size(), "多选题分数");
-        List<Integer> judgeScoresByRepo = expandPerRepoValues(examAddForm.getJudgeScore(), repoIds.size(), "判断题分数");
-        List<Integer> saqScoresByRepo = expandPerRepoValues(examAddForm.getSaqScore(), repoIds.size(), "简答题分数");
+        final boolean manualPick = "0".equals(examAddForm.getAddQuype());
+        List<Question> preloadedManualQuestions = null;
+        List<Integer> repoIdsForInsert;
+        int expandSize;
+        if (manualPick) {
+            if (StringUtils.isBlank(examAddForm.getQuIds())) {
+                throw new ServiceException("自己选题的时候不能不选试题");
+            }
+            List<Integer> selectedQuIds = Arrays.stream(examAddForm.getQuIds().split(","))
+                    .map(String::trim)
+                    .filter(StringUtils::isNotBlank)
+                    .map(Integer::parseInt)
+                    .collect(Collectors.toList());
+            preloadedManualQuestions = questionMapper.selectBatchIds(selectedQuIds);
+            LinkedHashSet<Integer> repoSet = new LinkedHashSet<>();
+            for (Question q : preloadedManualQuestions) {
+                if (q.getRepoId() != null) {
+                    repoSet.add(q.getRepoId());
+                }
+            }
+            if (repoSet.isEmpty()) {
+                throw new ServiceRuntimeException("所选题目未关联题库，无法创建考试");
+            }
+            repoIdsForInsert = new ArrayList<>(repoSet);
+            expandSize = 1;
+        } else {
+            repoIdsForInsert = parseCsvToIntList(examAddForm.getRepoId(), "题库ID");
+            expandSize = repoIdsForInsert.size();
+        }
+
+        List<Integer> radioCountsByRepo = expandPerRepoValues(examAddForm.getRadioCount(), expandSize, "单选题数量");
+        List<Integer> multiCountsByRepo = expandPerRepoValues(examAddForm.getMultiCount(), expandSize, "多选题数量");
+        List<Integer> judgeCountsByRepo = expandPerRepoValues(examAddForm.getJudgeCount(), expandSize, "判断题数量");
+        List<Integer> saqCountsByRepo = expandPerRepoValues(examAddForm.getSaqCount(), expandSize, "简答题数量");
+        List<Integer> radioScoresByRepo = expandPerRepoValues(examAddForm.getRadioScore(), expandSize, "单选题分数");
+        List<Integer> multiScoresByRepo = expandPerRepoValues(examAddForm.getMultiScore(), expandSize, "多选题分数");
+        List<Integer> judgeScoresByRepo = expandPerRepoValues(examAddForm.getJudgeScore(), expandSize, "判断题分数");
+        List<Integer> saqScoresByRepo = expandPerRepoValues(examAddForm.getSaqScore(), expandSize, "简答题分数");
 
         int radioCount = sumList(radioCountsByRepo);
         int multiCount = sumList(multiCountsByRepo);
@@ -145,13 +173,13 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
         }
         // 设置试卷与题库到关联（支持多个题库）
         int examRepoRows = 0;
-        for (Integer repoId : repoIds) {
+        for (Integer repoId : repoIdsForInsert) {
             ExamRepo examRepo = new ExamRepo();
             examRepo.setExamId(exam.getId());
             examRepo.setRepoId(repoId);
             examRepoRows += examRepoMapper.insert(examRepo);
         }
-        if (examRepoRows < repoIds.size()) {
+        if (examRepoRows < repoIdsForInsert.size()) {
             throw new ServiceRuntimeException("创建失败：题库关联写入不完整!");
         }
 
@@ -171,18 +199,16 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
         // 自己选题
         if("0".equals(examAddForm.getAddQuype())){
 
-            if(StringUtils.isBlank(examAddForm.getQuIds())){
-                throw new ServiceException("自己选题的时候不能不选试题");
-            }
             Integer examId = exam.getId();
             // 1. 获取所有选中的题目 ID 列表 (保持原始选择顺序)
-            List<String> selectedQuIdStrings = Arrays.asList(examAddForm.getQuIds().split(","));
-            List<Integer> selectedQuIds = selectedQuIdStrings.stream()
+            List<Integer> selectedQuIds = Arrays.stream(examAddForm.getQuIds().split(","))
+                    .map(String::trim)
+                    .filter(StringUtils::isNotBlank)
                     .map(Integer::parseInt)
                     .collect(Collectors.toList());
 
-            // 2. 批量查询选中的题目详情
-            List<Question> selectedQuestions = questionMapper.selectBatchIds(selectedQuIds);
+            // 2. 批量查询选中的题目详情（创建入口已预加载，此处复用）
+            List<Question> selectedQuestions = preloadedManualQuestions;
             if (selectedQuestions.size() != selectedQuIds.size()) {
                 // 处理可能存在的无效ID情况，可以记录日志或抛出更具体的异常
                 // 或者根据需求决定是否继续或抛出异常
@@ -240,8 +266,8 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
         // 随机抽题
         if("1".equals(examAddForm.getAddQuype())){
             Integer examId = exam.getId();
-            for (int repoIdx = 0; repoIdx < repoIds.size(); repoIdx++) {
-                Integer currentRepoId = repoIds.get(repoIdx);
+            for (int repoIdx = 0; repoIdx < repoIdsForInsert.size(); repoIdx++) {
+                Integer currentRepoId = repoIdsForInsert.get(repoIdx);
                 Map<Integer, Integer> countByType = new HashMap<>();
                 countByType.put(1, radioCountsByRepo.get(repoIdx));
                 countByType.put(2, multiCountsByRepo.get(repoIdx));

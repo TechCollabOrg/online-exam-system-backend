@@ -3,6 +3,7 @@ package cn.org.alan.exam.controller;
 import cn.org.alan.exam.common.result.Result;
 import cn.org.alan.exam.model.vo.score.GradeScoreVO;
 import cn.org.alan.exam.model.vo.score.QuestionAnalyseVO;
+import cn.org.alan.exam.model.vo.score.StudentExamRankPointVO;
 import cn.org.alan.exam.model.vo.score.UserScoreVO;
 import cn.org.alan.exam.service.IExamQuAnswerService;
 import cn.org.alan.exam.service.IUserExamsScoreService;
@@ -15,6 +16,8 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 /**
  * 成绩查询、单题分析与 Excel 导出。
@@ -70,6 +73,14 @@ public class ScoreController {
     @PreAuthorize("hasAnyAuthority('role_teacher','role_admin')")
     public void scoreExport(HttpServletResponse response, @PathVariable("examId") Integer examId, @PathVariable("gradeId") Integer gradeId) {
         iUserExamsScoreService.exportScores(response, examId, gradeId);
+    }
+
+    /** GET 学生：本班各场已参加考试在班级中的名次序列（用于前端曲线）。 */
+    @ApiOperation("学生班级排名变化")
+    @GetMapping("/student-rank-trend")
+    @PreAuthorize("hasAuthority('role_student')")
+    public Result<List<StudentExamRankPointVO>> studentRankTrend() {
+        return iUserExamsScoreService.getStudentRankTrend();
     }
 
 }

@@ -44,9 +44,8 @@ public class ExamAddForm {
     @Pattern(regexp = "^\\d+(,\\d+)*$|^\\d+$", message = "班级参数错误，请将传输格式改为 1,2,3,4...且至少包含一个班级ID")
     private String gradeIds;
 
-    // 题库ID（支持逗号分隔多题库：1,2,3）
-    @NotBlank(message = "题库ID不能为空")
-    @Pattern(regexp = "^\\d+(,\\d+)*$|^\\d+$", message = "题库参数错误，请使用 1 或 1,2,3 格式")
+    // 题库ID（随机抽题必填，支持 1 或 1,2,3）；自己选题时由服务端根据所选试题推导，可留空
+    @Pattern(regexp = "^$|^\\d+(,\\d+)*$|^\\d+$", message = "题库参数错误，请使用 1 或 1,2,3 格式")
     private String repoId;
 
     // 证书id（支持逗号分隔，服务端仅取第一个）

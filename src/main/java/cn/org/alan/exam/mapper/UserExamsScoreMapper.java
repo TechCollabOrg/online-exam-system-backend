@@ -4,9 +4,12 @@ import cn.org.alan.exam.model.entity.UserExamsScore;
 import cn.org.alan.exam.model.vo.answer.UncorrectedUserVO;
 import cn.org.alan.exam.model.vo.score.ExportScoreVO;
 import cn.org.alan.exam.model.vo.score.GradeScoreVO;
+import cn.org.alan.exam.model.vo.score.MyExamScoreRow;
+import cn.org.alan.exam.model.vo.score.PeerExamScoreRow;
 import cn.org.alan.exam.model.vo.score.UserScoreVO;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 
@@ -60,5 +63,15 @@ public interface UserExamsScoreMapper extends BaseMapper<UserExamsScore> {
      * @return 查询结果
      */
     IPage<UncorrectedUserVO> uncorrectedUser(IPage<UncorrectedUserVO> page, Integer examId, String realName);
+
+    /**
+     * 当前学生已交卷且已出分（含无简答题）的考试记录，按交卷时间升序。
+     */
+    List<MyExamScoreRow> listMyCompletedExamScores(@Param("userId") Integer userId);
+
+    /**
+     * 指定班级在若干场考试下的所有学生得分（用于计算班级名次）。
+     */
+    List<PeerExamScoreRow> listClassScoresForExams(@Param("gradeId") Integer gradeId, @Param("examIds") List<Integer> examIds);
 
 }

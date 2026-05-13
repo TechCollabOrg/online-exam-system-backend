@@ -3,11 +3,13 @@ package cn.org.alan.exam.service;
 import cn.org.alan.exam.common.result.Result;
 import cn.org.alan.exam.model.entity.UserExamsScore;
 import cn.org.alan.exam.model.vo.score.GradeScoreVO;
+import cn.org.alan.exam.model.vo.score.StudentExamRankPointVO;
 import cn.org.alan.exam.model.vo.score.UserScoreVO;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 import javax.servlet.http.HttpServletResponse;
+import java.util.List;
 
 /**
  * 考试成绩：班级成绩统计分页、单场得分明细、导出、缺考/待阅卷用户分页。
@@ -47,4 +49,9 @@ public interface IUserExamsScoreService extends IService<UserExamsScore> {
      * @return 响应结果
      */
     Result<IPage<GradeScoreVO>> getExamScoreInfo(Integer pageNum, Integer pageSize, String examTitle, Integer gradeId);
+
+    /**
+     * 学生：本班各场已参加考试的名次变化数据（按交卷时间排序）。
+     */
+    Result<List<StudentExamRankPointVO>> getStudentRankTrend();
 }
