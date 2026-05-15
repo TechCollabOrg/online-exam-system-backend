@@ -1,6 +1,7 @@
 package cn.org.alan.exam.model.vo.userbook;
 
 import cn.org.alan.exam.model.entity.Option;
+import cn.org.alan.exam.model.vo.question.QuestionSubItemVO;
 import lombok.Data;
 
 import java.util.List;
@@ -38,4 +39,7 @@ public class BookOneQuVO {
     private String stemContent;
     private String stemImage;
     private Integer parentQuId;
+
+    /** 复合题小题列表（quType=5） */
+    private List<QuestionSubItemVO> subItemList;
 }

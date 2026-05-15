@@ -593,13 +593,13 @@ CREATE TABLE `t_question` (
   `id` int(11) NOT NULL AUTO_INCREMENT COMMENT 'id   试题表',
   `qu_type` varchar(255) COLLATE utf8mb4_bin NOT NULL COMMENT '试题类型',
   `image` mediumtext COLLATE utf8mb4_bin COMMENT '试题图片（单张 URL 或多张以 ### 拼接）',
-  `content` text COLLATE utf8mb4_bin NOT NULL COMMENT '题干',
+  `content` mediumtext COLLATE utf8mb4_bin NOT NULL COMMENT '题干（可为含多图的 HTML）；复合题为共用材料',
+  `sub_items` mediumtext COLLATE utf8mb4_bin DEFAULT NULL COMMENT '复合题（题型5）小题 JSON',
   `create_time` datetime NOT NULL COMMENT '创建时间',
   `analysis` text COLLATE utf8mb4_bin COMMENT '题目分析',
   `repo_id` int(11) DEFAULT NULL COMMENT '题库id',
   `user_id` int(11) DEFAULT NULL COMMENT '用户id',
   `is_deleted` int(11) NOT NULL DEFAULT '0' COMMENT '逻辑删除：0代表未删除，1代表删除',
-  `parent_qu_id` int(11) DEFAULT NULL COMMENT '共用题干所属题目 id（t_question.id）；非空表示本题为该题干下的小题',
   PRIMARY KEY (`id`) USING BTREE
 ) ENGINE=InnoDB AUTO_INCREMENT=730 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin ROW_FORMAT=DYNAMIC;
 

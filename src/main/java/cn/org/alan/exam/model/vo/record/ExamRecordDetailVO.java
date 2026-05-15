@@ -1,57 +1,43 @@
 package cn.org.alan.exam.model.vo.record;
 
 import cn.org.alan.exam.model.entity.Option;
+import cn.org.alan.exam.model.vo.question.QuestionSubItemVO;
 import lombok.Data;
 
 import java.util.List;
 
 /**
- * 考试回顾详情中单题：选项、用户答案、标准答案与解析。
- *
- * @author Alan
- * @since 2024/4/30
+ * 考后试卷解析单题 VO。
  */
 @Data
 public class ExamRecordDetailVO {
-    // 1、题干 2、选项 3、自己的答案 4、正确的答案 5、是否正确 6、试题分析
-    /**
-     * 题干
-     */
-    private String title;
-    /**
-     * 题干图片
-     */
+
     private String image;
-    /**
-     * 选项
-     */
-    private List<Option> option;
-    /**
-     * 我的答案
-     */
-    private String myOption;
-    /**
-     * 正确答案
-     */
-    private String rightOption;
-    /**
-     * 是否正确
-     */
-    private Integer isRight;
-    /**
-     * 试题分析
-     */
-    private String analyse;
-    /**
-     * 试题类型
-     */
+
+    private String title;
+
     private Integer quType;
+
+    private String analyse;
+
+    private List<Option> option;
+
+    private String rightOption;
+
+    private List<QuestionSubItemVO> subItemList;
+
+    /** 用户作答（客观题为选项序号等，简答题为文本） */
+    private String myOption;
+
+    /** 是否正确：1 对 0 错 -1 未判（如简答） */
+    private Integer isRight;
+
+    /** 子题时的父题 ID */
+    private Integer parentQuId;
 
     /** 共用题干正文 */
     private String stemContent;
-    /** 共用题干附图 */
-    private String stemImage;
-    /** 父题 id */
-    private Integer parentQuId;
 
+    /** 共用题干图片 */
+    private String stemImage;
 }

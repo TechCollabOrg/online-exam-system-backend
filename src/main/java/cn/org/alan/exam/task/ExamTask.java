@@ -7,6 +7,8 @@ import cn.org.alan.exam.model.enums.ExamState;
 import cn.org.alan.exam.model.vo.exam.ExamQuDetailVO;
 import cn.org.alan.exam.service.IAutoScoringService;
 import cn.org.alan.exam.utils.ClassTokenGenerator;
+import cn.org.alan.exam.utils.ExamGradingUtil;
+import cn.org.alan.exam.utils.QuestionSubItemsUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import lombok.extern.slf4j.Slf4j;
@@ -20,7 +22,9 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 考试相关定时任务：扫描「进行中」的 {@link UserExamsScore}，在用户答题时长超过试卷限定时间后触发自动交卷。
@@ -44,6 +48,8 @@ public class ExamTask {
     private CertificateUserMapper certificateUserMapper;
     @Resource
     private ExamMapper examMapper;
+    @Resource
+    private QuestionMapper questionMapper;
     @Resource
     private IAutoScoringService autoScoringService;
 
@@ -142,22 +148,26 @@ public class ExamTask {
         userExamsScore.setUserScore(0);
         userExamsScore.setState(1);
 
+        insertUnansweredSubjectiveAnswers(ues.getExamId(), ues.getUserId());
+
         // 查询用户答题记录
         LambdaQueryWrapper<ExamQuAnswer> examQuAnswerLambdaQuery = new LambdaQueryWrapper<>();
         examQuAnswerLambdaQuery.eq(ExamQuAnswer::getUserId, ues.getUserId())
                 .eq(ExamQuAnswer::getExamId, ues.getExamId());
         List<ExamQuAnswer> examQuAnswer = examQuAnswerMapper.selectList(examQuAnswerLambdaQuery);
+        Map<Integer, Integer> questionScoreMap = loadExamQuestionScoreMap(ues.getExamId());
         // 客观分
         List<UserBook> userBookArrayList = new ArrayList<>();
+        boolean hasManualReview = false;
         for (ExamQuAnswer temp : examQuAnswer) {
-            if (temp.getIsRight() == 1) {
-                if (temp.getQuestionType() == 1) {
-                    userExamsScore.setUserScore(userExamsScore.getUserScore() + examOne.getRadioScore());
-                } else if (temp.getQuestionType() == 2) {
-                    userExamsScore.setUserScore(userExamsScore.getUserScore() + examOne.getMultiScore());
-                } else if (temp.getQuestionType() == 3) {
-                    userExamsScore.setUserScore(userExamsScore.getUserScore() + examOne.getJudgeScore());
+            if (temp.getIsRight() != null && temp.getIsRight() == 1) {
+                Integer earned = resolveEarnedScore(questionScoreMap, examOne, temp.getQuestionId(), temp.getQuestionType());
+                if (earned != null) {
+                    userExamsScore.setUserScore(userExamsScore.getUserScore() + earned);
                 }
+            } else if (temp.getIsRight() != null && temp.getIsRight() == -1) {
+                // 简答题或含简答子题的复合题，待人工阅卷，不加入错题本
+                hasManualReview = true;
             } else if (temp.getIsRight() == 0) {
                 UserBook userBook = new UserBook();
                 userBook.setExamId(ues.getExamId());
@@ -189,8 +199,8 @@ public class ExamTask {
         userExamsScoreLambdaUpdate.eq(UserExamsScore::getUserId, ues.getUserId())
                 .eq(UserExamsScore::getExamId, ues.getExamId());
         userExamsScoreMapper.update(userExamsScore, userExamsScoreLambdaUpdate);
-        // 判断是否有简答题
-        if (examOne.getSaqCount() != 0) {
+        if (ExamGradingUtil.examPaperNeedsManualGrading(ues.getExamId(), examQuestionMapper, questionMapper)
+                || hasManualReview) {
             LambdaUpdateWrapper<UserExamsScore> userExamsScoreLambdaUpdateWrapper = new LambdaUpdateWrapper<>();
             userExamsScoreLambdaUpdateWrapper.set(UserExamsScore::getWhetherMark, 0)
                     .eq(UserExamsScore::getExamId, ues.getExamId())
@@ -239,6 +249,89 @@ public class ExamTask {
                 .eq(UserExamsScore::getUserId, ues.getUserId());
         userExamsScoreMapper.update(userExamsScoreLambdaUpdateWrapper);
         return Result.success("交卷成功");
+    }
+
+    /** 自动交卷前补录未作答的简答题/复合题，避免阅卷列表漏题。 */
+    private void insertUnansweredSubjectiveAnswers(Integer examId, Integer userId) {
+        List<ExamQuestion> unansweredSaq = examQuestionMapper.getUnansweredSaqQuestions(examId, userId);
+        if (unansweredSaq != null) {
+            for (ExamQuestion question : unansweredSaq) {
+                ExamQuAnswer row = new ExamQuAnswer();
+                row.setExamId(examId);
+                row.setUserId(userId);
+                row.setQuestionId(question.getQuestionId());
+                row.setQuestionType(4);
+                row.setAnswerContent("");
+                row.setIsRight(0);
+                examQuAnswerMapper.insert(row);
+            }
+        }
+        List<ExamQuestion> unansweredCompound = examQuestionMapper.getUnansweredCompoundQuestions(examId, userId);
+        if (unansweredCompound != null) {
+            for (ExamQuestion question : unansweredCompound) {
+                Question compoundQu = questionMapper.selectById(question.getQuestionId());
+                ExamQuAnswer row = new ExamQuAnswer();
+                row.setExamId(examId);
+                row.setUserId(userId);
+                row.setQuestionId(question.getQuestionId());
+                row.setQuestionType(5);
+                row.setAnswerContent("{}");
+                row.setIsRight(gradeCompoundForHandExam(compoundQu, "{}"));
+                examQuAnswerMapper.insert(row);
+            }
+        }
+    }
+
+    private int gradeCompoundForHandExam(Question question, String answerJson) {
+        if (question == null || !Integer.valueOf(5).equals(question.getQuType())) {
+            return 0;
+        }
+        List<cn.org.alan.exam.model.form.question.QuestionSubItemForm> subItems =
+                QuestionSubItemsUtil.parseForms(question.getSubItems());
+        if (subItems.isEmpty()) {
+            return 0;
+        }
+        for (cn.org.alan.exam.model.form.question.QuestionSubItemForm sub : subItems) {
+            if (sub != null && Integer.valueOf(4).equals(sub.getQuType())) {
+                return -1;
+            }
+        }
+        return 0;
+    }
+
+    private Map<Integer, Integer> loadExamQuestionScoreMap(Integer examId) {
+        LambdaQueryWrapper<ExamQuestion> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(ExamQuestion::getExamId, examId);
+        List<ExamQuestion> list = examQuestionMapper.selectList(wrapper);
+        Map<Integer, Integer> map = new HashMap<>();
+        for (ExamQuestion eq : list) {
+            if (eq.getQuestionId() != null && eq.getScore() != null) {
+                map.put(eq.getQuestionId(), eq.getScore());
+            }
+        }
+        return map;
+    }
+
+    private Integer resolveEarnedScore(Map<Integer, Integer> questionScoreMap, Exam exam, Integer questionId, Integer questionType) {
+        if (questionId != null && questionScoreMap.containsKey(questionId)) {
+            return questionScoreMap.get(questionId);
+        }
+        if (questionType == null || exam == null) {
+            return null;
+        }
+        if (questionType == 1) {
+            return exam.getRadioScore();
+        }
+        if (questionType == 2) {
+            return exam.getMultiScore();
+        }
+        if (questionType == 3) {
+            return exam.getJudgeScore();
+        }
+        if (questionType == 4 || questionType == 5) {
+            return exam.getSaqScore();
+        }
+        return null;
     }
 
 }

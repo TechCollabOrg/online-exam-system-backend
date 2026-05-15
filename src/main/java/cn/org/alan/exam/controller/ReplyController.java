@@ -29,14 +29,14 @@ public class ReplyController {
     /** POST 发表评论/回复。 */
     @PostMapping("add")
     @ApiOperation("添加回复")
-    @PreAuthorize("hasAnyAuthority('role_student,role_teacher')")
+    @PreAuthorize("hasAnyAuthority('role_student','role_teacher')")
     public Result<Reply> addReply(@RequestBody ReplyForm replyForm) {
         Reply reply = replyService.addReply(replyForm);
         return Result.success("回复成功", reply);
     }
 
     /** DELETE 删除回复（楼主或本人，逻辑在 Service）。 */
-    @PreAuthorize("hasAnyAuthority('role_student,role_teacher')")
+    @PreAuthorize("hasAnyAuthority('role_student','role_teacher')")
     @ApiOperation("删除回复")
     @DeleteMapping("/delete/{id}")
     public Result<Integer> deleteReply(@PathVariable("id") Integer id) {
@@ -47,7 +47,7 @@ public class ReplyController {
     /**
      * GET 某讨论下回复列表；{@code orderBy}：1 时间升序、2 时间降序、3 点赞升序、4 点赞降序（与 Mapper 约定一致）。
      */
-    @PreAuthorize("hasAnyAuthority('role_student,role_teacher')")
+    @PreAuthorize("hasAnyAuthority('role_student','role_teacher')")
     @ApiOperation("根据讨论id获取评论")
     @GetMapping("/query/{orderBy}/{id}")
     public Result<List<ReplyVo>> queryReplyByDiscussionId(@PathVariable("orderBy") Integer orderBy, @PathVariable("id") Integer id) {

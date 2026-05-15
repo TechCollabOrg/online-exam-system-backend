@@ -62,6 +62,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                         "/swagger-resources/configuration/security",
                         // 其他需要允许匿名访问的路径，如文档页面、WebSocket 相关路径等
                         "/doc.html",
+                        "/websocket",
                         "/ws/**",
                         "/ws-app/**",
                         // 本地磁盘存储（storage.type=local）时，头像/题干图片通过该路径匿名读取

@@ -15,8 +15,12 @@ import cn.org.alan.exam.model.vo.score.PeerExamScoreRow;
 import cn.org.alan.exam.model.vo.score.StudentExamRankPointVO;
 import cn.org.alan.exam.model.vo.score.UserScoreVO;
 import cn.org.alan.exam.service.IUserExamsScoreService;
+import cn.org.alan.exam.mapper.ExamQuestionMapper;
+import cn.org.alan.exam.mapper.QuestionMapper;
+import cn.org.alan.exam.utils.ExamGradingUtil;
 import cn.org.alan.exam.utils.SecurityUtil;
 import cn.org.alan.exam.utils.excel.ExcelUtils;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -31,6 +35,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -46,6 +51,10 @@ public class UserExamsScoreServiceImpl extends ServiceImpl<UserExamsScoreMapper,
     private ExamMapper examMapper;
     @Resource
     private UserGradeMapper userGradeMapper;
+    @Resource
+    private ExamQuestionMapper examQuestionMapper;
+    @Resource
+    private QuestionMapper questionMapper;
 
     /**
      * 多条件分页查询成绩列表（班级、考试、真实姓名模糊），返回 VO 分页。
@@ -86,6 +95,7 @@ public class UserExamsScoreServiceImpl extends ServiceImpl<UserExamsScoreMapper,
         if (gradeIdList.isEmpty()) {
             throw new ServiceRuntimeException("教师还没加入班级暂无数据");
         }
+        repairObjectiveOnlyPendingMarks();
         Integer roleCode = SecurityUtil.getRoleCode();
         page = userExamsScoreMapper.scoreStatistics(page, gradeId, examTitle, userId, roleCode, gradeIdList);
         return Result.success("查询成功", page);
@@ -135,6 +145,33 @@ public class UserExamsScoreServiceImpl extends ServiceImpl<UserExamsScoreMapper,
             out.add(vo);
         }
         return Result.success("查询成功", out);
+    }
+
+    /**
+     * 修复历史数据：全客观卷被误标 whether_mark=0 时，恢复为 -1 以便成绩统计展示。
+     */
+    private void repairObjectiveOnlyPendingMarks() {
+        LambdaQueryWrapper<UserExamsScore> qw = new LambdaQueryWrapper<>();
+        qw.eq(UserExamsScore::getState, 1).eq(UserExamsScore::getWhetherMark, 0);
+        List<UserExamsScore> pending = userExamsScoreMapper.selectList(qw);
+        if (pending == null || pending.isEmpty()) {
+            return;
+        }
+        Set<Integer> examIds = pending.stream()
+                .map(UserExamsScore::getExamId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        for (Integer examId : examIds) {
+            if (ExamGradingUtil.examPaperNeedsManualGrading(examId, examQuestionMapper, questionMapper)) {
+                continue;
+            }
+            LambdaUpdateWrapper<UserExamsScore> uw = new LambdaUpdateWrapper<>();
+            uw.eq(UserExamsScore::getExamId, examId)
+                    .eq(UserExamsScore::getState, 1)
+                    .eq(UserExamsScore::getWhetherMark, 0)
+                    .set(UserExamsScore::getWhetherMark, -1);
+            userExamsScoreMapper.update(null, uw);
+        }
     }
 
     /**

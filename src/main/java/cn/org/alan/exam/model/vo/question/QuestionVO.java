@@ -1,42 +1,45 @@
 package cn.org.alan.exam.model.vo.question;
 
 import cn.org.alan.exam.model.entity.Option;
-import com.fasterxml.jackson.annotation.JsonFormat;
+import cn.org.alan.exam.model.form.question.QuestionSubItemForm;
 import lombok.Data;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * 试题详情/编辑回显：题干、类型、选项列表与解析等。
- *
- * @author WeiJin
- * @since 2024/4/2
+ * 试题详情 VO。
  */
 @Data
 public class QuestionVO {
+
     private Integer id;
-    // 题干
-    private String content;
-    // 题库ID
-    private Integer repoId;
-    // 图片
-    private  String image;
-    // 题库标题
-    private String repoTitle;
-    // 试题类型
+
     private Integer quType;
+
+    private String image;
+
+    private String content;
+
     private String analysis;
-    // 创建试卷
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
+
+    private Integer repoId;
+
+    private String repoTitle;
+
     private LocalDateTime createTime;
-    // 选项列表
+
     private List<Option> options;
 
-    /** 本题在库中的 parent_qu_id */
+    /** 复合题小题（题型 5） */
+    private List<QuestionSubItemForm> subItems;
+
+    /** 子题时的父题 ID（历史多行拆题方案） */
     private Integer parentQuId;
-    /** 父题题干（材料） */
+
+    /** 共用题干正文 */
     private String stemContent;
-    /** 父题附图 */
+
+    /** 共用题干图片 */
     private String stemImage;
 }

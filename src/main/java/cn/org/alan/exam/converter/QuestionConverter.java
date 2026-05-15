@@ -2,10 +2,13 @@ package cn.org.alan.exam.converter;
 
 import cn.org.alan.exam.model.entity.Question;
 import cn.org.alan.exam.model.form.question.QuestionFrom;
+import cn.org.alan.exam.model.form.question.QuestionSubItemForm;
 import cn.org.alan.exam.model.vo.question.QuestionVO;
 import cn.org.alan.exam.model.vo.exercise.QuestionSheetVO;
+import cn.org.alan.exam.utils.QuestionSubItemsUtil;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.Named;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -23,7 +26,8 @@ public interface QuestionConverter {
     /**
      * 后台录入/编辑题目：表单转 {@link Question}。
      */
-    @Mapping(target = "repoId",source = "repoId")
+    @Mapping(target = "repoId", source = "repoId")
+    @Mapping(target = "subItems", source = "subItems", qualifiedByName = "subItemsToJson")
     Question fromToEntity(QuestionFrom questionFrom);
 
     /** 题目实体列表转答题卡简略信息列表。 */
@@ -36,5 +40,16 @@ public interface QuestionConverter {
     QuestionSheetVO entityToVO(Question question);
 
     /** 题目实体转通用题目详情 VO（含选项等扩展字段由 MapStruct 按同名映射）。 */
+    @Mapping(target = "subItems", source = "subItems", qualifiedByName = "jsonToSubItems")
     QuestionVO QuestionToQuestionVO(Question question);
+
+    @Named("subItemsToJson")
+    default String subItemsToJson(List<QuestionSubItemForm> items) {
+        return QuestionSubItemsUtil.toJson(items);
+    }
+
+    @Named("jsonToSubItems")
+    default List<QuestionSubItemForm> jsonToSubItems(String json) {
+        return QuestionSubItemsUtil.parseForms(json);
+    }
 }

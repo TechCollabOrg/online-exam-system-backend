@@ -10,8 +10,8 @@ import java.util.List;
 
 /**
  * Excel 批量导入试题时单行映射字段。
- * <p>支持「材料题 / 多小问」：同一 {@link #stemGroupCode} 的多行共用首行 {@link #sharedStemContent}，
- * 每行 {@link #content} 写单个小问（如 (1)…、(2)…），导入后自动写入 {@code parent_qu_id}。</p>
+ * <p>支持「材料题 / 多小问」：同一 {@link #stemGroupCode} 的多行合并为一条复合题（题型 5），
+ * 首行 {@link #sharedStemContent} 为共用材料，各行 {@link #content} 转为小题。</p>
  *
  * @author WeiJin
  * @since 2024/4/8
@@ -20,7 +20,8 @@ import java.util.List;
 public class QuestionExcelFrom {
     @ExcelImport(value = "试题类型", required = true)
     private Integer quType;
-    @ExcelImport(value = "题干", required = true, unique = true)
+    /** 普通题必填；材料组内子题可为空（共用材料在「共用材料题干」） */
+    @ExcelImport(value = "题干", unique = true)
     private String content;
     @ExcelImport(value = "解析")
     private String analysis;
@@ -70,7 +71,7 @@ public class QuestionExcelFrom {
     @ExcelImport(value = "选项六图片")
     private String image6;
 
-    /** 同一编号的多行视为同一道大题下的多个小题；首行须填「共用材料题干」 */
+    /** 同一编号的多行合并为一条复合题；首行须填「共用材料题干」 */
     @ExcelImport(value = "材料组编号")
     private String stemGroupCode;
     /** 仅本组第一行必填：共用材料（文字），上图用「共用材料题干图片」 */
@@ -91,7 +92,7 @@ public class QuestionExcelFrom {
     }
 
     /**
-     * 将当前 Excel 行转为 {@link QuestionFrom}（不含 {@code parentQuId}，由导入逻辑按组写入）。
+     * 将当前 Excel 行转为 {@link QuestionFrom}（材料组由导入逻辑合并为复合题）。
      */
     public QuestionFrom toQuestionFrom() {
         QuestionFrom questionFrom = new QuestionFrom();

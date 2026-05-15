@@ -28,8 +28,8 @@ public class QuestionFrom {
      * 试题类型
      */
     @NotNull(message = "试题类型(quType)不能为空", groups = QuestionGroup.QuestionAddGroup.class)
-    @Min(value = 1, message = "试题类型(quType)只能是：1单选2多选3判断4简答", groups = QuestionGroup.QuestionAddGroup.class)
-    @Max(value = 4, message = "试题类型(quType)只能是：1单选2多选3判断4简答", groups = QuestionGroup.QuestionAddGroup.class)
+    @Min(value = 1, message = "试题类型(quType)只能是：1单选2多选3判断4简答5复合题", groups = QuestionGroup.QuestionAddGroup.class)
+    @Max(value = 5, message = "试题类型(quType)只能是：1单选2多选3判断4简答5复合题", groups = QuestionGroup.QuestionAddGroup.class)
     private Integer quType;
 
     /**
@@ -61,8 +61,8 @@ public class QuestionFrom {
     private List<Option> options;
 
     /**
-     * 非空时本题仅为某共用题干下的小题；父题在同一题库中且 content/image 为材料区。
+     * 复合题（题型 5）小题列表；共用材料写在 {@link #content}。
      */
-    private Integer parentQuId;
+    private List<QuestionSubItemForm> subItems;
 
 }

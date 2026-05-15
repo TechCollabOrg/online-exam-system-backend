@@ -5,8 +5,6 @@ import com.baomidou.mybatisplus.annotation.TableId;
 
 import lombok.Data;
 
-import javax.validation.constraints.NotBlank;
-
 /**
  * 考试中展示的选项：序号、文本、是否选中（考生视角）。
  *
@@ -33,9 +31,8 @@ public class OptionVO {
     private String image;
 
     /**
-     * 选项内容
+     * 选项内容（客观题为选项文字；简答题为各空参考答案 HTML）
      */
-    @NotBlank(message = "选型内容(content)不能为空")
     private String content;
 
     private Boolean checkout;
@@ -43,4 +40,9 @@ public class OptionVO {
      * 排序
      */
     private Integer sort;
+
+    /**
+     * 简答题多格作答时，该格学生已填内容（与 {@link #content} 题库参考答案区分；客观题不使用）。
+     */
+    private String studentFill;
 }

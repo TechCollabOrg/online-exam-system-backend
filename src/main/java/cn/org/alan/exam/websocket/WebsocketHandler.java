@@ -7,14 +7,13 @@ import org.springframework.stereotype.Component;
 import javax.websocket.*;
 import javax.websocket.server.ServerEndpoint;
 import java.io.IOException;
-import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * JSR-356 WebSocket 端点 {@code /websocket}：按用户 ID 维护会话映射，支持广播文本消息。
  * <p>
  * 前端需在连接 URL 上携带查询参数 {@code userId=…}（见 {@link #getUserIdBySession(Session)}），
- * 同一用户若已存在打开中的会话则不再重复注册。
+ * 同一用户重复连接时会关闭旧会话并注册新会话。
  * </p>
  *
  * @author WeiJin
@@ -41,16 +40,16 @@ public class WebsocketHandler {
      */
     @OnOpen
     public void onOpen(Session session) {
-        // 获取用户id
         Integer userId = getUserIdBySession(session);
-        if (Objects.nonNull(SESSION_MAP.get(userId)) && SESSION_MAP.get(userId).isOpen()) {
-            // 如果map中有该用户的session信息，就不再重复加入连接
+        if (userId == null) {
+            closeQuietly(session);
             return;
         }
-
-        // 加入连接 放入map管理
+        Session existing = SESSION_MAP.get(userId);
+        if (existing != null && existing.isOpen() && !existing.getId().equals(session.getId())) {
+            closeQuietly(existing);
+        }
         SESSION_MAP.put(userId, session);
-
         log.info("[websocket消息]：用户 {} 加入连接，当前连接总数：{}", userId, SESSION_MAP.size());
     }
 
@@ -63,15 +62,14 @@ public class WebsocketHandler {
     @OnClose
     public void onClose(Session session) {
         Integer userId = getUserIdBySession(session);
-        Session existSession = SESSION_MAP.get(userId);
-        if (Objects.isNull(existSession)) {
-            // 获取不到直接不移除
+        if (userId == null) {
             return;
         }
-        // 断开连接从map移除
+        Session existSession = SESSION_MAP.get(userId);
+        if (existSession == null || !existSession.getId().equals(session.getId())) {
+            return;
+        }
         SESSION_MAP.remove(userId);
-
-
         log.info("[websocket消息]：用户 {} 断开连接", userId);
     }
 
@@ -129,7 +127,27 @@ public class WebsocketHandler {
      * @return 用户主键
      */
     private Integer getUserIdBySession(Session session) {
-        String[] arr = session.getRequestURI().getQuery().split("=");
-        return Integer.parseInt(arr[arr.length - 1]);
+        String query = session.getRequestURI().getQuery();
+        if (query == null || !query.contains("userId=")) {
+            return null;
+        }
+        String[] arr = query.split("=");
+        try {
+            return Integer.parseInt(arr[arr.length - 1]);
+        } catch (NumberFormatException e) {
+            log.warn("WebSocket 握手缺少有效 userId: {}", query);
+            return null;
+        }
+    }
+
+    private void closeQuietly(Session session) {
+        if (session == null || !session.isOpen()) {
+            return;
+        }
+        try {
+            session.close();
+        } catch (IOException e) {
+            log.warn("关闭 WebSocket 会话失败: {}", e.getMessage());
+        }
     }
 }

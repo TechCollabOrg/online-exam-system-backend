@@ -11,12 +11,17 @@ import cn.org.alan.exam.model.form.exam.ExamUpdateForm;
 import cn.org.alan.exam.model.form.exam_qu_answer.ExamQuAnswerAddForm;
 import cn.org.alan.exam.model.vo.exam.*;
 import cn.org.alan.exam.model.vo.record.ExamRecordDetailVO;
+import cn.org.alan.exam.model.vo.question.QuestionSubItemVO;
 import cn.org.alan.exam.service.IAutoScoringService;
 import cn.org.alan.exam.service.IExamService;
 import cn.org.alan.exam.service.IOptionService;
 import cn.org.alan.exam.service.IQuestionService;
 import cn.org.alan.exam.utils.ClassTokenGenerator;
+import cn.org.alan.exam.utils.ExamGradingUtil;
+import cn.org.alan.exam.utils.QuestionSubItemsUtil;
 import cn.org.alan.exam.utils.SecurityUtil;
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
 import com.aliyun.oss.ServiceException;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
@@ -150,10 +155,18 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
         exam.setSaqScore(saqScore);
         // 添加考试信息到考试表
         // 计算总分
-        int grossScore = radioCount * radioScore
-                + multiCount * multiScore
-                + judgeCount * judgeScore
-                + saqCount * saqScore;
+        Map<Integer, Integer> quScoreMap = manualPick
+                ? parseQuScoreMap(examAddForm.getQuIds(), examAddForm.getQuScores())
+                : Collections.emptyMap();
+        int grossScore;
+        if (manualPick && !quScoreMap.isEmpty()) {
+            grossScore = quScoreMap.values().stream().mapToInt(Integer::intValue).sum();
+        } else {
+            grossScore = radioCount * radioScore
+                    + multiCount * multiScore
+                    + judgeCount * judgeScore
+                    + saqCount * saqScore;
+        }
         exam.setGrossScore(grossScore);
         // 添加考试信息到考试表
         int examRows = examMapper.insert(exam);
@@ -189,6 +202,7 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
         quTypeToScore.put(2, exam.getMultiScore());
         quTypeToScore.put(3, exam.getJudgeScore());
         quTypeToScore.put(4, exam.getSaqScore());
+        quTypeToScore.put(5, exam.getSaqScore());
         // <"试题类型"，"题目数量">
         Map<Integer, Integer> quTypeToCount = new HashMap<>();
         quTypeToCount.put(1, exam.getRadioCount());
@@ -221,6 +235,7 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
             groupedQuestions.put(2, new ArrayList<>()); // 多选
             groupedQuestions.put(3, new ArrayList<>()); // 判断
             groupedQuestions.put(4, new ArrayList<>()); // 简答
+            groupedQuestions.put(5, new ArrayList<>()); // 复合题
 
             // 为了保持组内相对顺序，我们需要遍历原始选择ID列表
             Map<Integer, Question> questionMap = selectedQuestions.stream()
@@ -254,8 +269,15 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
                     detail.put("sort", sortCounter);
                     sortCounter++; // 递增 sort 值
 
+                    Integer itemScore = quScoreMap.get(question.getId());
+                    if (itemScore == null) {
+                        itemScore = quScore;
+                    }
+                    if (itemScore == null || itemScore <= 0) {
+                        throw new ServiceRuntimeException("题目 ID " + question.getId() + " 未设置有效分值");
+                    }
                     // 调用插入数据库的方法
-                    int examQueRows = examQuestionMapper.insertSingleQuestion(examId, quType, quScore, detail);
+                    int examQueRows = examQuestionMapper.insertSingleQuestion(examId, quType, itemScore, detail);
                     if (examQueRows < 1) {
                         // 考虑事务回滚
                         throw new ServiceRuntimeException("创建考试失败，插入题目关联时出错, Question ID: " + question.getId());
@@ -425,8 +447,8 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
         }
         cl.add(Calendar.MINUTE, byId.getExamDuration());
         examQuestionListVO.setLeftSeconds((cl.getTimeInMillis() - System.currentTimeMillis()) / 1000);
-        // 添加不同类型的试题列表 1：单选 2：多选 3：判断 4：简答
-        for (Integer quType = 1; quType <= 4; quType++) {
+        // 添加不同类型的试题列表 1：单选 2：多选 3：判断 4：简答 5：复合题
+        for (Integer quType = 1; quType <= 5; quType++) {
             // 根据考试ID和试题类型，获取考试与试题的关联列表
             List<ExamQuestion> examQuestionList = examQuestionMapper.getExamQuByExamIdAndQuType(examId, quType);
             // 转换实体类型
@@ -460,9 +482,10 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
             } else if (quType == 4) {
                 // 如果遍历到简答则添加到简答列表
                 examQuestionListVO.setSaqList(examQuestionVOS);
+            } else if (quType == 5) {
+                examQuestionListVO.setCompoundList(examQuestionVOS);
             }
         }
-        enrichExamQuestionParentQuIds(examQuestionListVO);
         return Result.success("查询成功", examQuestionListVO);
     }
 
@@ -487,14 +510,51 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
         examQuDetailVO.setImage(quById.getImage());
         examQuDetailVO.setContent(quById.getContent());
         examQuDetailVO.setQuType(quById.getQuType());
-        fillCompoundStemForExamDetail(quById, examQuDetailVO);
-        // 答案列表
+
+        if (quById.getQuType() == 5) {
+            List<QuestionSubItemVO> subItems = QuestionSubItemsUtil.parseToVoList(quById.getSubItems());
+            LambdaQueryWrapper<ExamQuAnswer> compoundAnsQw = new LambdaQueryWrapper<>();
+            compoundAnsQw.eq(ExamQuAnswer::getQuestionId, quId)
+                    .eq(ExamQuAnswer::getExamId, examId)
+                    .eq(ExamQuAnswer::getUserId, SecurityUtil.getUserId());
+            List<ExamQuAnswer> compoundSaved = examQuAnswerMapper.selectList(compoundAnsQw);
+            String savedContent = null;
+            for (ExamQuAnswer a : compoundSaved) {
+                if (a != null && Integer.valueOf(5).equals(a.getQuestionType())) {
+                    savedContent = a.getAnswerContent();
+                    break;
+                }
+            }
+            QuestionSubItemsUtil.applyCompoundStudentAnswers(subItems, savedContent);
+            examQuDetailVO.setSubItemList(subItems);
+            return Result.success("获取成功", examQuDetailVO);
+        }
+
+        // 答案列表（简答题多格：按 sort 排序；content 为各空参考答案，studentFill 为考生已填）
         LambdaQueryWrapper<Option> optionLambdaQuery = new LambdaQueryWrapper<>();
-        optionLambdaQuery.eq(Option::getQuId, quId);
+        optionLambdaQuery.eq(Option::getQuId, quId).orderByAsc(Option::getSort);
         List<Option> list = optionMapper.selectList(optionLambdaQuery);
         List<OptionVO> optionVOS = examConverter.opListEntityToVO(list);
-        for (OptionVO temp : optionVOS) {
 
+        if (quById.getQuType() == 4) {
+            LambdaQueryWrapper<ExamQuAnswer> saqAnsQw = new LambdaQueryWrapper<>();
+            saqAnsQw.eq(ExamQuAnswer::getQuestionId, quId)
+                    .eq(ExamQuAnswer::getExamId, examId)
+                    .eq(ExamQuAnswer::getUserId, SecurityUtil.getUserId());
+            List<ExamQuAnswer> saqSaved = examQuAnswerMapper.selectList(saqAnsQw);
+            String savedContent = null;
+            for (ExamQuAnswer a : saqSaved) {
+                if (a != null && Integer.valueOf(4).equals(a.getQuestionType())) {
+                    savedContent = a.getAnswerContent();
+                    break;
+                }
+            }
+            applySaqStudentFills(optionVOS, savedContent);
+            examQuDetailVO.setAnswerList(optionVOS);
+            return Result.success("获取成功", examQuDetailVO);
+        }
+
+        for (OptionVO temp : optionVOS) {
             LambdaQueryWrapper<ExamQuAnswer> examQuAnswerLambdaQueryWrapper = new LambdaQueryWrapper<>();
             examQuAnswerLambdaQueryWrapper.eq(ExamQuAnswer::getQuestionId, temp.getQuId())
                     .eq(ExamQuAnswer::getExamId, examId)
@@ -505,19 +565,17 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
                 for (ExamQuAnswer temp1 : examQuAnswers) {
                     Integer questionType = temp1.getQuestionType();
                     String answerId = temp1.getAnswerId();
-                    String answerContent = temp1.getAnswerContent();
                     String idstr = temp.getId().toString();
                     switch (questionType) {
                         case 1:
                         case 3:
-                            if (answerId.equals(idstr)) {
+                            if (answerId != null && answerId.equals(idstr)) {
                                 temp.setCheckout(true);
                             } else {
                                 temp.setCheckout(false);
                             }
                             break;
                         case 2:
-                            // 解析用户作答
                             List<Integer> quIds = Arrays.stream(temp1.getAnswerId().split(","))
                                     .map(Integer::parseInt)
                                     .collect(Collectors.toList());
@@ -527,21 +585,13 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
                                 temp.setCheckout(false);
                             }
                             break;
-                        case 4:
-                            temp.setContent(answerContent);
-                            examQuDetailVO.setAnswerList(optionVOS);
-                            break;
                         default:
                             break;
                     }
                 }
-                ;
             }
-
         }
-        if (quById.getQuType() != 4) {
-            examQuDetailVO.setAnswerList(optionVOS);
-        }
+        examQuDetailVO.setAnswerList(optionVOS);
         return Result.success("获取成功", examQuDetailVO);
     }
 
@@ -573,16 +623,20 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
             examQuCollectVO.setQuType(temp.getQuType());
             // 设置题目ID
             examQuCollectVO.setId(temp.getId());
-            fillCompoundStemForCollect(temp, examQuCollectVO);
 
-            // 查询试题选项
-            LambdaQueryWrapper<Option> optionWrapper = new LambdaQueryWrapper<>();
-            optionWrapper.eq(Option::getQuId, temp.getId());
-            List<Option> options = optionMapper.selectList(optionWrapper);
-            if (temp.getQuType() == 4) {
+            if (temp.getQuType() == 5) {
+                examQuCollectVO.setSubItemList(QuestionSubItemsUtil.parseToVoList(temp.getSubItems()));
                 examQuCollectVO.setOption(null);
             } else {
-                examQuCollectVO.setOption(options);
+                // 查询试题选项
+                LambdaQueryWrapper<Option> optionWrapper = new LambdaQueryWrapper<>();
+                optionWrapper.eq(Option::getQuId, temp.getId());
+                List<Option> options = optionMapper.selectList(optionWrapper);
+                if (temp.getQuType() == 4) {
+                    examQuCollectVO.setOption(null);
+                } else {
+                    examQuCollectVO.setOption(options);
+                }
             }
 
 
@@ -633,6 +687,9 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
                     examQuCollectVO.setMyOption(Integer.toString(op3.getSort()));
                     break;
                 case 4:
+                    examQuCollectVO.setMyOption(examQuAnswer.getAnswerContent());
+                    break;
+                case 5:
                     examQuCollectVO.setMyOption(examQuAnswer.getAnswerContent());
                     break;
                 default:
@@ -767,13 +824,24 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
                 }
             case 4:
                 LambdaQueryWrapper<Option> optionLambdaQueryWrapper = new LambdaQueryWrapper<>();
-                optionLambdaQueryWrapper.eq(Option::getQuId, examQuAnswerForm.getQuId());
-                Option option = optionMapper.selectOne(optionLambdaQueryWrapper);
-                if (option.getContent().equals(examQuAnswerForm.getAnswer())) {
-                    examQuAnswer.setIsRight(1);
+                optionLambdaQueryWrapper.eq(Option::getQuId, examQuAnswerForm.getQuId()).orderByAsc(Option::getSort);
+                List<Option> refOptions = optionMapper.selectList(optionLambdaQueryWrapper);
+                if (refOptions.size() == 1) {
+                    String ref = refOptions.get(0).getContent();
+                    if (ref != null && ref.equals(examQuAnswerForm.getAnswer())) {
+                        examQuAnswer.setIsRight(1);
+                    } else {
+                        examQuAnswer.setIsRight(0);
+                    }
                 } else {
+                    // 多格简答：不机判，待阅卷
                     examQuAnswer.setIsRight(0);
                 }
+                examQuAnswerMapper.insert(examQuAnswer);
+                return Result.success("请求成功");
+            case 5:
+                Question compoundQu = questionMapper.selectById(examQuAnswerForm.getQuId());
+                examQuAnswer.setIsRight(gradeCompoundAnswer(compoundQu, examQuAnswerForm.getAnswer()));
                 examQuAnswerMapper.insert(examQuAnswer);
                 return Result.success("请求成功");
             default:
@@ -875,6 +943,18 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
                         .set(ExamQuAnswer::getAnswerContent, examQuAnswerForm.getAnswer());
                 examQuAnswerMapper.update(null, updateWrapper4);
                 return Result.success("请求成功");
+            case 5:
+                int isRight5 = gradeCompoundAnswer(
+                        questionMapper.selectById(examQuAnswerForm.getQuId()),
+                        examQuAnswerForm.getAnswer());
+                LambdaUpdateWrapper<ExamQuAnswer> updateWrapper5 = new LambdaUpdateWrapper<>();
+                updateWrapper5.eq(ExamQuAnswer::getUserId, SecurityUtil.getUserId())
+                        .eq(ExamQuAnswer::getExamId, examQuAnswerForm.getExamId())
+                        .eq(ExamQuAnswer::getQuestionId, examQuAnswerForm.getQuId())
+                        .set(ExamQuAnswer::getAnswerContent, examQuAnswerForm.getAnswer())
+                        .set(ExamQuAnswer::getIsRight, isRight5);
+                examQuAnswerMapper.update(null, updateWrapper5);
+                return Result.success("请求成功");
             default:
                 return Result.failed("请求错误，请联系管理员解决");
         }
@@ -887,7 +967,7 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
     public ExamQuAnswer prepareExamQuAnswer(ExamQuAnswerAddForm form, Integer quType) {
         // 表单转换实体
         ExamQuAnswer examQuAnswer = examQuAnswerConverter.formToEntity(form);
-        if (quType == 4) {
+        if (quType == 4 || quType == 5) {
             examQuAnswer.setAnswerContent(form.getAnswer());
         } else {
             examQuAnswer.setAnswerId(form.getAnswer());
@@ -974,25 +1054,28 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
             examRecordDetailVO.setTitle(temp.getContent());
             examRecordDetailVO.setQuType(temp.getQuType());
             examRecordDetailVO.setAnalyse(temp.getAnalysis());
-            fillCompoundStemForRecordDetail(temp, examRecordDetailVO);
-            LambdaQueryWrapper<Option> optionWrapper = new LambdaQueryWrapper<>();
-            optionWrapper.eq(Option::getQuId, temp.getId()).orderByAsc(Option::getSort);
-            List<Option> options = optionMapper.selectList(optionWrapper);
-            // 简答题同样需要返回选项行（参考答案文本 + 附图等多图），教师「查看试卷」页依赖 option[0].image
-            examRecordDetailVO.setOption(options);
-
-            if (temp.getQuType() == 4 && !options.isEmpty()) {
-                examRecordDetailVO.setRightOption(options.get(0).getContent());
+            if (Integer.valueOf(5).equals(temp.getQuType())) {
+                examRecordDetailVO.setSubItemList(QuestionSubItemsUtil.parseToVoList(temp.getSubItems()));
+                examRecordDetailVO.setOption(null);
             } else {
-                ArrayList<Integer> strings = new ArrayList<>();
-                for (Option temp1 : options) {
-                    if (temp1.getIsRight() == 1) {
-                        strings.add(temp1.getSort());
+                LambdaQueryWrapper<Option> optionWrapper = new LambdaQueryWrapper<>();
+                optionWrapper.eq(Option::getQuId, temp.getId()).orderByAsc(Option::getSort);
+                List<Option> options = optionMapper.selectList(optionWrapper);
+                examRecordDetailVO.setOption(options);
+
+                if (temp.getQuType() == 4 && !options.isEmpty()) {
+                    examRecordDetailVO.setRightOption(options.get(0).getContent());
+                } else {
+                    ArrayList<Integer> strings = new ArrayList<>();
+                    for (Option temp1 : options) {
+                        if (temp1.getIsRight() == 1) {
+                            strings.add(temp1.getSort());
+                        }
                     }
+                    List<String> stringList = strings.stream().map(String::valueOf).collect(Collectors.toList());
+                    String result = String.join(",", stringList);
+                    examRecordDetailVO.setRightOption(result);
                 }
-                List<String> stringList = strings.stream().map(String::valueOf).collect(Collectors.toList());
-                String result = String.join(",", stringList);
-                examRecordDetailVO.setRightOption(result);
             }
             examRecordDetailVOS.add(examRecordDetailVO);
         }
@@ -1086,29 +1169,47 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
                 examQuAnswerMapper.insert(examQuAnswer);
             }
         }
+        // 查询用户未作答的复合题，并添加默认空白作答（isRight 由子题类型决定）
+        List<ExamQuestion> unansweredCompoundQuestions = examQuestionMapper.getUnansweredCompoundQuestions(examId, SecurityUtil.getUserId());
+        if (unansweredCompoundQuestions != null && !unansweredCompoundQuestions.isEmpty()) {
+            for (ExamQuestion question : unansweredCompoundQuestions) {
+                Question compoundQu = questionMapper.selectById(question.getQuestionId());
+                int compoundIsRight = gradeCompoundAnswer(compoundQu, "{}");
+                ExamQuAnswer examQuAnswer = new ExamQuAnswer();
+                examQuAnswer.setExamId(examId);
+                examQuAnswer.setUserId(SecurityUtil.getUserId());
+                examQuAnswer.setQuestionId(question.getQuestionId());
+                examQuAnswer.setQuestionType(5); // 复合题
+                examQuAnswer.setAnswerContent("{}"); // 空白作答
+                examQuAnswer.setIsRight(compoundIsRight);
+                examQuAnswerMapper.insert(examQuAnswer);
+            }
+        }
 
         // 查询用户答题记录
         LambdaQueryWrapper<ExamQuAnswer> examQuAnswerLambdaQuery = new LambdaQueryWrapper<>();
         examQuAnswerLambdaQuery.eq(ExamQuAnswer::getUserId, SecurityUtil.getUserId())
                 .eq(ExamQuAnswer::getExamId, examId);
         List<ExamQuAnswer> examQuAnswer = examQuAnswerMapper.selectList(examQuAnswerLambdaQuery);
+        Map<Integer, Integer> questionScoreMap = loadExamQuestionScoreMap(examId);
 
         // 计算客观分 & 收集错题
         List<UserBook> userBookArrayList = new ArrayList<>();
         int calculatedScore = 0; // 使用局部变量计算分数
+        boolean hasManualReview = false; // 是否存在需要人工阅卷的题目（简答题或含简答子题的复合题）
         for (ExamQuAnswer temp : examQuAnswer) {
             // 添加 null 检查防止 NPE
             if (temp.getIsRight() != null && temp.getIsRight() == 1) {
                 Integer questionType = temp.getQuestionType();
                 if (questionType != null) {
-                    if (questionType == 1 && examOne.getRadioScore() != null) {
-                        calculatedScore += examOne.getRadioScore();
-                    } else if (questionType == 2 && examOne.getMultiScore() != null) {
-                        calculatedScore += examOne.getMultiScore();
-                    } else if (questionType == 3 && examOne.getJudgeScore() != null) {
-                        calculatedScore += examOne.getJudgeScore();
+                    Integer earned = resolveEarnedScore(questionScoreMap, examOne, temp.getQuestionId(), questionType);
+                    if (earned != null) {
+                        calculatedScore += earned;
                     }
                 }
+            } else if (temp.getIsRight() != null && temp.getIsRight() == -1) {
+                // isRight==-1 表示复合题含简答子题，待人工阅卷，不加入错题本
+                hasManualReview = true;
             } else if (temp.getIsRight() != null && temp.getIsRight() == 0) { // 只记录明确回答错误的
                 UserBook userBook = new UserBook();
                 userBook.setExamId(examId);
@@ -1128,10 +1229,11 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
         long secondsDifference = Duration.between(userStartTime, nowTime).getSeconds();
         int userTime = (int) secondsDifference; // 注意 long 转 int 可能的溢出
 
-        // 确定是否需要人工阅卷
-        int whetherMark = -1; // 默认无需阅卷
-        if (examOne.getSaqCount() != null && examOne.getSaqCount() > 0) {
-            whetherMark = 0; // 有简答题，设置为待阅卷
+        // 按试卷实际题目判断是否需要人工阅卷（不依赖 saq_count 配置，避免全客观卷误入待阅）
+        int whetherMark = -1;
+        if (ExamGradingUtil.examPaperNeedsManualGrading(examId, examQuestionMapper, questionMapper)
+                || hasManualReview) {
+            whetherMark = 0;
         }
 
         LambdaUpdateWrapper<UserExamsScore> userExamsScoreLambdaUpdate = new LambdaUpdateWrapper<>();
@@ -1216,85 +1318,123 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
         return createTime;
     }
 
-    /** 小题挂载共用题干：写入考试单题 VO 的 stem 与 parentQuId。 */
-    private void fillCompoundStemForExamDetail(Question child, ExamQuDetailVO vo) {
-        if (child == null || child.getParentQuId() == null) {
-            return;
+    /**
+     * 复合题机判：客观小题按选项下标比对；含简答小题时整题标记为 -1（待人工阅卷）。
+     * 返回值：1=全部客观且全对；0=全部客观但有错；-1=含简答子题，待阅卷。
+     */
+    private int gradeCompoundAnswer(Question question, String answerJson) {
+        if (question == null || !Integer.valueOf(5).equals(question.getQuType())) {
+            return 0;
         }
-        Question stem = questionMapper.selectById(child.getParentQuId());
-        if (stem == null) {
-            return;
+        List<cn.org.alan.exam.model.form.question.QuestionSubItemForm> subItems =
+                QuestionSubItemsUtil.parseForms(question.getSubItems());
+        Map<String, Object> answers = QuestionSubItemsUtil.parseStudentAnswers(answerJson);
+        if (subItems.isEmpty()) {
+            return 0;
         }
-        vo.setParentQuId(child.getParentQuId());
-        vo.setStemContent(stem.getContent());
-        vo.setStemImage(stem.getImage());
-    }
-
-    private void fillCompoundStemForCollect(Question child, ExamQuCollectVO vo) {
-        if (child == null || child.getParentQuId() == null) {
-            return;
-        }
-        Question stem = questionMapper.selectById(child.getParentQuId());
-        if (stem == null) {
-            return;
-        }
-        vo.setParentQuId(child.getParentQuId());
-        vo.setStemContent(stem.getContent());
-        vo.setStemImage(stem.getImage());
-    }
-
-    private void fillCompoundStemForRecordDetail(Question child, ExamRecordDetailVO vo) {
-        if (child == null || child.getParentQuId() == null) {
-            return;
-        }
-        Question stem = questionMapper.selectById(child.getParentQuId());
-        if (stem == null) {
-            return;
-        }
-        vo.setParentQuId(child.getParentQuId());
-        vo.setStemContent(stem.getContent());
-        vo.setStemImage(stem.getImage());
-    }
-
-    /** 答题卡各题项标注 parentQuId，便于前端提示「同一大题」。 */
-    private void enrichExamQuestionParentQuIds(ExamQuestionListVO examQuestionListVO) {
-        Set<Integer> questionIds = new LinkedHashSet<>();
-        addQuestionIds(examQuestionListVO.getRadioList(), questionIds);
-        addQuestionIds(examQuestionListVO.getMultiList(), questionIds);
-        addQuestionIds(examQuestionListVO.getJudgeList(), questionIds);
-        addQuestionIds(examQuestionListVO.getSaqList(), questionIds);
-        if (questionIds.isEmpty()) {
-            return;
-        }
-        List<Question> questions = questionMapper.selectBatchIds(new ArrayList<>(questionIds));
-        Map<Integer, Question> byId = questions.stream()
-                .collect(Collectors.toMap(Question::getId, q -> q, (a, b) -> a));
-        Consumer<List<ExamQuestionVO>> enrich = list -> {
-            if (list == null) {
-                return;
+        boolean hasManual = false;
+        boolean allObjectiveCorrect = true;
+        for (int i = 0; i < subItems.size(); i++) {
+            cn.org.alan.exam.model.form.question.QuestionSubItemForm sub = subItems.get(i);
+            if (sub == null || sub.getQuType() == null) {
+                allObjectiveCorrect = false;
+                continue;
             }
-            for (ExamQuestionVO row : list) {
-                Question q = byId.get(row.getQuestionId());
-                if (q != null && q.getParentQuId() != null) {
-                    row.setParentQuId(q.getParentQuId());
+            if (sub.getQuType() == 4) {
+                hasManual = true;
+                continue;
+            }
+            if (!isObjectiveSubItemCorrect(sub, answers.get(String.valueOf(i)))) {
+                allObjectiveCorrect = false;
+            }
+        }
+        if (hasManual) {
+            return -1; // 含简答子题，待人工阅卷
+        }
+        return allObjectiveCorrect ? 1 : 0;
+    }
+
+    private boolean isObjectiveSubItemCorrect(cn.org.alan.exam.model.form.question.QuestionSubItemForm sub, Object ans) {
+        List<cn.org.alan.exam.model.form.question.QuestionSubItemOptionForm> opts = sub.getOptions();
+        if (opts == null || opts.isEmpty()) {
+            return false;
+        }
+        int quType = sub.getQuType();
+        if (quType == 1 || quType == 3) {
+            int selected = parseAnswerIndex(ans, -1);
+            if (selected < 0 || selected >= opts.size()) {
+                return false;
+            }
+            return Integer.valueOf(1).equals(opts.get(selected).getIsRight());
+        }
+        if (quType == 2) {
+            Set<Integer> selected = parseAnswerIndexSet(ans);
+            Set<Integer> correct = new LinkedHashSet<>();
+            for (int i = 0; i < opts.size(); i++) {
+                if (Integer.valueOf(1).equals(opts.get(i).getIsRight())) {
+                    correct.add(i);
                 }
             }
-        };
-        enrich.accept(examQuestionListVO.getRadioList());
-        enrich.accept(examQuestionListVO.getMultiList());
-        enrich.accept(examQuestionListVO.getJudgeList());
-        enrich.accept(examQuestionListVO.getSaqList());
+            return !selected.isEmpty() && selected.equals(correct);
+        }
+        return false;
     }
 
-    private static void addQuestionIds(List<ExamQuestionVO> list, Set<Integer> out) {
-        if (list == null) {
-            return;
+    private static int parseAnswerIndex(Object ans, int defaultVal) {
+        if (ans == null) {
+            return defaultVal;
         }
-        for (ExamQuestionVO row : list) {
-            if (row.getQuestionId() != null) {
-                out.add(row.getQuestionId());
+        try {
+            return Integer.parseInt(String.valueOf(ans).trim());
+        } catch (NumberFormatException e) {
+            return defaultVal;
+        }
+    }
+
+    private static Set<Integer> parseAnswerIndexSet(Object ans) {
+        Set<Integer> out = new LinkedHashSet<>();
+        if (ans == null) {
+            return out;
+        }
+        if (ans instanceof JSONArray) {
+            JSONArray arr = (JSONArray) ans;
+            for (int i = 0; i < arr.size(); i++) {
+                int idx = parseAnswerIndex(arr.get(i), -1);
+                if (idx >= 0) {
+                    out.add(idx);
+                }
+            }
+            return out;
+        }
+        String s = String.valueOf(ans).trim();
+        if (s.startsWith("[")) {
+            try {
+                JSONArray arr = JSON.parseArray(s);
+                for (int i = 0; i < arr.size(); i++) {
+                    int idx = parseAnswerIndex(arr.get(i), -1);
+                    if (idx >= 0) {
+                        out.add(idx);
+                    }
+                }
+                return out;
+            } catch (Exception ignored) {
+                return out;
             }
         }
+        if (s.contains(",")) {
+            for (String part : s.split(",")) {
+                int idx = parseAnswerIndex(part, -1);
+                if (idx >= 0) {
+                    out.add(idx);
+                }
+            }
+            return out;
+        }
+        int single = parseAnswerIndex(s, -1);
+        if (single >= 0) {
+            out.add(single);
+        }
+        return out;
     }
 
     private List<Integer> parseCsvToIntList(String raw, String fieldName) {
@@ -1352,5 +1492,112 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
             }
         }
         return score;
+    }
+
+    /**
+     * 解析自己选题时与 quIds 顺序一致的分值列表。
+     */
+    private Map<Integer, Integer> parseQuScoreMap(String quIds, String quScores) {
+        if (StringUtils.isBlank(quIds) || StringUtils.isBlank(quScores)) {
+            return Collections.emptyMap();
+        }
+        String[] ids = quIds.split(",");
+        String[] scores = quScores.split(",");
+        if (ids.length != scores.length) {
+            throw new ServiceRuntimeException("题目与分值数量不一致");
+        }
+        Map<Integer, Integer> map = new LinkedHashMap<>();
+        for (int i = 0; i < ids.length; i++) {
+            String idStr = ids[i].trim();
+            String scoreStr = scores[i].trim();
+            if (idStr.isEmpty() || scoreStr.isEmpty()) {
+                continue;
+            }
+            int quId = Integer.parseInt(idStr);
+            int score = Integer.parseInt(scoreStr);
+            if (score <= 0) {
+                throw new ServiceRuntimeException("题目 ID " + quId + " 分值必须大于 0");
+            }
+            map.put(quId, score);
+        }
+        return map;
+    }
+
+    private Map<Integer, Integer> loadExamQuestionScoreMap(Integer examId) {
+        LambdaQueryWrapper<ExamQuestion> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(ExamQuestion::getExamId, examId);
+        List<ExamQuestion> list = examQuestionMapper.selectList(wrapper);
+        Map<Integer, Integer> map = new HashMap<>();
+        for (ExamQuestion eq : list) {
+            if (eq.getQuestionId() != null && eq.getScore() != null) {
+                map.put(eq.getQuestionId(), eq.getScore());
+            }
+        }
+        return map;
+    }
+
+    /**
+     * 优先使用试卷内单题分值，否则回退到考试表上的题型默认分。
+     */
+    private Integer resolveEarnedScore(Map<Integer, Integer> questionScoreMap, Exam exam, Integer questionId, Integer questionType) {
+        if (questionId != null && questionScoreMap.containsKey(questionId)) {
+            return questionScoreMap.get(questionId);
+        }
+        if (questionType == null || exam == null) {
+            return null;
+        }
+        if (questionType == 1) {
+            return exam.getRadioScore();
+        }
+        if (questionType == 2) {
+            return exam.getMultiScore();
+        }
+        if (questionType == 3) {
+            return exam.getJudgeScore();
+        }
+        if (questionType == 4 || questionType == 5) {
+            return exam.getSaqScore();
+        }
+        return null;
+    }
+
+    /**
+     * 将已保存的简答作答（单字符串或 JSON 数组）写入各 {@link OptionVO#studentFill}，不修改参考答案 {@link OptionVO#content}。
+     */
+    private static void applySaqStudentFills(List<OptionVO> vos, String answerContent) {
+        if (vos == null || vos.isEmpty()) {
+            return;
+        }
+        int n = vos.size();
+        List<String> parts = parseSaqAnswerSlots(answerContent, n);
+        for (int i = 0; i < n; i++) {
+            vos.get(i).setStudentFill(parts.get(i));
+        }
+    }
+
+    private static List<String> parseSaqAnswerSlots(String raw, int slotCount) {
+        List<String> out = new ArrayList<>(slotCount);
+        for (int i = 0; i < slotCount; i++) {
+            out.add("");
+        }
+        if (raw == null || raw.trim().isEmpty()) {
+            return out;
+        }
+        String t = raw.trim();
+        if (t.startsWith("[")) {
+            try {
+                JSONArray arr = JSON.parseArray(t);
+                for (int i = 0; i < slotCount && i < arr.size(); i++) {
+                    Object o = arr.get(i);
+                    out.set(i, o == null ? "" : String.valueOf(o));
+                }
+                return out;
+            } catch (Exception ignored) {
+                out.set(0, raw);
+                return out;
+            }
+        }
+        out.set(0, raw);
+        return out;
     }
 }

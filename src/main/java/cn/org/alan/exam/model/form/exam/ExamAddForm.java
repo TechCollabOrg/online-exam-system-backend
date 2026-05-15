@@ -97,4 +97,10 @@ public class ExamAddForm {
     private String addQuype;
     // 简答题分数
     private String quIds;
+
+    /**
+     * 自己选题时每题分值，与 quIds 顺序一致，逗号分隔，如 2,3,5
+     */
+    @Pattern(regexp = "^$|^\\d+(,\\d+)*$|^\\d+$", message = "题目分值格式错误，请使用 2,3,5 格式")
+    private String quScores;
 }

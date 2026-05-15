@@ -1,6 +1,9 @@
 package cn.org.alan.exam.model.vo.answer;
 
+import cn.org.alan.exam.model.vo.question.QuestionSubItemVO;
 import lombok.Data;
+
+import java.util.List;
 
 /**
  * 阅卷侧查看某考生在某题上的作答全文与附件标识。
@@ -25,5 +28,11 @@ public class UserAnswerDetailVO {
     private Integer correctScore;
     private String aiReason;
     private Integer totalScore;
+
+    /** 试题类型：1单选 2多选 3判断 4简答 5复合题 */
+    private Integer quType;
+
+    /** 复合题小题列表（含考生作答，仅 quType=5 时有值） */
+    private List<QuestionSubItemVO> subItemList;
 
 }

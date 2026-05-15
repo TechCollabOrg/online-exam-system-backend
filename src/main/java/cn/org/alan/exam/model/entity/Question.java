@@ -26,7 +26,8 @@ public class Question implements Serializable {
     @TableId(value = "id", type = IdType.AUTO)
     private Integer id;
 
-    @ApiModelProperty("试题类型")
+    /** 1单选 2多选 3判断 4简答 5复合题（共用材料+多小题） */
+    @ApiModelProperty("试题类型：1单选2多选3判断4简答5复合题")
     private Integer quType;
 
     @ApiModelProperty("试题图片")
@@ -54,8 +55,15 @@ public class Question implements Serializable {
     private Integer isDeleted;
 
     /**
-     * 指向「共用题干」所在试题（同表）；为空表示独立题。小题题干仅存本小问文字，材料由父题 content/image 提供。
+     * 复合题小题 JSON（题型 5）：共用材料在 content，各小题结构见 {@code QuestionSubItemForm}。
      */
-    @ApiModelProperty("共用题干父题 id")
+    @ApiModelProperty("复合题小题JSON")
+    private String subItems;
+
+    /**
+     * 子题关联的共用题干题目 ID（历史「多行拆题」方案）；与 {@link #subItems} JSON 可并存，未使用时为 null。
+     */
+    @TableField(exist = false)
+    @ApiModelProperty("父题ID（子题时非空）")
     private Integer parentQuId;
 }

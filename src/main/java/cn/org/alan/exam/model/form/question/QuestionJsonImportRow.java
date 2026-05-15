@@ -86,13 +86,20 @@ public class QuestionJsonImportRow {
     }
 
     /**
-     * 转为 {@link QuestionFrom}（不含 {@code parentQuId}，由导入逻辑按材料组写入）。
+     * 转为 {@link QuestionFrom}；材料组内小题可 {@linkplain #toQuestionFrom(int, boolean) 允许空题干}。
      */
     public QuestionFrom toQuestionFrom(int index) {
+        return toQuestionFrom(index, false);
+    }
+
+    /**
+     * 转为 {@link QuestionFrom}。{@code allowBlankContent} 为 true 时用于材料组子题（题干可仅含选项）。
+     */
+    public QuestionFrom toQuestionFrom(int index, boolean allowBlankContent) {
         if (quType == null) {
             throw new ServiceRuntimeException(String.format("JSON 第 %d 条：缺少试题类型 quType（1单选 2多选 3判断 4简答）", index));
         }
-        if (StringUtils.isBlank(content)) {
+        if (!allowBlankContent && StringUtils.isBlank(content)) {
             throw new ServiceRuntimeException(String.format("JSON 第 %d 条：题干 content 不能为空", index));
         }
 
@@ -129,7 +136,7 @@ public class QuestionJsonImportRow {
         }
 
         QuestionFrom qf = new QuestionFrom();
-        qf.setContent(content.trim());
+        qf.setContent(StringUtils.isBlank(content) ? null : content.trim());
         qf.setQuType(quType);
         qf.setAnalysis(StringUtils.isBlank(analysis) ? null : analysis.trim());
         qf.setImage(StringUtils.isBlank(image) ? null : image.trim());

@@ -4,15 +4,32 @@
 
     <!--获取自己创建的考试，考试id，考试考试标题，是否需要阅卷-->
     <select id="selectMarkedList" resultType="cn.org.alan.exam.model.vo.answer.AnswerExamVO">
-        select id as examId, title as examTitle, 1 as neededMark
-        from t_exam
+        select distinct e.id as examId, e.title as examTitle, 1 as neededMark
+        from t_exam e
         <trim prefix="where" prefixOverrides="and">
-            is_deleted = 0 and saq_count > 0
+            e.is_deleted = 0
+            and (
+                exists (
+                    select 1 from t_exam_question eq
+                    join t_question q on eq.question_id = q.id and q.is_deleted = 0
+                    where eq.exam_id = e.id and q.qu_type = 4
+                )
+                or exists (
+                    select 1 from t_exam_question eq
+                    join t_question q on eq.question_id = q.id and q.is_deleted = 0
+                    where eq.exam_id = e.id and q.qu_type = 5
+                      and (q.sub_items like '%"quType":4%' or q.sub_items like '%"quType": 4%')
+                )
+                or exists (
+                    select 1 from t_user_exams_score ues
+                    where ues.exam_id = e.id and ues.whether_mark = 0 and ues.state = 1
+                )
+            )
             <if test="role == 'role_teacher'">
-                and user_id = #{userId}
+                and e.user_id = #{userId}
             </if>
             <if test="examName != null">
-                and title like concat('%',#{examName},'%')
+                and e.title like concat('%',#{examName},'%')
             </if>
         </trim>
     </select>

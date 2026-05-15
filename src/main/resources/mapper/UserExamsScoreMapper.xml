@@ -18,7 +18,7 @@
         JOIN
         t_exam_grade ug ON e.id = ug.exam_id
         JOIN
-        t_user_exams_score ues ON e.id = ues.exam_id and ues.whether_mark in (-1,1)
+        t_user_exams_score ues ON e.id = ues.exam_id and ues.state = 1 and ues.whether_mark in (-1,1)
         JOIN
         t_user u ON ues.user_id = u.id AND u.grade_id = ug.grade_id
         JOIN
@@ -51,6 +51,7 @@
         join t_exam as e on ues.exam_id = e.id
         <trim prefix="where" prefixOverrides="and">
             u.grade_id = #{gradeId} and ues.exam_id = #{examId}
+            and ues.state = 1 and ues.whether_mark in (-1, 1)
             <if test='realName != null and realName != ""'>
                 and u.real_name like concat('%',#{realName},'%')
             </if>
@@ -114,7 +115,7 @@
         left join t_user as u on ues.user_id = u.id
         left join t_exam as e on ues.exam_id = e.id
         where
-        ues.exam_id = #{examId} and ues.whether_mark = 0
+        ues.exam_id = #{examId} and ues.whether_mark = 0 and ues.state = 1
         <if test='realName!=null and realName!=""'>
             and u.real_name like concat('%',#{realName},'%')
         </if>

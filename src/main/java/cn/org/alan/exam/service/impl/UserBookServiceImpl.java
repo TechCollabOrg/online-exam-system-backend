@@ -13,7 +13,10 @@ import cn.org.alan.exam.model.vo.userbook.*;
 import cn.org.alan.exam.service.IOptionService;
 import cn.org.alan.exam.service.IQuestionService;
 import cn.org.alan.exam.service.IUserBookService;
+import cn.org.alan.exam.utils.ExamGradingUtil;
+import cn.org.alan.exam.utils.QuestionSubItemsUtil;
 import cn.org.alan.exam.utils.SecurityUtil;
+import cn.org.alan.exam.model.vo.question.QuestionSubItemVO;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.StringUtils;
@@ -80,6 +83,12 @@ public class UserBookServiceImpl extends ServiceImpl<UserBookMapper, UserBook> i
         bookOneQuVO.setImage(quById.getImage());
         bookOneQuVO.setContent(quById.getContent());
         bookOneQuVO.setQuType(quById.getQuType());
+        if (Integer.valueOf(5).equals(quById.getQuType())) {
+            List<QuestionSubItemVO> subItems = QuestionSubItemsUtil.parseToVoList(quById.getSubItems());
+            bookOneQuVO.setSubItemList(subItems);
+            bookOneQuVO.setAnswerList(Collections.emptyList());
+            return Result.success("获取成功", bookOneQuVO);
+        }
         if (quById.getParentQuId() != null) {
             Question stem = questionMapper.selectById(quById.getParentQuId());
             if (stem != null) {
@@ -202,6 +211,24 @@ public class UserBookServiceImpl extends ServiceImpl<UserBookMapper, UserBook> i
                 }
                 addBookAnswerVO.setCorrect(0);
                 return Result.success("回答错误", addBookAnswerVO);
+            case 5: {
+                int grade = ExamGradingUtil.gradeCompoundAnswer(qu, reUserBookForm.getAnswer());
+                if (grade == -1) {
+                    addBookAnswerVO.setCorrect(0);
+                    return Result.success("含简答小题，无法自动判分", addBookAnswerVO);
+                }
+                if (grade == 1) {
+                    LambdaQueryWrapper<UserBook> userBookLambdaQueryWrapper5 = new LambdaQueryWrapper<>();
+                    userBookLambdaQueryWrapper5.eq(UserBook::getUserId, userId)
+                            .eq(UserBook::getExamId, reUserBookForm.getExamId())
+                            .eq(UserBook::getQuId, reUserBookForm.getQuId());
+                    userBookMapper.delete(userBookLambdaQueryWrapper5);
+                    addBookAnswerVO.setCorrect(1);
+                    return Result.success("回答正确，已移出错题本", addBookAnswerVO);
+                }
+                addBookAnswerVO.setCorrect(0);
+                return Result.success("回答错误", addBookAnswerVO);
+            }
             default:
                 throw new ServiceRuntimeException("填充答案请求错误");
         }

@@ -249,9 +249,9 @@ public class ExcelUtils {
             errMsgList.add(String.format("[%s]不能为空", cname));
             return;
         }
-        // 数据唯一性获取
+        // 数据唯一性获取（空值不参与，避免材料组多行子题无题干时误判重复）
         boolean unique = annotation.unique();
-        if (unique) {
+        if (unique && !val.isEmpty()) {
             if (uniqueBuilder.length() > 0) {
                 uniqueBuilder.append("--").append(val);
             } else {
