@@ -1,6 +1,9 @@
 server:
   port: 8080 # 允许端口号
 spring:
+  # 可选：项目根 application-dev.local.yml 覆盖连接信息（已 gitignore，见 application-dev.local.yml.example）
+  config:
+    import: optional:file:./application-dev.local.yml
   main:
     # 关闭banner
     banner-mode: console
