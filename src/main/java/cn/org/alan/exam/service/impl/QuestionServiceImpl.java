@@ -16,6 +16,7 @@ import cn.org.alan.exam.model.form.question.QuestionSubItemForm;
 import cn.org.alan.exam.model.form.question.QuestionSubItemOptionForm;
 import cn.org.alan.exam.model.vo.question.QuestionVO;
 import cn.org.alan.exam.service.IQuestionService;
+import cn.org.alan.exam.utils.QuestionImportValidators;
 import cn.org.alan.exam.utils.QuestionSubItemsUtil;
 import cn.org.alan.exam.utils.SecurityUtil;
 import cn.org.alan.exam.utils.excel.ExcelUtils;
@@ -266,8 +267,18 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
             for (QuestionJsonImportRow jsonRow : rows) {
                 String groupCode = QuestionExcelFrom.normalizeStemGroupCode(jsonRow.getStemGroupCode());
                 if (groupCode == null) {
+                    if (jsonRow.getSubItems() != null && !jsonRow.getSubItems().isEmpty()
+                            && jsonRow.getQuType() != null && jsonRow.getQuType() != 5) {
+                        throw new ServiceRuntimeException(
+                                "填写了 subItems 时 quType 必须为 5（复合题），或去掉 subItems 作为普通题导入");
+                    }
                     singles.add(jsonRow);
                     continue;
+                }
+                if (Integer.valueOf(5).equals(jsonRow.getQuType())) {
+                    throw new ServiceRuntimeException(String.format(
+                            "材料组「%s」内不能使用 quType=5；请在该组各行填写 1～4 的小题类型，共用材料写在首行 sharedStemContent",
+                            groupCode));
                 }
                 grouped.computeIfAbsent(groupCode, k -> new ArrayList<>()).add(jsonRow);
             }
@@ -326,34 +337,9 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
         List<QuestionJsonImportRow> rows = new ArrayList<>(arr.size());
         for (int i = 0; i < arr.size(); i++) {
             JSONObject o = arr.getJSONObject(i);
-            rows.add(parseOneJsonQuestionRow(o));
+            rows.add(QuestionJsonImportRow.fromJsonObject(o, i + 1));
         }
         return rows;
-    }
-
-    private static QuestionJsonImportRow parseOneJsonQuestionRow(JSONObject o) {
-        QuestionJsonImportRow row = new QuestionJsonImportRow();
-        row.setQuType(o.getInteger("quType"));
-        row.setContent(o.getString("content"));
-        row.setAnalysis(o.getString("analysis"));
-        row.setImage(o.getString("image"));
-        row.setStemGroupCode(o.getString("stemGroupCode"));
-        row.setSharedStemContent(o.getString("sharedStemContent"));
-        row.setSharedStemImage(o.getString("sharedStemImage"));
-        JSONArray opts = o.getJSONArray("options");
-        List<QuestionJsonImportRow.JsonOption> list = new ArrayList<>();
-        if (opts != null) {
-            for (int j = 0; j < opts.size(); j++) {
-                JSONObject jo = opts.getJSONObject(j);
-                QuestionJsonImportRow.JsonOption opt = new QuestionJsonImportRow.JsonOption();
-                opt.setContent(jo.getString("content"));
-                opt.setIsRight(QuestionJsonImportRow.normalizeIsRight(jo.get("isRight")));
-                opt.setImage(jo.getString("image"));
-                list.add(opt);
-            }
-        }
-        row.setOptions(list);
-        return row;
     }
 
     private static QuestionFrom buildCompoundQuestion(QuestionExcelFrom first, List<QuestionFrom> rowForms) {
@@ -438,45 +424,11 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
     }
 
     private Result<String> validateCompoundQuestion(QuestionFrom questionFrom) {
-        if (StringUtils.isBlank(questionFrom.getContent())) {
-            return Result.failed("复合题须填写共用材料（题目内容）");
+        String err = QuestionImportValidators.validateCompound(questionFrom);
+        if (err == null) {
+            return null;
         }
-        List<QuestionSubItemForm> subItems = questionFrom.getSubItems();
-        if (subItems == null || subItems.isEmpty()) {
-            return Result.failed("复合题至少需要一道小题");
-        }
-        int idx = 0;
-        for (QuestionSubItemForm sub : subItems) {
-            idx++;
-            if (sub == null) {
-                return Result.failed("第 " + idx + " 道小题数据无效");
-            }
-            if (sub.getQuType() == null || sub.getQuType() < 1 || sub.getQuType() > 4) {
-                return Result.failed("第 " + idx + " 道小题题型无效");
-            }
-            if (!QuestionSubItemsUtil.hasMeaningfulStemContent(sub.getContent())) {
-                return Result.failed("第 " + idx + " 道小题题干不能为空（可输入文字或在编辑器中插入图片）");
-            }
-            List<QuestionSubItemOptionForm> opts = sub.getOptions();
-            if (sub.getQuType() == 4) {
-                if (opts == null || opts.isEmpty()) {
-                    return Result.failed("第 " + idx + " 道简答小题至少需要一空");
-                }
-            } else if (opts == null || opts.size() < 2) {
-                return Result.failed("第 " + idx + " 道客观小题选项不能少于两个");
-            }
-            if (sub.getQuType() != 4 && opts != null) {
-                long rightCount = opts.stream().filter(o -> o != null && Integer.valueOf(1).equals(o.getIsRight())).count();
-                if (sub.getQuType() == 1 || sub.getQuType() == 3) {
-                    if (rightCount != 1) {
-                        return Result.failed("第 " + idx + " 道小题：单选/判断题只能有一个正确答案");
-                    }
-                } else if (sub.getQuType() == 2 && rightCount < 2) {
-                    return Result.failed("第 " + idx + " 道小题：多选题至少两个正确答案");
-                }
-            }
-        }
-        return null;
+        return Result.failed(err);
     }
 
 }
