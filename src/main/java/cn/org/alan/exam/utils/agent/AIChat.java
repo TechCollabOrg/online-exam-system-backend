@@ -17,4 +17,9 @@ public interface AIChat {
      * @throws Exception HTTP、序列化或厂商 API 错误
      */
     String getChatResponse(String msg) throws Exception;
+
+    /**
+     * 使用指定系统提示词与用户消息调用模型（用于成绩简报等与阅卷不同的场景）。
+     */
+    String getChatResponse(String systemPrompt, String userMessage) throws Exception;
 }

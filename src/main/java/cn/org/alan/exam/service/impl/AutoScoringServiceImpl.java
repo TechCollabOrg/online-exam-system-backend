@@ -6,12 +6,15 @@ import cn.hutool.json.JSONUtil;
 import cn.org.alan.exam.common.exception.ServiceRuntimeException;
 import cn.org.alan.exam.mapper.ExamQuAnswerMapper;
 import cn.org.alan.exam.model.entity.ExamQuAnswer;
-import cn.org.alan.exam.service.IAuthService;
+import cn.org.alan.exam.model.vo.question.QuestionScoreVO;
+import cn.org.alan.exam.service.IAiGradingWebSearchService;
+import cn.org.alan.exam.service.IAutoScoringService;
+import cn.org.alan.exam.utils.AiGradingResponseParser;
 import cn.org.alan.exam.utils.agent.AIChat;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import cn.org.alan.exam.model.vo.question.QuestionScoreVO;
-import cn.org.alan.exam.service.IAutoScoringService;
+import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -22,15 +25,16 @@ import org.springframework.transaction.support.DefaultTransactionDefinition;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
- * 主观题 AI 辅助评分：异步调用 {@link AIChat}，解析返回 JSON 中的分数与扣分说明写回 {@link ExamQuAnswer}；
- * 独立事务 + 最多三次重试，避免与主交卷事务耦合。
+ * 主观题 AI 辅助评分：结合题目解析与可选联网检索，调用 {@link AIChat} 后写回 aiScore / aiReason。
  */
+@Slf4j
 @Service
 public class AutoScoringServiceImpl extends ServiceImpl<ExamQuAnswerMapper, ExamQuAnswer> implements IAutoScoringService {
+
+    private static final int MAX_ATTEMPTS = 3;
+    private static final long RETRY_DELAY_MS = 5000L;
 
     @Autowired
     private ExamQuAnswerMapper examQuAnswerMapper;
@@ -39,94 +43,121 @@ public class AutoScoringServiceImpl extends ServiceImpl<ExamQuAnswerMapper, Exam
     private AIChat aiChat;
 
     @Autowired
+    private IAiGradingWebSearchService aiGradingWebSearchService;
+
+    @Autowired
     private PlatformTransactionManager platformTransactionManager;
 
-    /**
-     * 按考试与用户拉取待评分主观题，组装 prompt 调模型，正则抽取 markdown 内 JSON，批量更新 aiScore/aiReason。
-     */
     @Override
     @Async
     public void autoScoringExam(Integer examId, Integer userId) {
-        int maxAttempts = 3; // 最大重试次数
-        long retryDelay = 5000; // 每次重试之间的间隔时间（毫秒）
-
-        for (int attempt = 1; attempt <= maxAttempts; attempt++) {
-            // 定义事务属性
+        for (int attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
             DefaultTransactionDefinition def = new DefaultTransactionDefinition();
             def.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
-
-            // 开启事务
             TransactionStatus status = platformTransactionManager.getTransaction(def);
             try {
-                // 1. 获取考试答案
                 List<QuestionScoreVO> questions = examQuAnswerMapper.getQuestionsForGrading(examId, userId);
+                if (questions == null || questions.isEmpty()) {
+                    log.info("AI阅卷跳过：无待评主观题 examId={} userId={}", examId, userId);
+                    platformTransactionManager.commit(status);
+                    return;
+                }
 
-                // 2. 构建评分请求并转化为 JSON 字符串
+                enrichGradingContext(questions);
+
                 String scoringRequest = JSONUtil.toJsonStr(questions);
-
-                // 调用 AI 聊天接口，返回结果是 JSON 格式
-                String scoringResult = null; // 去掉 Markdown 标记
                 String response = aiChat.getChatResponse(scoringRequest).trim();
-                System.out.println(response);
-                Pattern pattern = Pattern.compile("```json\\r?\\n(.*?)```", Pattern.DOTALL | Pattern.MULTILINE);
-                Matcher matcher = pattern.matcher(response);
-                if (matcher.find()) {
-                    scoringResult = matcher.group(1).trim();
-                } else {
-                    System.out.println("JSON内容未匹配");
+                log.debug("AI阅卷原始回复 examId={} userId={} length={}", examId, userId, response.length());
+
+                JSONArray scoreArray = AiGradingResponseParser.parseScoreItems(response);
+                if (scoreArray == null || scoreArray.isEmpty()) {
+                    throw new ServiceRuntimeException("AI 返回无法解析为评分结果 JSON");
                 }
 
-                // 4. 解析评分结果
-                JSONArray scoreArray = JSONUtil
-                        .parseArray(JSONUtil
-                                .parseObj(scoringResult)
-                                .getStr("评分结果"));
-
-                // 5. 更新ai评分和扣分原因到数据库
-                for (int i = 0; i < scoreArray.size(); i++) {
-                    JSONObject item = scoreArray.getJSONObject(i);
-                    ExamQuAnswer examQuAnswer = new ExamQuAnswer();
-                    examQuAnswer.setQuestionId(Integer.valueOf(item.getStr("题目ID")));
-                    examQuAnswer.setAiScore(Integer.valueOf(item.getStr("最终得分")));
-                    examQuAnswer.setAiReason(item.getStr("扣分原因"));
-
-                    // 构建查询条件
-                    LambdaQueryWrapper<ExamQuAnswer> queryWrapper = new LambdaQueryWrapper<>();
-                    queryWrapper.eq(ExamQuAnswer::getExamId, examId)
-                            .eq(ExamQuAnswer::getUserId, userId)
-                            .eq(ExamQuAnswer::getQuestionId, examQuAnswer.getQuestionId());
-
-                    // 获取当前需要评分的记录
-                    ExamQuAnswer existingRecord = getOne(queryWrapper);
-                    if (existingRecord != null) {
-                        // 如果存在，更新记录
-                        examQuAnswer.setId(existingRecord.getId());
-                        updateById(examQuAnswer);
-                    } else {
-                        // 否则抛出异常
-                        throw new ServiceRuntimeException("ai评分失败！");
-                    }
-                }
-
-                // ai评分成功，提交事务，跳出重试循环
+                applyScoreResults(examId, userId, scoreArray);
                 platformTransactionManager.commit(status);
+                log.info("AI阅卷完成 examId={} userId={} 题数={}", examId, userId, scoreArray.size());
                 return;
             } catch (Exception e) {
-                // 回滚事务
                 platformTransactionManager.rollback(status);
-                // 如果达到最大重试次数，抛出异常
-                if (attempt == maxAttempts) {
-                    throw new RuntimeException("ai评分重试多次后仍然失败！", e);
+                log.warn("AI阅卷失败 第{}次 examId={} userId={}: {}", attempt, examId, userId, e.getMessage());
+                if (attempt == MAX_ATTEMPTS) {
+                    log.error("AI阅卷重试耗尽 examId={} userId={}", examId, userId, e);
+                    return;
                 }
-
-                // 等待一段时间后重试
                 try {
-                    TimeUnit.MILLISECONDS.sleep(retryDelay);
+                    TimeUnit.MILLISECONDS.sleep(RETRY_DELAY_MS);
                 } catch (InterruptedException ie) {
                     Thread.currentThread().interrupt();
-                    throw new RuntimeException("线程中断！", ie);
+                    return;
                 }
             }
         }
+    }
+
+    private void enrichGradingContext(List<QuestionScoreVO> questions) {
+        for (QuestionScoreVO q : questions) {
+            if (StringUtils.isBlank(q.getReferenceMaterial())) {
+                String plain = stripHtml(q.getQuestionContent());
+                String ref = aiGradingWebSearchService.searchReference(plain);
+                if (StringUtils.isNotBlank(ref)) {
+                    q.setReferenceMaterial(ref);
+                }
+            }
+            if (StringUtils.isBlank(q.getQuestionAnalysis())) {
+                q.setQuestionAnalysis("");
+            }
+            if (StringUtils.isBlank(q.getReferenceMaterial())) {
+                q.setReferenceMaterial("");
+            }
+        }
+    }
+
+    private void applyScoreResults(Integer examId, Integer userId, JSONArray scoreArray) {
+        for (int i = 0; i < scoreArray.size(); i++) {
+            JSONObject item = scoreArray.getJSONObject(i);
+            Integer questionId = parseQuestionId(item);
+            int finalScore = AiGradingResponseParser.parseFinalScore(item);
+            String reason = item.getStr("扣分原因");
+            if (reason == null) {
+                reason = "";
+            }
+
+            LambdaQueryWrapper<ExamQuAnswer> queryWrapper = new LambdaQueryWrapper<>();
+            queryWrapper.eq(ExamQuAnswer::getExamId, examId)
+                    .eq(ExamQuAnswer::getUserId, userId)
+                    .eq(ExamQuAnswer::getQuestionId, questionId);
+
+            ExamQuAnswer existing = getOne(queryWrapper);
+            if (existing == null) {
+                throw new ServiceRuntimeException("未找到作答记录 questionId=" + questionId);
+            }
+
+            ExamQuAnswer update = new ExamQuAnswer();
+            update.setId(existing.getId());
+            update.setAiScore(finalScore);
+            update.setAiReason(reason);
+            updateById(update);
+        }
+    }
+
+    private Integer parseQuestionId(JSONObject item) {
+        Object raw = item.get("题目ID");
+        if (raw == null) {
+            throw new ServiceRuntimeException("评分结果缺少题目ID");
+        }
+        if (raw instanceof Number) {
+            return ((Number) raw).intValue();
+        }
+        return Integer.valueOf(String.valueOf(raw).trim());
+    }
+
+    private static String stripHtml(String html) {
+        if (StringUtils.isBlank(html)) {
+            return "";
+        }
+        return html.replaceAll("<[^>]+>", " ")
+                .replaceAll("\\s+", " ")
+                .trim();
     }
 }

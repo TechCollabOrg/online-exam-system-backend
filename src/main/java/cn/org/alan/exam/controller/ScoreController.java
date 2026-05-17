@@ -5,7 +5,9 @@ import cn.org.alan.exam.model.vo.score.GradeScoreVO;
 import cn.org.alan.exam.model.vo.score.QuestionAnalyseVO;
 import cn.org.alan.exam.model.vo.score.StudentExamRankPointVO;
 import cn.org.alan.exam.model.vo.score.UserScoreVO;
+import cn.org.alan.exam.model.vo.score.ScoreAiBriefingVO;
 import cn.org.alan.exam.service.IExamQuAnswerService;
+import cn.org.alan.exam.service.IScoreAiBriefingService;
 import cn.org.alan.exam.service.IUserExamsScoreService;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 
@@ -33,6 +35,8 @@ public class ScoreController {
     private IUserExamsScoreService iUserExamsScoreService;
     @Resource
     private IExamQuAnswerService iExamQuAnswerService;
+    @Resource
+    private IScoreAiBriefingService scoreAiBriefingService;
 
     /** GET 某班某场考试的成绩分页。 */
     @ApiOperation("分页获取成绩信息")
@@ -65,6 +69,15 @@ public class ScoreController {
             @RequestParam(value = "examTitle", required = false) String examTitle,
             @RequestParam(value = "gradeId", required = false) Integer gradeId) {
         return iUserExamsScoreService.getExamScoreInfo(pageNum, pageSize, examTitle, gradeId);
+    }
+
+    /** GET 根据班级某场考试统计数据生成 AI 自然语言成绩简报。 */
+    @ApiOperation("AI成绩分析简报")
+    @GetMapping("/ai-briefing")
+    @PreAuthorize("hasAnyAuthority('role_teacher','role_admin')")
+    public Result<ScoreAiBriefingVO> aiBriefing(@RequestParam Integer examId,
+                                                @RequestParam Integer gradeId) {
+        return scoreAiBriefingService.generateBriefing(examId, gradeId);
     }
 
     /** GET 导出某班某场考试成绩 Excel（直接写 response 流）。 */

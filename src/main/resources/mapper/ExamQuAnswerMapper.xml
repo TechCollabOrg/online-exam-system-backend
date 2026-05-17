@@ -47,18 +47,20 @@
 
     <select id="getQuestionsForGrading" resultType="cn.org.alan.exam.model.vo.question.QuestionScoreVO">
         SELECT
-        q.id as questionId,
-        q.content as questionContent,
-        eq.score as totalScore,
-        o.content as qusetionAnswer,
-        eqa.answer_content as userAnswer
+            q.id AS questionId,
+            q.content AS questionContent,
+            eq.score AS totalScore,
+            GROUP_CONCAT(DISTINCT o.content ORDER BY o.sort SEPARATOR '；') AS qusetionAnswer,
+            q.analysis AS questionAnalysis,
+            eqa.answer_content AS userAnswer
         FROM t_exam_qu_answer eqa
-        JOIN t_exam_question eq ON eqa.question_id = eq.question_id
+        JOIN t_exam_question eq ON eqa.question_id = eq.question_id AND eq.exam_id = eqa.exam_id
         JOIN t_question q ON eq.question_id = q.id AND q.is_deleted = 0
-        JOIN t_option o ON o.qu_id = q.id and o.is_deleted = 0 and o.is_right = 1
+        LEFT JOIN t_option o ON o.qu_id = q.id AND o.is_deleted = 0 AND o.is_right = 1
         WHERE eqa.exam_id = #{examId}
-        AND eqa.user_id = #{userId}
-        AND q.qu_type = '4'
+          AND eqa.user_id = #{userId}
+          AND q.qu_type = 4
+        GROUP BY q.id, q.content, eq.score, q.analysis, eqa.answer_content
     </select>
 
     <update id="updateQuestionScore">

@@ -76,7 +76,8 @@ dify:
   base-url: ${DIFY_BASE_URL:https://api.dify.ai/v1/chat-messages}
   api-key: ${DIFY_API_KEY:}
 
-# LLM / 向量（仅 type=llm 等场景使用）
+# LLM（OpenAI 兼容接口；默认对接硅基流动 SiliconFlow，密钥只填 env.local 的 LLM_API_KEY）
+# 控制台: https://cloud.siliconflow.cn/account/ak
 llm:
   api-key: ${LLM_API_KEY:}
   base-url: ${LLM_BASE_URL:https://api.siliconflow.cn/v1}
@@ -98,13 +99,22 @@ logging:
     root: info
     com.example: debug
 
+# Serper 联网检索（仅 AI 阅卷启用 web-search 时需要；密钥勿提交 Git）
+serper:
+  api-key: ${SERPER_API_KEY:}
+  api-url: ${SERPER_API_URL:https://google.serper.dev/search}
+
 online-exam:
   crypto:
     # 须与前端 VUE_APP_CRYPTO_KEY / VUE_APP_CRYPTO_IV 一致（各 16 字符）
     aes-key: ${EXAM_AES_KEY:changeme16byte!!}
     aes-iv: ${EXAM_AES_IV:changeme16byte!!}
   chat-platform:
-    type: coze # coze、llm、dify
+    # 本地开发推荐 env.local 设 CHAT_PLATFORM_TYPE=llm（硅基流动）；未配置时仍为 coze
+    type: ${CHAT_PLATFORM_TYPE:coze}
+  ai-grading:
+    web-search-enabled: ${AI_GRADING_WEB_SEARCH:false}
+    web-search-max-results: ${AI_GRADING_WEB_SEARCH_MAX:3}
   storage:
     # local：写入项目目录下 uploads，无需 MinIO；minio：需本机 127.0.0.1:9000 已启动并配置桶
     type: ${STORAGE_TYPE:local}
