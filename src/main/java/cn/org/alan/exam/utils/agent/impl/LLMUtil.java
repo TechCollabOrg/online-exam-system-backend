@@ -99,14 +99,27 @@ public class LLMUtil implements AIChat {
         return assistant.answer(input);
     }
 
+    @Override
+    public String getGradingResponse(String systemPrompt, String userMessage) {
+        Assistant assistant = createAssistant(Constants.gradingTemperature);
+        ChatMessage systemMessage = new SystemMessage(systemPrompt);
+        ChatMessage userMsg = new UserMessage(userMessage);
+        String input = systemMessage.text() + "\n" + userMsg.text();
+        return assistant.answer(input);
+    }
+
     /** 构建兼容 OpenAI API 的聊天模型，并生成 LangChain4j {@link Assistant} 代理（未启用 RAG 时为纯对话）。 */
     private Assistant createAssistant() {
+        return createAssistant(Constants.temperature);
+    }
+
+    private Assistant createAssistant(Double temperature) {
 
         OpenAiChatModel llm = OpenAiChatModel.builder()
                 .apiKey(llmApiKey)
                 .modelName(llmModelName)
                 .baseUrl(llmBaseUrl)
-                .temperature(Constants.temperature)
+                .temperature(temperature)
                 .maxTokens(Constants.maxToken)
                 .build();
 

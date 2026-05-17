@@ -540,7 +540,7 @@ public class ManualScoreServiceImpl extends ServiceImpl<ManualScoreMapper, Manua
 
         vo.setRefAnswer(loadRefAnswer(question.getId()));
 
-        vo.setCorrectScore(answer != null ? answer.getAiScore() : null);
+        vo.setAiScore(answer != null ? answer.getAiScore() : null);
 
         vo.setAiReason(answer != null ? answer.getAiReason() : null);
 
@@ -616,7 +616,7 @@ public class ManualScoreServiceImpl extends ServiceImpl<ManualScoreMapper, Manua
 
         vo.setRefAnswer(formatCompoundReferenceAnswer(subItems));
 
-        vo.setCorrectScore(answer != null ? answer.getAiScore() : null);
+        vo.setAiScore(answer != null ? answer.getAiScore() : null);
 
         vo.setAiReason(answer != null ? answer.getAiReason() : null);
 

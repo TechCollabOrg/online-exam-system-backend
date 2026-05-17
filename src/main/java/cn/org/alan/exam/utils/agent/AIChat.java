@@ -22,4 +22,9 @@ public interface AIChat {
      * 使用指定系统提示词与用户消息调用模型（用于成绩简报等与阅卷不同的场景）。
      */
     String getChatResponse(String systemPrompt, String userMessage) throws Exception;
+
+    /**
+     * 主观题阅卷：使用更低温度，提高评分稳定性。
+     */
+    String getGradingResponse(String systemPrompt, String userMessage) throws Exception;
 }

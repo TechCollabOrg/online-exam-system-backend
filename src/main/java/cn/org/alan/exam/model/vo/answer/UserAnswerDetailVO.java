@@ -25,7 +25,9 @@ public class UserAnswerDetailVO {
     private String quImg;
     private String answer;
     private String refAnswer;
-    private Integer correctScore;
+    /** AI 阅卷建议分（教师可修改后提交） */
+    private Integer aiScore;
+    /** AI 阅卷说明，以【AI阅卷】开头 */
     private String aiReason;
     private Integer totalScore;
 

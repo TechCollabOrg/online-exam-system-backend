@@ -62,6 +62,28 @@ public final class AiGradingResponseParser {
         if (s.isEmpty()) {
             return 0;
         }
-        return (int) Math.round(Double.parseDouble(s));
+        try {
+            return (int) Math.round(Double.parseDouble(s));
+        } catch (NumberFormatException e) {
+            return 0;
+        }
+    }
+
+    public static Integer parseQuestionId(JSONObject item) {
+        if (item == null) {
+            throw new IllegalArgumentException("评分项为空");
+        }
+        Object raw = item.get("题目ID");
+        if (raw == null) {
+            throw new IllegalArgumentException("评分结果缺少题目ID");
+        }
+        if (raw instanceof Number) {
+            return ((Number) raw).intValue();
+        }
+        String s = String.valueOf(raw).trim();
+        if (s.isEmpty()) {
+            throw new IllegalArgumentException("题目ID为空");
+        }
+        return Integer.valueOf(s);
     }
 }

@@ -10,7 +10,9 @@ import cn.org.alan.exam.model.vo.question.QuestionScoreVO;
 import cn.org.alan.exam.service.IAiGradingWebSearchService;
 import cn.org.alan.exam.service.IAutoScoringService;
 import cn.org.alan.exam.utils.AiGradingResponseParser;
+import cn.org.alan.exam.utils.AiGradingTextUtil;
 import cn.org.alan.exam.utils.agent.AIChat;
+import cn.org.alan.exam.utils.agent.Constants;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -23,11 +25,12 @@ import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
- * 主观题 AI 辅助评分：结合题目解析与可选联网检索，调用 {@link AIChat} 后写回 aiScore / aiReason。
+ * 主观题 AI 辅助评分：逐题调用模型、钳制分数、写回 aiScore / aiReason（带【AI阅卷】标记）。
  */
 @Slf4j
 @Service
@@ -63,20 +66,21 @@ public class AutoScoringServiceImpl extends ServiceImpl<ExamQuAnswerMapper, Exam
                     return;
                 }
 
-                enrichGradingContext(questions);
+                for (QuestionScoreVO q : questions) {
+                    prepareQuestionForModel(q);
+                    Integer qid = parseQuestionIdFromVo(q);
 
-                String scoringRequest = JSONUtil.toJsonStr(questions);
-                String response = aiChat.getChatResponse(scoringRequest).trim();
-                log.debug("AI阅卷原始回复 examId={} userId={} length={}", examId, userId, response.length());
+                    if (AiGradingTextUtil.isBlankAnswer(q.getUserAnswer())) {
+                        persistAiResult(examId, userId, qid, 0,
+                                AiGradingTextUtil.formatAiReason("未作答，0分"));
+                        continue;
+                    }
 
-                JSONArray scoreArray = AiGradingResponseParser.parseScoreItems(response);
-                if (scoreArray == null || scoreArray.isEmpty()) {
-                    throw new ServiceRuntimeException("AI 返回无法解析为评分结果 JSON");
+                    gradeSingleQuestion(examId, userId, q, qid);
                 }
 
-                applyScoreResults(examId, userId, scoreArray);
                 platformTransactionManager.commit(status);
-                log.info("AI阅卷完成 examId={} userId={} 题数={}", examId, userId, scoreArray.size());
+                log.info("AI阅卷完成 examId={} userId={} 题数={}", examId, userId, questions.size());
                 return;
             } catch (Exception e) {
                 platformTransactionManager.rollback(status);
@@ -95,69 +99,71 @@ public class AutoScoringServiceImpl extends ServiceImpl<ExamQuAnswerMapper, Exam
         }
     }
 
-    private void enrichGradingContext(List<QuestionScoreVO> questions) {
-        for (QuestionScoreVO q : questions) {
-            if (StringUtils.isBlank(q.getReferenceMaterial())) {
-                String plain = stripHtml(q.getQuestionContent());
-                String ref = aiGradingWebSearchService.searchReference(plain);
-                if (StringUtils.isNotBlank(ref)) {
-                    q.setReferenceMaterial(ref);
-                }
-            }
-            if (StringUtils.isBlank(q.getQuestionAnalysis())) {
-                q.setQuestionAnalysis("");
-            }
-            if (StringUtils.isBlank(q.getReferenceMaterial())) {
-                q.setReferenceMaterial("");
-            }
+    private void gradeSingleQuestion(Integer examId, Integer userId, QuestionScoreVO question, Integer questionId)
+            throws Exception {
+        String payload = JSONUtil.toJsonStr(Collections.singletonList(question));
+        String response = aiChat.getGradingResponse(Constants.systemMessage, payload).trim();
+        log.debug("AI阅卷单题回复 questionId={} length={}", questionId, response.length());
+
+        JSONArray scoreArray = AiGradingResponseParser.parseScoreItems(response);
+        if (scoreArray == null || scoreArray.isEmpty()) {
+            throw new ServiceRuntimeException("AI 返回无法解析为评分结果 JSON，questionId=" + questionId);
+        }
+
+        JSONObject item = scoreArray.getJSONObject(0);
+        Integer returnedId = AiGradingResponseParser.parseQuestionId(item);
+        if (!questionId.equals(returnedId)) {
+            throw new ServiceRuntimeException("AI 返回题目ID不匹配，期望" + questionId + "实际" + returnedId);
+        }
+
+        int rawScore = AiGradingResponseParser.parseFinalScore(item);
+        int finalScore = AiGradingTextUtil.clampScore(rawScore, question.getTotalScore());
+        String reason = AiGradingTextUtil.formatAiReason(item.getStr("扣分原因"));
+        if (rawScore != finalScore) {
+            reason = AiGradingTextUtil.formatAiReason(
+                    item.getStr("扣分原因") + "（已按满分" + question.getTotalScore() + "分钳制）");
+        }
+
+        persistAiResult(examId, userId, questionId, finalScore, reason);
+    }
+
+    private void prepareQuestionForModel(QuestionScoreVO q) {
+        q.setQuestionContent(AiGradingTextUtil.stripHtml(q.getQuestionContent()));
+        q.setQusetionAnswer(AiGradingTextUtil.stripHtml(q.getQusetionAnswer()));
+        q.setQuestionAnalysis(AiGradingTextUtil.stripHtml(q.getQuestionAnalysis()));
+        q.setUserAnswer(AiGradingTextUtil.stripHtml(q.getUserAnswer()));
+
+        if (StringUtils.isBlank(q.getReferenceMaterial())) {
+            String ref = aiGradingWebSearchService.searchReference(q.getQuestionContent());
+            q.setReferenceMaterial(StringUtils.isNotBlank(ref) ? ref : "");
+        }
+        if (StringUtils.isBlank(q.getQuestionAnalysis())) {
+            q.setQuestionAnalysis("");
         }
     }
 
-    private void applyScoreResults(Integer examId, Integer userId, JSONArray scoreArray) {
-        for (int i = 0; i < scoreArray.size(); i++) {
-            JSONObject item = scoreArray.getJSONObject(i);
-            Integer questionId = parseQuestionId(item);
-            int finalScore = AiGradingResponseParser.parseFinalScore(item);
-            String reason = item.getStr("扣分原因");
-            if (reason == null) {
-                reason = "";
-            }
+    private void persistAiResult(Integer examId, Integer userId, Integer questionId, int score, String reason) {
+        LambdaQueryWrapper<ExamQuAnswer> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(ExamQuAnswer::getExamId, examId)
+                .eq(ExamQuAnswer::getUserId, userId)
+                .eq(ExamQuAnswer::getQuestionId, questionId);
 
-            LambdaQueryWrapper<ExamQuAnswer> queryWrapper = new LambdaQueryWrapper<>();
-            queryWrapper.eq(ExamQuAnswer::getExamId, examId)
-                    .eq(ExamQuAnswer::getUserId, userId)
-                    .eq(ExamQuAnswer::getQuestionId, questionId);
-
-            ExamQuAnswer existing = getOne(queryWrapper);
-            if (existing == null) {
-                throw new ServiceRuntimeException("未找到作答记录 questionId=" + questionId);
-            }
-
-            ExamQuAnswer update = new ExamQuAnswer();
-            update.setId(existing.getId());
-            update.setAiScore(finalScore);
-            update.setAiReason(reason);
-            updateById(update);
+        ExamQuAnswer existing = getOne(queryWrapper);
+        if (existing == null) {
+            throw new ServiceRuntimeException("未找到作答记录 questionId=" + questionId);
         }
+
+        ExamQuAnswer update = new ExamQuAnswer();
+        update.setId(existing.getId());
+        update.setAiScore(score);
+        update.setAiReason(reason);
+        updateById(update);
     }
 
-    private Integer parseQuestionId(JSONObject item) {
-        Object raw = item.get("题目ID");
-        if (raw == null) {
-            throw new ServiceRuntimeException("评分结果缺少题目ID");
+    private Integer parseQuestionIdFromVo(QuestionScoreVO q) {
+        if (q == null || StringUtils.isBlank(q.getQuestionId())) {
+            throw new ServiceRuntimeException("题目缺少题目ID");
         }
-        if (raw instanceof Number) {
-            return ((Number) raw).intValue();
-        }
-        return Integer.valueOf(String.valueOf(raw).trim());
-    }
-
-    private static String stripHtml(String html) {
-        if (StringUtils.isBlank(html)) {
-            return "";
-        }
-        return html.replaceAll("<[^>]+>", " ")
-                .replaceAll("\\s+", " ")
-                .trim();
+        return Integer.valueOf(q.getQuestionId().trim());
     }
 }

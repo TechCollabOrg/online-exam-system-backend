@@ -72,4 +72,9 @@ public class DifyUtil implements AIChat {
     public String getChatResponse(String systemPrompt, String userMessage) throws Exception {
         return getChatResponse(systemPrompt + "\n\n" + userMessage);
     }
+
+    @Override
+    public String getGradingResponse(String systemPrompt, String userMessage) throws Exception {
+        return getChatResponse(systemPrompt, userMessage);
+    }
 }

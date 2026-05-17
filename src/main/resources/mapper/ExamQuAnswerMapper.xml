@@ -32,7 +32,7 @@
                 from t_option o2
                 where o2.qu_id = q.id and o2.is_right = 1 and (o2.is_deleted = 0 or o2.is_deleted is null)
             ) as refAnswer,
-            eqa.ai_score as correctScore,
+            eqa.ai_score as aiScore,
             eqa.ai_reason as aiReason,
             eq.score as totalScore
         from t_exam_qu_answer as eqa
