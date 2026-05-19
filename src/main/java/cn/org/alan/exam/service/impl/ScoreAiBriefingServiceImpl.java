@@ -15,6 +15,8 @@ import cn.org.alan.exam.model.entity.Question;
 import cn.org.alan.exam.model.vo.score.ScoreAiBriefingVO;
 import cn.org.alan.exam.model.vo.score.ScoreBriefingRowVO;
 import cn.org.alan.exam.model.vo.score.QuestionAnalyseVO;
+import cn.org.alan.exam.model.dto.LlmResolvedConfig;
+import cn.org.alan.exam.service.IAiPlatformConfigService;
 import cn.org.alan.exam.service.IScoreAiBriefingService;
 import cn.org.alan.exam.utils.ScoreBriefingStatsUtil;
 import cn.org.alan.exam.utils.agent.AIChat;
@@ -56,11 +58,16 @@ public class ScoreAiBriefingServiceImpl implements IScoreAiBriefingService {
     private ExamQuAnswerMapper examQuAnswerMapper;
     @Resource
     private AIChat aiChat;
+    @Resource
+    private IAiPlatformConfigService aiPlatformConfigService;
 
     @Override
     public Result<ScoreAiBriefingVO> generateBriefing(Integer examId, Integer gradeId) {
         if (examId == null || gradeId == null) {
             return Result.failed("考试与班级不能为空");
+        }
+        if (!isAiConfigured()) {
+            return Result.failed("请由管理员在「API 连接配置」中保存并启用 AI 接口后再生成简报");
         }
         Exam exam = examMapper.selectById(examId);
         if (exam == null || Integer.valueOf(1).equals(exam.getIsDeleted())) {
@@ -118,7 +125,7 @@ public class ScoreAiBriefingServiceImpl implements IScoreAiBriefingService {
         try {
             String briefing = aiChat.getChatResponse(Constants.scoreBriefingSystemMessage, userPayload);
             if (StringUtils.isBlank(briefing)) {
-                return Result.failed("AI 未返回有效内容，请检查 LLM 配置");
+                return Result.failed("AI 未返回有效内容，请检查管理员 API 连接配置");
             }
             ScoreAiBriefingVO vo = new ScoreAiBriefingVO();
             vo.setBriefing(briefing.trim());
@@ -130,6 +137,12 @@ public class ScoreAiBriefingServiceImpl implements IScoreAiBriefingService {
             log.error("成绩 AI 简报失败 examId={} gradeId={}", examId, gradeId, e);
             return Result.failed("AI 调用失败：" + e.getMessage());
         }
+    }
+
+    /** 与 AI 助手、阅卷一致：优先管理员库内配置。 */
+    private boolean isAiConfigured() {
+        LlmResolvedConfig active = aiPlatformConfigService.resolveActive();
+        return active != null && StringUtils.isNotBlank(active.getApiKey());
     }
 
     private List<Map<String, Object>> buildWeakQuestions(Integer examId) {
