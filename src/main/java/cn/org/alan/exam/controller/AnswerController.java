@@ -43,14 +43,17 @@ public class AnswerController {
         return manualScoreService.getDetail(userId, examId);
     }
 
-    /** POST 触发指定考生在某场考试的主观题 AI 阅卷（异步，结果写入 ai_score / ai_reason）。 */
+    /** POST 同步执行 AI 阅卷，完成后 ai_score / ai_reason 已写入数据库。 */
     @ApiOperation("触发AI阅卷")
     @PostMapping("/ai-score")
     @PreAuthorize("hasAnyAuthority('role_teacher','role_admin')")
     public Result<String> triggerAiScore(@RequestParam Integer examId,
                                          @RequestParam Integer userId) {
-        autoScoringService.autoScoringExam(examId, userId);
-        return Result.success("AI 阅卷任务已提交，请稍后刷新页面查看建议分数");
+        int count = autoScoringService.autoScoringExamSync(examId, userId);
+        if (count <= 0) {
+            return Result.success("未找到需要 AI 评分的简答题（可能尚未作答或试卷无简答题）");
+        }
+        return Result.success("AI 阅卷完成，共评分 " + count + " 题");
     }
 
     /** PUT 批量提交简答题分数；Body 校验分组 {@link AnswerGroup.CorrectGroup}。 */

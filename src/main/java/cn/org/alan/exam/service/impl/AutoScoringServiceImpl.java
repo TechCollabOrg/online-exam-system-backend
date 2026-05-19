@@ -5,9 +5,11 @@ import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
 import cn.org.alan.exam.common.exception.ServiceRuntimeException;
 import cn.org.alan.exam.mapper.ExamQuAnswerMapper;
+import cn.org.alan.exam.model.dto.LlmResolvedConfig;
 import cn.org.alan.exam.model.entity.ExamQuAnswer;
 import cn.org.alan.exam.model.vo.question.QuestionScoreVO;
 import cn.org.alan.exam.service.IAiGradingWebSearchService;
+import cn.org.alan.exam.service.IAiPlatformConfigService;
 import cn.org.alan.exam.service.IAutoScoringService;
 import cn.org.alan.exam.utils.AiGradingResponseParser;
 import cn.org.alan.exam.utils.AiGradingTextUtil;
@@ -25,6 +27,7 @@ import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 
+import javax.annotation.Resource;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -51,52 +54,98 @@ public class AutoScoringServiceImpl extends ServiceImpl<ExamQuAnswerMapper, Exam
     @Autowired
     private PlatformTransactionManager platformTransactionManager;
 
+    @Resource
+    private IAiPlatformConfigService aiPlatformConfigService;
+
     @Override
     @Async
     public void autoScoringExam(Integer examId, Integer userId) {
+        try {
+            doAutoScoringExam(examId, userId, false);
+        } catch (Exception e) {
+            log.error("异步 AI 阅卷失败 examId={} userId={}", examId, userId, e);
+        }
+    }
+
+    @Override
+    public int autoScoringExamSync(Integer examId, Integer userId) {
+        assertAiConfigured();
+        return doAutoScoringExam(examId, userId, true);
+    }
+
+    private void assertAiConfigured() {
+        LlmResolvedConfig active = aiPlatformConfigService.resolveActive();
+        if (active == null || StringUtils.isBlank(active.getApiKey())) {
+            throw new ServiceRuntimeException("请由管理员在「API 连接配置」中保存并启用 AI 接口后再使用 AI 阅卷");
+        }
+    }
+
+    /**
+     * @param throwOnFailure 为 true 时（教师手动触发）在重试耗尽后抛出异常
+     * @return 成功写入 AI 分数的题目数
+     */
+    private int doAutoScoringExam(Integer examId, Integer userId, boolean throwOnFailure) {
+        Exception lastError = null;
         for (int attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
             DefaultTransactionDefinition def = new DefaultTransactionDefinition();
             def.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
             TransactionStatus status = platformTransactionManager.getTransaction(def);
             try {
-                List<QuestionScoreVO> questions = examQuAnswerMapper.getQuestionsForGrading(examId, userId);
-                if (questions == null || questions.isEmpty()) {
-                    log.info("AI阅卷跳过：无待评主观题 examId={} userId={}", examId, userId);
-                    platformTransactionManager.commit(status);
-                    return;
-                }
-
-                for (QuestionScoreVO q : questions) {
-                    prepareQuestionForModel(q);
-                    Integer qid = parseQuestionIdFromVo(q);
-
-                    if (AiGradingTextUtil.isBlankAnswer(q.getUserAnswer())) {
-                        persistAiResult(examId, userId, qid, 0,
-                                AiGradingTextUtil.formatAiReason("未作答，0分"));
-                        continue;
-                    }
-
-                    gradeSingleQuestion(examId, userId, q, qid);
-                }
-
+                int graded = runGradingInTransaction(examId, userId);
                 platformTransactionManager.commit(status);
-                log.info("AI阅卷完成 examId={} userId={} 题数={}", examId, userId, questions.size());
-                return;
+                log.info("AI阅卷完成 examId={} userId={} 题数={}", examId, userId, graded);
+                return graded;
             } catch (Exception e) {
                 platformTransactionManager.rollback(status);
+                lastError = e;
                 log.warn("AI阅卷失败 第{}次 examId={} userId={}: {}", attempt, examId, userId, e.getMessage());
                 if (attempt == MAX_ATTEMPTS) {
-                    log.error("AI阅卷重试耗尽 examId={} userId={}", examId, userId, e);
-                    return;
+                    if (throwOnFailure) {
+                        String msg = e.getMessage() != null ? e.getMessage() : "未知错误";
+                        throw new ServiceRuntimeException("AI 阅卷失败：" + msg);
+                    }
+                    return 0;
                 }
                 try {
                     TimeUnit.MILLISECONDS.sleep(RETRY_DELAY_MS);
                 } catch (InterruptedException ie) {
                     Thread.currentThread().interrupt();
-                    return;
+                    if (throwOnFailure) {
+                        throw new ServiceRuntimeException("AI 阅卷被中断");
+                    }
+                    return 0;
                 }
             }
         }
+        if (throwOnFailure && lastError != null) {
+            throw new ServiceRuntimeException("AI 阅卷失败：" + lastError.getMessage());
+        }
+        return 0;
+    }
+
+    private int runGradingInTransaction(Integer examId, Integer userId) throws Exception {
+        List<QuestionScoreVO> questions = examQuAnswerMapper.getQuestionsForGrading(examId, userId);
+        if (questions == null || questions.isEmpty()) {
+            log.info("AI阅卷跳过：无待评主观题 examId={} userId={}", examId, userId);
+            return 0;
+        }
+
+        int graded = 0;
+        for (QuestionScoreVO q : questions) {
+            prepareQuestionForModel(q);
+            Integer qid = parseQuestionIdFromVo(q);
+
+            if (AiGradingTextUtil.isBlankAnswer(q.getUserAnswer())) {
+                persistAiResult(examId, userId, qid, 0,
+                        AiGradingTextUtil.formatAiReason("未作答，0分"));
+                graded++;
+                continue;
+            }
+
+            gradeSingleQuestion(examId, userId, q, qid);
+            graded++;
+        }
+        return graded;
     }
 
     private void gradeSingleQuestion(Integer examId, Integer userId, QuestionScoreVO question, Integer questionId)

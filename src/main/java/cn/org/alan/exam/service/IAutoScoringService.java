@@ -16,5 +16,15 @@ public interface IAutoScoringService extends IService<ExamQuAnswer> {
      * @param userId 用户ID
      * @return 评分结果列表
      */
+    /**
+     * 异步自动评分（交卷后定时任务等场景）。
+     */
     void autoScoringExam(Integer examId, Integer userId);
+
+    /**
+     * 同步 AI 阅卷（教师手动触发），完成后结果已写入库。
+     *
+     * @return 实际评分的题目数
+     */
+    int autoScoringExamSync(Integer examId, Integer userId);
 } 
