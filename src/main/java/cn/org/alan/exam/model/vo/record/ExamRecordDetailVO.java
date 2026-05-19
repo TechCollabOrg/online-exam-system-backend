@@ -12,6 +12,9 @@ import java.util.List;
 @Data
 public class ExamRecordDetailVO {
 
+    /** 题目 ID（t_question.id） */
+    private Integer quId;
+
     private String image;
 
     private String title;

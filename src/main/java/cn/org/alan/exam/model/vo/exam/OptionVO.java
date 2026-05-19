@@ -41,6 +41,9 @@ public class OptionVO {
      */
     private Integer sort;
 
+    /** 0 错误 1 正确（复合题子题选项等场景） */
+    private Integer isRight;
+
     /**
      * 简答题多格作答时，该格学生已填内容（与 {@link #content} 题库参考答案区分；客观题不使用）。
      */

@@ -127,6 +127,7 @@ public class ExerciseRecordServiceImpl extends ServiceImpl<ExerciseRecordMapper,
                 continue;
             }
             ExamRecordDetailVO examRecordDetailVO = new ExamRecordDetailVO();
+            examRecordDetailVO.setQuId(temp.getId());
             examRecordDetailVO.setImage(temp.getImage());
             examRecordDetailVO.setTitle(temp.getContent());
             examRecordDetailVO.setQuType(temp.getQuType());

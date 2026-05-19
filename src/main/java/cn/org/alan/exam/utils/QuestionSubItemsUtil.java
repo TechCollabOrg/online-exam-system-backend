@@ -102,6 +102,7 @@ public final class QuestionSubItemsUtil {
             vo.setSort(sort++);
             vo.setContent(opt.getContent());
             vo.setImage(opt.getImage());
+            vo.setIsRight(opt.getIsRight());
             vos.add(vo);
         }
         return vos;
