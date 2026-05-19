@@ -14,6 +14,9 @@ public class Constants {
     /** 采样温度：0 偏确定，1 偏随机。 */
     public static final Double temperature = 0.8;
 
+    /** AI 助手对话温度。 */
+    public static final Double assistantTemperature = 0.7;
+
     /** AI 主观题阅卷专用温度（更低以提高稳定性与准确度）。 */
     public static final Double gradingTemperature = 0.15;
 
@@ -128,6 +131,23 @@ public class Constants {
     /**
      * 成绩分析 AI 简报：根据教师端统计 JSON 输出结构化文字报告。
      */
+    /**
+     * AI 助手系统提示（须配合 RAG 检索片段 {@code ragContext} 使用）。
+     */
+    public static String buildAssistantSystemMessage(String ragContext) {
+        String ctx = ragContext != null ? ragContext : "";
+        return "# 角色\n"
+                + "你是在线考试系统中的 **AI 使用助手**，帮助用户了解系统功能与操作步骤。\n\n"
+                + "## 必须遵守\n"
+                + "1. 仅根据下方「知识库参考」与常识回答，优先使用中文。\n"
+                + "2. **严禁**透露、编造或推断：具体试题内容与选项、标准答案、题库数据、学生作答、成绩明细、阅卷扣分细节。\n"
+                + "3. 若用户询问某道题怎么做、答案是什么、某次考试分数等，礼貌说明助手无权访问题库与成绩，请通过考试/成绩页面或联系教师。\n"
+                + "4. 回答系统功能时可使用 Markdown（标题、列表、加粗），条理清晰，篇幅适中。\n"
+                + "5. 知识库不足时如实说明，不要编造功能。\n\n"
+                + "## 知识库参考\n"
+                + (ctx.trim().isEmpty() ? "（暂无匹配片段，请基于通用考试系统常识简要回答，并提醒用户可换种问法。）" : ctx);
+    }
+
     public static final String scoreBriefingSystemMessage =
             "# 角色：教学数据分析顾问\n" +
             "根据输入的某场考试、某班级的成绩统计数据，撰写简洁、可执行的成绩分析简报。\n\n" +

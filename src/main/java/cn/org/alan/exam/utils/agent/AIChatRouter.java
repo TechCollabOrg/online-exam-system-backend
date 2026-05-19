@@ -2,7 +2,13 @@ package cn.org.alan.exam.utils.agent;
 
 import cn.org.alan.exam.common.exception.ServiceRuntimeException;
 import cn.org.alan.exam.model.dto.LlmResolvedConfig;
+import cn.org.alan.exam.model.form.ai.AiChatHistoryItemForm;
 import cn.org.alan.exam.service.IAiPlatformConfigService;
+import com.baomidou.mybatisplus.core.toolkit.StringUtils;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import cn.org.alan.exam.utils.agent.impl.CozeUtil;
 import cn.org.alan.exam.utils.agent.impl.DifyUtil;
 import cn.org.alan.exam.utils.agent.impl.LLMUtil;
@@ -37,6 +43,45 @@ public class AIChatRouter implements AIChat {
     @Override
     public String getChatResponse(String msg) throws Exception {
         return getChatResponse(Constants.systemMessage, msg);
+    }
+
+    /**
+     * AI 助手专用：带 RAG 系统提示与多轮历史。
+     */
+    public String getAssistantChatResponse(String systemPrompt, String userMessage,
+                                           List<AiChatHistoryItemForm> history) throws Exception {
+        List<AiChatHistoryItemForm> safeHistory = history != null ? trimHistory(history) : Collections.emptyList();
+        LlmResolvedConfig db = aiPlatformConfigService.resolveActive();
+        if (db != null) {
+            return llmChatExecutor.chatWithHistory(
+                    db, systemPrompt, safeHistory, userMessage, Constants.assistantTemperature);
+        }
+        String combined = buildCombinedUserMessage(safeHistory, userMessage);
+        return delegate().getChatResponse(systemPrompt, combined);
+    }
+
+    private List<AiChatHistoryItemForm> trimHistory(List<AiChatHistoryItemForm> history) {
+        int max = 20;
+        if (history.size() <= max) {
+            return history;
+        }
+        return new ArrayList<>(history.subList(history.size() - max, history.size()));
+    }
+
+    private String buildCombinedUserMessage(List<AiChatHistoryItemForm> history, String userMessage) {
+        if (history == null || history.isEmpty()) {
+            return userMessage;
+        }
+        StringBuilder sb = new StringBuilder("【对话历史】\n");
+        for (AiChatHistoryItemForm item : history) {
+            if (item == null || StringUtils.isBlank(item.getContent())) {
+                continue;
+            }
+            String roleLabel = "assistant".equalsIgnoreCase(item.getRole()) ? "助手" : "用户";
+            sb.append(roleLabel).append("：").append(item.getContent()).append("\n");
+        }
+        sb.append("\n【当前问题】\n").append(userMessage);
+        return sb.toString();
     }
 
     @Override
