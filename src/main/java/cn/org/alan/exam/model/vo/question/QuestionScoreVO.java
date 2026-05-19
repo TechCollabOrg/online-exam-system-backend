@@ -31,16 +31,27 @@ public class QuestionScoreVO {
     private Integer totalScore;
 
     /**
-     * 标准答案
+     * 标准答案（多选项已聚合）
      */
     @JsonProperty("标准答案")
     private String qusetionAnswer;
+
+    /**
+     * 题目解析（题库 analysis 字段，供模型对照判分）
+     */
+    @JsonProperty("题目解析")
+    private String questionAnalysis;
+
+    /**
+     * 联网检索摘要（可选，由 Serper 等注入）
+     */
+    @JsonProperty("参考资料")
+    private String referenceMaterial;
 
     /**
      * 待评分答案
      */
     @JsonProperty("待评分答案")
     private String userAnswer;
-
 
 }

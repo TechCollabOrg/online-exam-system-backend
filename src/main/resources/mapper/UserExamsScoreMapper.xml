@@ -69,6 +69,20 @@
         order by ues.user_score desc;
     </select>
 
+    <select id="listBriefingScores" resultType="cn.org.alan.exam.model.vo.score.ScoreBriefingRowVO">
+        SELECT u.real_name AS realName,
+               ues.user_score AS userScore,
+               IFNULL(ues.count, 0) AS cutScreenCount
+        FROM t_user_exams_score ues
+        JOIN t_user u ON ues.user_id = u.id
+        WHERE ues.exam_id = #{examId}
+          AND u.grade_id = #{gradeId}
+          AND ues.state = 1
+          AND ues.whether_mark IN (-1, 1)
+          AND ues.user_score IS NOT NULL
+        ORDER BY ues.user_score DESC
+    </select>
+
     <select id="listMyCompletedExamScores" resultType="cn.org.alan.exam.model.vo.score.MyExamScoreRow">
         SELECT
             ues.exam_id AS examId,

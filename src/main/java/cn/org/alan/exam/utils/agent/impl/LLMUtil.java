@@ -87,21 +87,39 @@ public class LLMUtil implements AIChat {
     /** 系统人设 + 用户消息拼接为单次 prompt，经 {@link Assistant#answer} 返回文本。 */
     @Override
     public String getChatResponse(String msg) {
+        return getChatResponse(Constants.systemMessage, msg);
+    }
+
+    @Override
+    public String getChatResponse(String systemPrompt, String userMessage) {
         Assistant assistant = createAssistant();
-        ChatMessage systemMessage = new SystemMessage(Constants.systemMessage);
-        ChatMessage userMessage = new UserMessage(msg);
-        String input = systemMessage.text() + "\n" + userMessage.text();
+        ChatMessage systemMessage = new SystemMessage(systemPrompt);
+        ChatMessage userMsg = new UserMessage(userMessage);
+        String input = systemMessage.text() + "\n" + userMsg.text();
+        return assistant.answer(input);
+    }
+
+    @Override
+    public String getGradingResponse(String systemPrompt, String userMessage) {
+        Assistant assistant = createAssistant(Constants.gradingTemperature);
+        ChatMessage systemMessage = new SystemMessage(systemPrompt);
+        ChatMessage userMsg = new UserMessage(userMessage);
+        String input = systemMessage.text() + "\n" + userMsg.text();
         return assistant.answer(input);
     }
 
     /** 构建兼容 OpenAI API 的聊天模型，并生成 LangChain4j {@link Assistant} 代理（未启用 RAG 时为纯对话）。 */
     private Assistant createAssistant() {
+        return createAssistant(Constants.temperature);
+    }
+
+    private Assistant createAssistant(Double temperature) {
 
         OpenAiChatModel llm = OpenAiChatModel.builder()
                 .apiKey(llmApiKey)
                 .modelName(llmModelName)
                 .baseUrl(llmBaseUrl)
-                .temperature(Constants.temperature)
+                .temperature(temperature)
                 .maxTokens(Constants.maxToken)
                 .build();
 

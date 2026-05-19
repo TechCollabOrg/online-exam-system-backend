@@ -1,0 +1,59 @@
+{
+  "questions": [
+    {
+      "quType": 1,
+      "content": "示例单选题题干",
+      "analysis": "整题解析（选填）",
+      "image": null,
+      "options": [
+        { "content": "选项A", "isRight": 1 },
+        { "content": "选项B", "isRight": 0 }
+      ]
+    },
+    {
+      "quType": 5,
+      "content": "阅读下列材料，回答问题。",
+      "analysis": "复合题整题解析（选填）",
+      "subItems": [
+        {
+          "sort": 1,
+          "content": "(1) 材料相关单选题",
+          "quType": 1,
+          "options": [
+            { "content": "对", "isRight": 1 },
+            { "content": "错", "isRight": 0 }
+          ]
+        },
+        {
+          "sort": 2,
+          "content": "(2) 材料相关简答",
+          "quType": 4,
+          "options": [
+            { "content": "参考答案要点（可 HTML）", "isRight": 1 }
+          ]
+        }
+      ]
+    },
+    {
+      "stemGroupCode": "G1",
+      "sharedStemContent": "材料组方式：多行合并为一条复合题（首行必填）",
+      "sharedStemImage": null,
+      "quType": 2,
+      "content": "第1小题题干",
+      "options": [
+        { "content": "A", "isRight": 1 },
+        { "content": "B", "isRight": 1 },
+        { "content": "C", "isRight": 0 }
+      ]
+    },
+    {
+      "stemGroupCode": "G1",
+      "quType": 1,
+      "content": "第2小题题干",
+      "options": [
+        { "content": "是", "isRight": 1 },
+        { "content": "否", "isRight": 0 }
+      ]
+    }
+  ]
+}

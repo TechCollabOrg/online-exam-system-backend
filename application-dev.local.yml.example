@@ -1,0 +1,7 @@
+# 复制为 application-dev.local.yml 后填写（该文件已 gitignore，勿提交）
+# 也可使用 env.local + IDEA/Cursor 启动配置中的环境变量（优先级更高）
+spring:
+  datasource:
+    password: "你的MySQL密码"
+  redis:
+    password: 你的Redis密码

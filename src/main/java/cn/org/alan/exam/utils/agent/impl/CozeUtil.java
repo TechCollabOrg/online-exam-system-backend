@@ -68,4 +68,14 @@ public class CozeUtil implements AIChat {
 
         return answer.orElseThrow(() -> new RuntimeException("No answer found"));
     }
+
+    @Override
+    public String getChatResponse(String systemPrompt, String userMessage) throws Exception {
+        return getChatResponse(systemPrompt + "\n\n" + userMessage);
+    }
+
+    @Override
+    public String getGradingResponse(String systemPrompt, String userMessage) throws Exception {
+        return getChatResponse(systemPrompt, userMessage);
+    }
 }

@@ -4,6 +4,7 @@ import cn.org.alan.exam.model.entity.UserExamsScore;
 import cn.org.alan.exam.model.vo.answer.UncorrectedUserVO;
 import cn.org.alan.exam.model.vo.score.ExportScoreVO;
 import cn.org.alan.exam.model.vo.score.GradeScoreVO;
+import cn.org.alan.exam.model.vo.score.ScoreBriefingRowVO;
 import cn.org.alan.exam.model.vo.score.MyExamScoreRow;
 import cn.org.alan.exam.model.vo.score.PeerExamScoreRow;
 import cn.org.alan.exam.model.vo.score.UserScoreVO;
@@ -54,6 +55,11 @@ public interface UserExamsScoreMapper extends BaseMapper<UserExamsScore> {
      * @return 查询结果
      */
     List<ExportScoreVO> selectScores(Integer examId, Integer gradeId);
+
+    /**
+     * 某班某场考试已出分成绩（含切屏次数），供 AI 简报统计。
+     */
+    List<ScoreBriefingRowVO> listBriefingScores(@Param("examId") Integer examId, @Param("gradeId") Integer gradeId);
 
     /**
      * 根据考试id获取未考试用户
