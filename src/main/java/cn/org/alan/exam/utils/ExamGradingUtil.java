@@ -12,7 +12,9 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * 判断试卷是否含需人工阅卷的题目（简答题或含简答子题的复合题）。
@@ -34,11 +36,16 @@ public final class ExamGradingUtil {
         LambdaQueryWrapper<ExamQuestion> qw = new LambdaQueryWrapper<>();
         qw.eq(ExamQuestion::getExamId, examId);
         List<ExamQuestion> examQuestions = examQuestionMapper.selectList(qw);
-        for (ExamQuestion examQuestion : examQuestions) {
-            if (examQuestion.getQuestionId() == null) {
-                continue;
-            }
-            Question question = questionMapper.selectById(examQuestion.getQuestionId());
+        List<Integer> quIds = examQuestions.stream()
+                .map(ExamQuestion::getQuestionId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .collect(Collectors.toList());
+        if (quIds.isEmpty()) {
+            return false;
+        }
+        List<Question> questions = questionMapper.selectBatchIds(quIds);
+        for (Question question : questions) {
             if (questionNeedsManualGrading(question)) {
                 return true;
             }

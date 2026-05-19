@@ -123,19 +123,23 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
         List<Integer> multiCountsByRepo = expandPerRepoValues(examAddForm.getMultiCount(), expandSize, "多选题数量");
         List<Integer> judgeCountsByRepo = expandPerRepoValues(examAddForm.getJudgeCount(), expandSize, "判断题数量");
         List<Integer> saqCountsByRepo = expandPerRepoValues(examAddForm.getSaqCount(), expandSize, "简答题数量");
+        List<Integer> compoundCountsByRepo = expandPerRepoValues(examAddForm.getCompoundCount(), expandSize, "复合题数量");
         List<Integer> radioScoresByRepo = expandPerRepoValues(examAddForm.getRadioScore(), expandSize, "单选题分数");
         List<Integer> multiScoresByRepo = expandPerRepoValues(examAddForm.getMultiScore(), expandSize, "多选题分数");
         List<Integer> judgeScoresByRepo = expandPerRepoValues(examAddForm.getJudgeScore(), expandSize, "判断题分数");
         List<Integer> saqScoresByRepo = expandPerRepoValues(examAddForm.getSaqScore(), expandSize, "简答题分数");
+        List<Integer> compoundScoresByRepo = expandPerRepoValues(examAddForm.getCompoundScore(), expandSize, "复合题分数");
 
         int radioCount = sumList(radioCountsByRepo);
         int multiCount = sumList(multiCountsByRepo);
         int judgeCount = sumList(judgeCountsByRepo);
         int saqCount = sumList(saqCountsByRepo);
+        int compoundCount = sumList(compoundCountsByRepo);
         int radioScore = resolveUnifiedScore(radioCountsByRepo, radioScoresByRepo, "单选题");
         int multiScore = resolveUnifiedScore(multiCountsByRepo, multiScoresByRepo, "多选题");
         int judgeScore = resolveUnifiedScore(judgeCountsByRepo, judgeScoresByRepo, "判断题");
         int saqScore = resolveUnifiedScore(saqCountsByRepo, saqScoresByRepo, "简答题");
+        int compoundScore = resolveUnifiedScore(compoundCountsByRepo, compoundScoresByRepo, "复合题");
 
         Exam exam = new Exam();
         exam.setTitle(examAddForm.getTitle());
@@ -153,6 +157,8 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
         exam.setJudgeScore(judgeScore);
         exam.setSaqCount(saqCount);
         exam.setSaqScore(saqScore);
+        exam.setCompoundCount(compoundCount);
+        exam.setCompoundScore(compoundScore);
         // 添加考试信息到考试表
         // 计算总分
         Map<Integer, Integer> quScoreMap = manualPick
@@ -165,7 +171,8 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
             grossScore = radioCount * radioScore
                     + multiCount * multiScore
                     + judgeCount * judgeScore
-                    + saqCount * saqScore;
+                    + saqCount * saqScore
+                    + compoundCount * compoundScore;
         }
         exam.setGrossScore(grossScore);
         // 添加考试信息到考试表
@@ -202,7 +209,7 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
         quTypeToScore.put(2, exam.getMultiScore());
         quTypeToScore.put(3, exam.getJudgeScore());
         quTypeToScore.put(4, exam.getSaqScore());
-        quTypeToScore.put(5, exam.getSaqScore());
+        quTypeToScore.put(5, exam.getCompoundScore());
         // <"试题类型"，"题目数量">
         Map<Integer, Integer> quTypeToCount = new HashMap<>();
         quTypeToCount.put(1, exam.getRadioCount());
@@ -295,6 +302,7 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
                 countByType.put(2, multiCountsByRepo.get(repoIdx));
                 countByType.put(3, judgeCountsByRepo.get(repoIdx));
                 countByType.put(4, saqCountsByRepo.get(repoIdx));
+                countByType.put(5, compoundCountsByRepo.get(repoIdx));
 
                 // 开始抽题（按题库逐行抽取）
                 for (Map.Entry<Integer, Integer> entry : countByType.entrySet()) {
@@ -355,7 +363,8 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
             grossScore = exam.getRadioCount() * exam.getRadioScore()
                     + exam.getMultiCount() * exam.getMultiScore()
                     + exam.getJudgeCount() * exam.getJudgeScore()
-                    + exam.getSaqCount() * exam.getSaqScore();
+                    + exam.getSaqCount() * exam.getSaqScore()
+                    + safeInt(exam.getCompoundCount()) * safeInt(exam.getCompoundScore());
         } catch (Exception e) {
             throw new ServiceRuntimeException("计算总分时出现空指针异常:" + e.getMessage());
         }
@@ -1144,8 +1153,8 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
         LocalDateTime userStartTime = userExamsScore1.getCreateTime();
         LocalDateTime userEndTime = userStartTime.plusMinutes(examOne.getExamDuration());
 
-        // 4. 检查当前时间是否超过了用户的截止时间
-        if (nowTime.isAfter(userEndTime)) {
+        // 4. 检查是否超过个人截止时间（预留 60 秒宽限，兼容计时器与服务器时钟差、自动交卷延迟）
+        if (nowTime.isAfter(userEndTime.plusSeconds(60))) {
             return Result.failed("提交失败，已过交卷时间");
         }
 
@@ -1155,35 +1164,49 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
         userExamsScoreToUpdate.setState(1); // 标记为完成
         userExamsScoreToUpdate.setLimitTime(nowTime); // 记录交卷时间
 
+        Integer currentUserId = SecurityUtil.getUserId();
+        List<ExamQuAnswer> placeholderAnswers = new ArrayList<>();
         // 查询用户未作答的简答题，并添加默认空白作答
-        List<ExamQuestion> unansweredSaqQuestions = examQuestionMapper.getUnansweredSaqQuestions(examId, SecurityUtil.getUserId());
+        List<ExamQuestion> unansweredSaqQuestions = examQuestionMapper.getUnansweredSaqQuestions(examId, currentUserId);
         if (unansweredSaqQuestions != null && !unansweredSaqQuestions.isEmpty()) {
             for (ExamQuestion question : unansweredSaqQuestions) {
                 ExamQuAnswer examQuAnswer = new ExamQuAnswer();
                 examQuAnswer.setExamId(examId);
-                examQuAnswer.setUserId(SecurityUtil.getUserId());
+                examQuAnswer.setUserId(currentUserId);
                 examQuAnswer.setQuestionId(question.getQuestionId());
                 examQuAnswer.setQuestionType(4); // 简答题
                 examQuAnswer.setAnswerContent(""); // 空白作答
                 examQuAnswer.setIsRight(0); // 默认错误
-                examQuAnswerMapper.insert(examQuAnswer);
+                placeholderAnswers.add(examQuAnswer);
             }
         }
         // 查询用户未作答的复合题，并添加默认空白作答（isRight 由子题类型决定）
-        List<ExamQuestion> unansweredCompoundQuestions = examQuestionMapper.getUnansweredCompoundQuestions(examId, SecurityUtil.getUserId());
+        List<ExamQuestion> unansweredCompoundQuestions = examQuestionMapper.getUnansweredCompoundQuestions(examId, currentUserId);
         if (unansweredCompoundQuestions != null && !unansweredCompoundQuestions.isEmpty()) {
+            List<Integer> compoundQuIds = unansweredCompoundQuestions.stream()
+                    .map(ExamQuestion::getQuestionId)
+                    .filter(Objects::nonNull)
+                    .distinct()
+                    .collect(Collectors.toList());
+            Map<Integer, Question> compoundQuestionMap = compoundQuIds.isEmpty()
+                    ? Collections.emptyMap()
+                    : questionMapper.selectBatchIds(compoundQuIds).stream()
+                    .collect(Collectors.toMap(Question::getId, q -> q, (a, b) -> a));
             for (ExamQuestion question : unansweredCompoundQuestions) {
-                Question compoundQu = questionMapper.selectById(question.getQuestionId());
+                Question compoundQu = compoundQuestionMap.get(question.getQuestionId());
                 int compoundIsRight = gradeCompoundAnswer(compoundQu, "{}");
                 ExamQuAnswer examQuAnswer = new ExamQuAnswer();
                 examQuAnswer.setExamId(examId);
-                examQuAnswer.setUserId(SecurityUtil.getUserId());
+                examQuAnswer.setUserId(currentUserId);
                 examQuAnswer.setQuestionId(question.getQuestionId());
                 examQuAnswer.setQuestionType(5); // 复合题
                 examQuAnswer.setAnswerContent("{}"); // 空白作答
                 examQuAnswer.setIsRight(compoundIsRight);
-                examQuAnswerMapper.insert(examQuAnswer);
+                placeholderAnswers.add(examQuAnswer);
             }
+        }
+        for (ExamQuAnswer placeholder : placeholderAnswers) {
+            examQuAnswerMapper.insert(placeholder);
         }
 
         // 查询用户答题记录
@@ -1555,10 +1578,17 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
         if (questionType == 3) {
             return exam.getJudgeScore();
         }
-        if (questionType == 4 || questionType == 5) {
+        if (questionType == 4) {
             return exam.getSaqScore();
         }
+        if (questionType == 5) {
+            return exam.getCompoundScore() != null ? exam.getCompoundScore() : exam.getSaqScore();
+        }
         return null;
+    }
+
+    private static int safeInt(Integer value) {
+        return value == null ? 0 : value;
     }
 
     /**

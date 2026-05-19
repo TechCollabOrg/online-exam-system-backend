@@ -59,8 +59,9 @@
     <select id="selectRepoList" resultType="cn.org.alan.exam.model.vo.repo.RepoListVO">
         select r.id,r.user_id,r.title, sum(case when q.qu_type = 1 and q.is_deleted = 0 then 1 else 0 end) as radioNum,
         sum(case when q.qu_type = 2 and q.is_deleted = 0 then 1 else 0 end) as multiNum,
-        sum(case when q.qu_type = 3 and q.is_deleted = 0 then 1 else 0 end) as judgeNum,sum(case when q.qu_type = 4 and
-        q.is_deleted = 0 then 1 else 0 end) as saqNum
+        sum(case when q.qu_type = 3 and q.is_deleted = 0 then 1 else 0 end) as judgeNum,
+        sum(case when q.qu_type = 4 and q.is_deleted = 0 then 1 else 0 end) as saqNum,
+        sum(case when q.qu_type = 5 and q.is_deleted = 0 then 1 else 0 end) as compoundNum
         from t_repo as r left join t_question as q on r.id = q.repo_id
         <trim prefix="where" prefixOverrides="and">
             r.is_deleted = 0

@@ -109,11 +109,21 @@ public class StatServiceImpl extends ServiceImpl<ExamGradeMapper, ExamGrade> imp
         return Result.success("查询成功", allStatsVO);
     }
 
+    /** 单日在线时长展示上限（秒），与 {@link AuthServiceImpl} 写入逻辑一致。 */
+    private static final int MAX_DAILY_ONLINE_SECONDS = 24 * 60 * 60;
+
     /** 当前登录用户近期每日登录/活跃时长序列（Mapper 自定义 SQL）。 */
     @Override
     public Result<List<DailyVO>> getDaily() {
         List<DailyVO> daily = userDailyLoginDurationMapper.getDaily(SecurityUtil.getUserId());
-        return Result.success("请求成功",daily);
+        if (daily != null) {
+            for (DailyVO vo : daily) {
+                if (vo.getTotalSeconds() != null && vo.getTotalSeconds() > MAX_DAILY_ONLINE_SECONDS) {
+                    vo.setTotalSeconds(MAX_DAILY_ONLINE_SECONDS);
+                }
+            }
+        }
+        return Result.success("请求成功", daily);
     }
 }
 
