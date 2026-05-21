@@ -53,7 +53,7 @@ public class AuthController {
         return iAuthService.logout(request);
     }
 
-    /** POST 学生注册：需先通过验证码校验流程；校验分组 {@link UserGroup.RegisterGroup}。 */
+    /** POST 用户注册：可选学生/教师/管理员；教师与管理员须有效邀请码；校验分组 {@link UserGroup.RegisterGroup}。 */
     @ApiOperation("用户注册")
     @PostMapping("/register")
     public Result<String> register(HttpServletRequest request,

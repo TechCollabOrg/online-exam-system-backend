@@ -20,3 +20,6 @@ SOURCE alter_t_exam_qu_answer_score.sql;
 -- SOURCE alter_t_option_content_mediumtext.sql;
 -- SOURCE alter_question_option_image_mediumtext.sql;
 -- SOURCE alter_t_option_analysis_mediumtext.sql;
+
+-- 注册邀请码（教师/管理员注册须凭码）
+-- SOURCE create_t_invite_code.sql;

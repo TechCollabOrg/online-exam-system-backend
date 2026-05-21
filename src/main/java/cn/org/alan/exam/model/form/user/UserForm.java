@@ -5,7 +5,10 @@ import cn.org.alan.exam.utils.excel.ExcelImport;
 
 import lombok.Data;
 
+import javax.validation.constraints.Max;
+import javax.validation.constraints.Min;
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 
 
@@ -38,9 +41,15 @@ public class UserForm {
     @ExcelImport(value = "真实姓名*")
     private String realName;
 
-    // 角色ID
+    // 角色ID：注册时 1学生 2教师 3管理员
+    @NotNull(groups = UserGroup.RegisterGroup.class, message = "请选择注册身份")
+    @Min(value = 1, groups = UserGroup.RegisterGroup.class, message = "注册身份无效")
+    @Max(value = 3, groups = UserGroup.RegisterGroup.class, message = "注册身份无效")
     @ExcelImport(value = "角色")
     private Integer roleId;
+
+    /** 教师/管理员注册必填；学生无需填写 */
+    private String inviteCode;
 
     // 班级ID
     private Integer gradeId;

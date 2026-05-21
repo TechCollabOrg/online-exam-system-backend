@@ -16,6 +16,7 @@ import cn.org.alan.exam.model.form.auth.VerifyCodeForm;
 import cn.org.alan.exam.model.form.user.UserForm;
 import cn.org.alan.exam.model.vo.auth.CaptchaVO;
 import cn.org.alan.exam.service.IAuthService;
+import cn.org.alan.exam.service.IInviteCodeService;
 import cn.org.alan.exam.service.ILogService;
 import cn.org.alan.exam.utils.*;
 import cn.org.alan.exam.utils.security.SysUserDetails;
@@ -36,6 +37,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import javax.servlet.ServletOutputStream;
@@ -118,6 +120,8 @@ public class AuthServiceImpl implements IAuthService {
     HttpServletRequest httpServletRequest;
     @Autowired
     private ILogService logService;
+    @Resource
+    private IInviteCodeService inviteCodeService;
 
     /**
      * 用户名密码登录：可选图形验证码前置校验；密码经客户端 AES 解密后与 BCrypt 比对；
@@ -351,9 +355,10 @@ public class AuthServiceImpl implements IAuthService {
     }
 
     /**
-     * 学生注册：须先通过验证码校验；两次密码一致后 BCrypt 入库，默认角色为学生（{@code roleId=1}）。
+     * 用户注册：须先通过验证码校验；可选学生/教师/管理员；教师与管理员须有效邀请码。
      */
     @Override
+    @Transactional
     public Result<String> register(HttpServletRequest request, UserForm userForm) {
         if (captchaEnabled) {
             if (StringUtils.isBlank(userForm.getCaptchaId())) {
@@ -365,13 +370,27 @@ public class AuthServiceImpl implements IAuthService {
             }
             stringRedisTemplate.delete(regOkKey);
         }
-        // 判断两次密码是否一致
         if (!SecretUtils.desEncrypt(userForm.getPassword()).equals(SecretUtils.desEncrypt(userForm.getCheckedPassword()))) {
             throw new ServiceRuntimeException("两次密码不一致");
         }
+        Integer roleId = userForm.getRoleId();
+        if (roleId == null || roleId < 1 || roleId > 3) {
+            throw new ServiceRuntimeException("请选择有效的注册身份");
+        }
+        if (roleId == 2 || roleId == 3) {
+            inviteCodeService.validateAndConsumeForRegister(userForm.getInviteCode(), roleId);
+        }
+        LambdaQueryWrapper<User> existWrapper = new LambdaQueryWrapper<>();
+        existWrapper.eq(User::getUserName, userForm.getUserName());
+        if (userMapper.selectCount(existWrapper) > 0) {
+            throw new ServiceRuntimeException("用户名已存在");
+        }
         User user = userConverter.fromToEntity(userForm);
         user.setPassword(new BCryptPasswordEncoder().encode(SecretUtils.desEncrypt(user.getPassword())));
-        user.setRoleId(1);
+        user.setRoleId(roleId);
+        if (roleId != 1) {
+            user.setGradeId(null);
+        }
         userMapper.insert(user);
         return Result.success("注册成功");
     }

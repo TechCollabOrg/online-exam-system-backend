@@ -23,6 +23,7 @@ CREATE DATABASE db_exam DEFAULT CHARACTER SET utf8mb4;
 ```
 
 在 MySQL 中执行 `sql/db_exam.sql`。若从旧库升级，按需执行 `sql/` 下以 `alter_` 开头的脚本（详见根 README「试题图片」「材料题」等章节）。  
+**注册邀请码**：对已有库执行一次 `sql/create_t_invite_code.sql`（教师/管理员自助注册须凭码）。  
 **进入考试报 `Unknown column 'score' in 'field list'`**：对已有库执行一次 `sql/alter_t_exam_qu_answer_score.sql`（为 `t_exam_qu_answer` 增加 `score` 列）。
 
 ### 启动
@@ -102,6 +103,7 @@ online-exam-system-backend/
 | 模块 | 路径前缀 | Controller |
 |------|----------|------------|
 | 认证 | `/api/auths` | AuthController |
+| 邀请码 | `/api/invite-codes` | InviteCodeController（仅管理员） |
 | 用户 | `/api/user` | UserController |
 | 班级 | `/api/grades` | GradeController |
 | 题目 | `/api/questions` | QuestionController |
@@ -130,6 +132,11 @@ online-exam-system-backend/
 | GET | `/api/records/exam/detail` | 考后详情，含每题 `totalScore` / `quScore` |
 | GET | `/api/answers/exam/absent` | 教师：某场考试缺考学生（未交卷；可选 `gradeId`、姓名） |
 | POST | `/api/exams/random-preview` | 教师：随机组卷预览（按题库与题型数量抽题，返回题目列表，不落库） |
+| POST | `/api/auths/register` | 注册：Body 含 `roleId`（1/2/3）；教师/管理员须 `inviteCode` |
+| POST | `/api/invite-codes` | 管理员：生成邀请码 |
+| GET | `/api/invite-codes/paging` | 管理员：邀请码分页 |
+| PUT | `/api/invite-codes/{id}/disable` | 管理员：禁用邀请码 |
+| DELETE | `/api/invite-codes/{ids}` | 管理员：批量删除邀请码 |
 
 创建考试 `POST /api/exams`：随机模式（`addQuype=1`）若同时提交 `quIds` 与 `quScores`（与预览列表一致），则按确认后的题目与分值组卷，不再重新洗牌。
 
