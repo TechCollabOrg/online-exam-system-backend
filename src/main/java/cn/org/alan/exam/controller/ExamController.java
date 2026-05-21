@@ -3,6 +3,7 @@ package cn.org.alan.exam.controller;
 
 import cn.org.alan.exam.common.result.Result;
 import cn.org.alan.exam.model.form.exam.ExamAddForm;
+import cn.org.alan.exam.model.form.exam.ExamRandomPreviewForm;
 import cn.org.alan.exam.model.form.exam.ExamUpdateForm;
 import cn.org.alan.exam.model.form.exam_qu_answer.ExamQuAnswerAddForm;
 import cn.org.alan.exam.model.vo.exam.*;
@@ -43,6 +44,14 @@ public class ExamController {
     @PreAuthorize("hasAnyAuthority('role_teacher','role_admin')")
     public Result<String> createExam(@Validated @RequestBody ExamAddForm examAddForm) {
         return examService.createExam(examAddForm);
+    }
+
+    /** POST 随机组卷预览：按规则抽题并返回题目列表，供教师确认与微调。 */
+    @ApiOperation("随机组卷预览")
+    @PostMapping("/random-preview")
+    @PreAuthorize("hasAnyAuthority('role_teacher','role_admin')")
+    public Result<List<ExamRandomPreviewItemVO>> randomPreview(@Validated @RequestBody ExamRandomPreviewForm form) {
+        return examService.randomPreview(form);
     }
 
     /** GET 开课：写入进行中成绩记录，防重复开考。 */

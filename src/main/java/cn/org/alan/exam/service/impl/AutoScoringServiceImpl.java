@@ -5,9 +5,14 @@ import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
 import cn.org.alan.exam.common.exception.ServiceRuntimeException;
 import cn.org.alan.exam.mapper.ExamQuAnswerMapper;
+import cn.org.alan.exam.mapper.ExamQuestionMapper;
+import cn.org.alan.exam.mapper.QuestionMapper;
 import cn.org.alan.exam.model.dto.LlmResolvedConfig;
 import cn.org.alan.exam.model.entity.ExamQuAnswer;
+import cn.org.alan.exam.model.entity.ExamQuestion;
+import cn.org.alan.exam.model.entity.Question;
 import cn.org.alan.exam.model.vo.question.QuestionScoreVO;
+import cn.org.alan.exam.utils.ExamGradingUtil;
 import cn.org.alan.exam.service.IAiGradingWebSearchService;
 import cn.org.alan.exam.service.IAiPlatformConfigService;
 import cn.org.alan.exam.service.IAutoScoringService;
@@ -44,6 +49,12 @@ public class AutoScoringServiceImpl extends ServiceImpl<ExamQuAnswerMapper, Exam
 
     @Autowired
     private ExamQuAnswerMapper examQuAnswerMapper;
+
+    @Autowired
+    private ExamQuestionMapper examQuestionMapper;
+
+    @Autowired
+    private QuestionMapper questionMapper;
 
     @Autowired
     private AIChat aiChat;
@@ -124,8 +135,13 @@ public class AutoScoringServiceImpl extends ServiceImpl<ExamQuAnswerMapper, Exam
     }
 
     private int runGradingInTransaction(Integer examId, Integer userId) throws Exception {
-        List<QuestionScoreVO> questions = examQuAnswerMapper.getQuestionsForGrading(examId, userId);
-        if (questions == null || questions.isEmpty()) {
+        List<QuestionScoreVO> questions = new java.util.ArrayList<>();
+        List<QuestionScoreVO> saqList = examQuAnswerMapper.getQuestionsForGrading(examId, userId);
+        if (saqList != null) {
+            questions.addAll(saqList);
+        }
+        questions.addAll(buildCompoundGradingQuestions(examId, userId));
+        if (questions.isEmpty()) {
             log.info("AI阅卷跳过：无待评主观题 examId={} userId={}", examId, userId);
             return 0;
         }
@@ -214,5 +230,49 @@ public class AutoScoringServiceImpl extends ServiceImpl<ExamQuAnswerMapper, Exam
             throw new ServiceRuntimeException("题目缺少题目ID");
         }
         return Integer.valueOf(q.getQuestionId().trim());
+    }
+
+    /**
+     * 含简答小问的复合题：组装为 AI 可评的单条记录（共用材料 + 各简答子题作答）。
+     */
+    private List<QuestionScoreVO> buildCompoundGradingQuestions(Integer examId, Integer userId) {
+        com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<ExamQuestion> eqQw =
+                new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<>();
+        eqQw.eq(ExamQuestion::getExamId, examId).eq(ExamQuestion::getType, 5);
+        List<ExamQuestion> examQuestions = examQuestionMapper.selectList(eqQw);
+        if (examQuestions == null || examQuestions.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<QuestionScoreVO> list = new java.util.ArrayList<>();
+        for (ExamQuestion eq : examQuestions) {
+            if (eq.getQuestionId() == null) {
+                continue;
+            }
+            Question question = questionMapper.selectById(eq.getQuestionId());
+            if (!ExamGradingUtil.compoundNeedsManualGrading(question)) {
+                continue;
+            }
+            com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<ExamQuAnswer> ansQw =
+                    new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<>();
+            ansQw.eq(ExamQuAnswer::getExamId, examId)
+                    .eq(ExamQuAnswer::getUserId, userId)
+                    .eq(ExamQuAnswer::getQuestionId, eq.getQuestionId())
+                    .last("limit 1");
+            ExamQuAnswer answer = examQuAnswerMapper.selectOne(ansQw);
+            if (answer == null) {
+                continue;
+            }
+            QuestionScoreVO vo = new QuestionScoreVO();
+            vo.setQuestionId(String.valueOf(eq.getQuestionId()));
+            String refBlock = ExamGradingUtil.formatCompoundSaqReference(question);
+            vo.setQuestionContent(AiGradingTextUtil.stripHtml(question.getContent())
+                    + (StringUtils.isNotBlank(refBlock) ? "\n【简答子题参考答案】\n" + refBlock : ""));
+            vo.setQusetionAnswer(ExamGradingUtil.formatCompoundSaqReference(question));
+            vo.setQuestionAnalysis(AiGradingTextUtil.stripHtml(question.getAnalysis()));
+            vo.setUserAnswer(ExamGradingUtil.formatCompoundSaqStudentAnswer(question, answer.getAnswerContent()));
+            vo.setTotalScore(eq.getScore() != null ? eq.getScore() : 0);
+            list.add(vo);
+        }
+        return list;
     }
 }

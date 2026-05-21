@@ -349,6 +349,18 @@ public class ExerciseRecordServiceImpl extends ServiceImpl<ExerciseRecordMapper,
             vo.setScoreLabel(null);
             return;
         }
+        if (Integer.valueOf(5).equals(quType)) {
+            if (Integer.valueOf(1).equals(answer.getIsRight())) {
+                vo.setQuScore(full);
+                vo.setScoreLabel(null);
+                return;
+            }
+            if (Integer.valueOf(0).equals(answer.getIsRight())) {
+                vo.setQuScore(0);
+                vo.setScoreLabel(null);
+                return;
+            }
+        }
         if (Integer.valueOf(1).equals(whetherMark) && Integer.valueOf(1).equals(answer.getIsRight())) {
             vo.setQuScore(full);
             vo.setScoreLabel(null);

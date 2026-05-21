@@ -4,6 +4,7 @@ import cn.org.alan.exam.common.result.Result;
 import cn.org.alan.exam.model.entity.Exam;
 import cn.org.alan.exam.model.entity.ExamQuAnswer;
 import cn.org.alan.exam.model.form.exam.ExamAddForm;
+import cn.org.alan.exam.model.form.exam.ExamRandomPreviewForm;
 import cn.org.alan.exam.model.form.exam.ExamUpdateForm;
 import cn.org.alan.exam.model.form.exam_qu_answer.ExamQuAnswerAddForm;
 import cn.org.alan.exam.model.vo.exam.*;
@@ -27,6 +28,11 @@ public interface IExamService extends IService<Exam> {
      * @return
      */
     Result<String> createExam(ExamAddForm examAddForm);
+
+    /**
+     * 按随机组卷规则抽题并返回预览列表（不落库）。
+     */
+    Result<List<ExamRandomPreviewItemVO>> randomPreview(ExamRandomPreviewForm form);
 
     /**
      * 修改考试

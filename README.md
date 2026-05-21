@@ -129,6 +129,9 @@ online-exam-system-backend/
 | GET | `/api/records/exam/paging` | 学生：已交卷记录（含 `whetherMark=0` 待批改） |
 | GET | `/api/records/exam/detail` | 考后详情，含每题 `totalScore` / `quScore` |
 | GET | `/api/answers/exam/absent` | 教师：某场考试缺考学生（未交卷；可选 `gradeId`、姓名） |
+| POST | `/api/exams/random-preview` | 教师：随机组卷预览（按题库与题型数量抽题，返回题目列表，不落库） |
+
+创建考试 `POST /api/exams`：随机模式（`addQuype=1`）若同时提交 `quIds` 与 `quScores`（与预览列表一致），则按确认后的题目与分值组卷，不再重新洗牌。
 
 ---
 

@@ -67,10 +67,65 @@ public final class QuestionSubItemsUtil {
             return Collections.emptyList();
         }
         try {
-            return JSON.parseArray(json, QuestionSubItemForm.class);
+            JSONArray arr = JSON.parseArray(json);
+            if (arr == null || arr.isEmpty()) {
+                return Collections.emptyList();
+            }
+            List<QuestionSubItemForm> out = new ArrayList<>();
+            for (int i = 0; i < arr.size(); i++) {
+                JSONObject sub = arr.getJSONObject(i);
+                if (sub == null) {
+                    continue;
+                }
+                QuestionSubItemForm form = sub.toJavaObject(QuestionSubItemForm.class);
+                normalizeSubItemOptions(form, sub.getJSONArray("options"));
+                out.add(form);
+            }
+            return out;
         } catch (Exception e) {
             return Collections.emptyList();
         }
+    }
+
+    /**
+     * 选项是否正确：兼容 JSON 中 isRight 为 1/0、true/false 等写法。
+     */
+    public static boolean isOptionCorrect(Integer isRight) {
+        return isRight != null && isRight == 1;
+    }
+
+    private static void normalizeSubItemOptions(QuestionSubItemForm form, JSONArray optArr) {
+        if (form == null || optArr == null || optArr.isEmpty()) {
+            return;
+        }
+        List<QuestionSubItemOptionForm> opts = new ArrayList<>();
+        for (int i = 0; i < optArr.size(); i++) {
+            JSONObject o = optArr.getJSONObject(i);
+            if (o == null) {
+                continue;
+            }
+            QuestionSubItemOptionForm opt = o.toJavaObject(QuestionSubItemOptionForm.class);
+            opt.setIsRight(parseIsRightFlag(o.get("isRight")));
+            opts.add(opt);
+        }
+        form.setOptions(opts);
+    }
+
+    private static Integer parseIsRightFlag(Object raw) {
+        if (raw == null) {
+            return 0;
+        }
+        if (raw instanceof Boolean) {
+            return Boolean.TRUE.equals(raw) ? 1 : 0;
+        }
+        if (raw instanceof Number) {
+            return ((Number) raw).intValue() != 0 ? 1 : 0;
+        }
+        String s = String.valueOf(raw).trim();
+        if ("true".equalsIgnoreCase(s) || "1".equals(s)) {
+            return 1;
+        }
+        return 0;
     }
 
     public static List<QuestionSubItemVO> parseToVoList(String json) {
@@ -102,7 +157,7 @@ public final class QuestionSubItemsUtil {
             vo.setSort(sort++);
             vo.setContent(opt.getContent());
             vo.setImage(opt.getImage());
-            vo.setIsRight(opt.getIsRight());
+            vo.setIsRight(parseIsRightFlag(opt.getIsRight()));
             vos.add(vo);
         }
         return vos;
