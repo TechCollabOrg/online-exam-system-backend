@@ -1,6 +1,7 @@
 package cn.org.alan.exam.mapper;
 
 import cn.org.alan.exam.model.entity.UserExamsScore;
+import cn.org.alan.exam.model.vo.answer.AbsentUserVO;
 import cn.org.alan.exam.model.vo.answer.UncorrectedUserVO;
 import cn.org.alan.exam.model.vo.score.ExportScoreVO;
 import cn.org.alan.exam.model.vo.score.GradeScoreVO;
@@ -69,6 +70,16 @@ public interface UserExamsScoreMapper extends BaseMapper<UserExamsScore> {
      * @return 查询结果
      */
     IPage<UncorrectedUserVO> uncorrectedUser(IPage<UncorrectedUserVO> page, Integer examId, String realName);
+
+    /**
+     * 某场考试关联班级中尚未交卷（state≠1）的学生。
+     *
+     * @param gradeId 班级 id，可空表示该考试全部关联班级
+     */
+    IPage<AbsentUserVO> absentUsers(IPage<AbsentUserVO> page,
+                                    @Param("examId") Integer examId,
+                                    @Param("gradeId") Integer gradeId,
+                                    @Param("realName") String realName);
 
     /**
      * 当前学生已交卷且已出分（含无简答题）的考试记录，按交卷时间升序。

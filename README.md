@@ -22,7 +22,8 @@
 CREATE DATABASE db_exam DEFAULT CHARACTER SET utf8mb4;
 ```
 
-在 MySQL 中执行 `sql/db_exam.sql`。若从旧库升级，按需执行 `sql/` 下以 `alter_` 开头的脚本（详见根 README「试题图片」「材料题」等章节）。
+在 MySQL 中执行 `sql/db_exam.sql`。若从旧库升级，按需执行 `sql/` 下以 `alter_` 开头的脚本（详见根 README「试题图片」「材料题」等章节）。  
+**进入考试报 `Unknown column 'score' in 'field list'`**：对已有库执行一次 `sql/alter_t_exam_qu_answer_score.sql`（为 `t_exam_qu_answer` 增加 `score` 列）。
 
 ### 启动
 
@@ -121,6 +122,14 @@ online-exam-system-backend/
 
 完整参数与示例见 Knife4j：http://127.0.0.1:8080/doc.html
 
+**近期接口补充**
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | `/api/records/exam/paging` | 学生：已交卷记录（含 `whetherMark=0` 待批改） |
+| GET | `/api/records/exam/detail` | 考后详情，含每题 `totalScore` / `quScore` |
+| GET | `/api/answers/exam/absent` | 教师：某场考试缺考学生（未交卷；可选 `gradeId`、姓名） |
+
 ---
 
 ## 推荐阅读顺序（改代码前）
@@ -162,4 +171,4 @@ Spring Boot 2 · MyBatis-Plus · Spring Security + JWT · Redis · WebSocket · 
 
 ---
 
-*最后更新：2026-05-19*
+*最后更新：2026-05-21*

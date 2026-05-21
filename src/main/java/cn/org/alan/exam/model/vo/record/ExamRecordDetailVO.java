@@ -35,6 +35,15 @@ public class ExamRecordDetailVO {
     /** 是否正确：1 对 0 错 -1 未判（如简答） */
     private Integer isRight;
 
+    /** 该题满分（试卷内配置） */
+    private Integer totalScore;
+
+    /** 该题得分；未阅卷完成时可能为 null */
+    private Integer quScore;
+
+    /** 得分说明：如「待批改」 */
+    private String scoreLabel;
+
     /** 子题时的父题 ID */
     private Integer parentQuId;
 

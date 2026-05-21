@@ -69,9 +69,15 @@ public class ExamQuAnswer implements Serializable {
     private Integer isRight;
 
     /**
+     * 该题得分（客观题自动写入或教师批改后写入）
+     */
+    @ApiModelProperty("题目得分")
+    private Integer score;
+
+    /**
      * 用于客观题, ai评分
      */
-    @ApiModelProperty("是否正确")
+    @ApiModelProperty("AI 建议分")
     private Integer aiScore;
 
     /**
