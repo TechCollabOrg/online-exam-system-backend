@@ -6,6 +6,7 @@ import cn.hutool.json.JSONUtil;
 import cn.org.alan.exam.common.exception.ServiceRuntimeException;
 import cn.org.alan.exam.config.AiGradingProperties;
 import cn.org.alan.exam.mapper.ExamQuAnswerMapper;
+import cn.org.alan.exam.common.enums.AiFeatureCode;
 import cn.org.alan.exam.model.dto.LlmResolvedConfig;
 import cn.org.alan.exam.model.entity.ExamQuAnswer;
 import cn.org.alan.exam.model.vo.question.QuestionScoreVO;
@@ -81,9 +82,9 @@ public class AutoScoringServiceImpl extends ServiceImpl<ExamQuAnswerMapper, Exam
     }
 
     private void assertAiConfigured() {
-        LlmResolvedConfig active = aiPlatformConfigService.resolveActive();
+        LlmResolvedConfig active = aiPlatformConfigService.resolveForFeature(AiFeatureCode.GRADING);
         if (active == null || StringUtils.isBlank(active.getApiKey())) {
-            throw new ServiceRuntimeException("请由管理员在「API 连接配置」中保存并启用 AI 接口后再使用 AI 阅卷");
+            throw new ServiceRuntimeException("请由管理员在「API 连接配置」中为 AI 阅卷保存并启用接口");
         }
     }
 
