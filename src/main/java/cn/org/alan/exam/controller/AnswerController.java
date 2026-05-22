@@ -44,7 +44,7 @@ public class AnswerController {
         return manualScoreService.getDetail(userId, examId);
     }
 
-    /** POST 同步执行 AI 阅卷，完成后 ai_score / ai_reason 已写入数据库。 */
+    /** POST 同步执行 AI 阅卷，全部待评主观题逐题评分后返回。 */
     @ApiOperation("触发AI阅卷")
     @PostMapping("/ai-score")
     @PreAuthorize("hasAnyAuthority('role_teacher','role_admin')")
@@ -52,9 +52,9 @@ public class AnswerController {
                                          @RequestParam Integer userId) {
         int count = autoScoringService.autoScoringExamSync(examId, userId);
         if (count <= 0) {
-            return Result.success("未找到需要 AI 评分的简答题（可能尚未作答或试卷无简答题）");
+            return Result.success("未找到需要 AI 评分的题目（试卷可能无简答题/复合简答子题）");
         }
-        return Result.success("AI 阅卷完成，共评分 " + count + " 题");
+        return Result.success("AI 阅卷完成，共评分 " + count + " 题，请核对后提交批改");
     }
 
     /** PUT 批量提交简答题分数；Body 校验分组 {@link AnswerGroup.CorrectGroup}。 */

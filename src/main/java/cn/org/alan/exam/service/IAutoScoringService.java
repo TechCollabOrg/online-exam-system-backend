@@ -10,21 +10,14 @@ import com.baomidou.mybatisplus.extension.service.IService;
  * @since 2025/4/12
  */
 public interface IAutoScoringService extends IService<ExamQuAnswer> {
-    /**
-     * 自动评分服务
-     * @param examId 考试ID
-     * @param userId 用户ID
-     * @return 评分结果列表
-     */
+
     /**
      * 异步自动评分（交卷后定时任务等场景）。
      */
     void autoScoringExam(Integer examId, Integer userId);
 
     /**
-     * 同步 AI 阅卷（教师手动触发），完成后结果已写入库。
-     *
-     * @return 实际评分的题目数
+     * 同步 AI 阅卷（教师手动触发）：逐题评分并写库，返回成功题数。
      */
     int autoScoringExamSync(Integer examId, Integer userId);
-} 
+}
