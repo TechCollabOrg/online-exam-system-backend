@@ -19,7 +19,8 @@ import cn.org.alan.exam.model.dto.LlmResolvedConfig;
 import cn.org.alan.exam.service.IAiPlatformConfigService;
 import cn.org.alan.exam.service.IScoreAiBriefingService;
 import cn.org.alan.exam.utils.ScoreBriefingStatsUtil;
-import cn.org.alan.exam.utils.agent.AIChat;
+import cn.org.alan.exam.common.enums.AiFeatureCode;
+import cn.org.alan.exam.utils.agent.AIChatRouter;
 import cn.org.alan.exam.utils.agent.Constants;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.StringUtils;
@@ -57,7 +58,7 @@ public class ScoreAiBriefingServiceImpl implements IScoreAiBriefingService {
     @Resource
     private ExamQuAnswerMapper examQuAnswerMapper;
     @Resource
-    private AIChat aiChat;
+    private AIChatRouter aiChatRouter;
     @Resource
     private IAiPlatformConfigService aiPlatformConfigService;
 
@@ -67,7 +68,7 @@ public class ScoreAiBriefingServiceImpl implements IScoreAiBriefingService {
             return Result.failed("考试与班级不能为空");
         }
         if (!isAiConfigured()) {
-            return Result.failed("请由管理员在「API 连接配置」中保存并启用 AI 接口后再生成简报");
+            return Result.failed("请由管理员在「API 连接配置」中为成绩简报保存并启用 AI 接口");
         }
         Exam exam = examMapper.selectById(examId);
         if (exam == null || Integer.valueOf(1).equals(exam.getIsDeleted())) {
@@ -123,7 +124,7 @@ public class ScoreAiBriefingServiceImpl implements IScoreAiBriefingService {
 
         String userPayload = JSONUtil.toJsonPrettyStr(context);
         try {
-            String briefing = aiChat.getChatResponse(Constants.scoreBriefingSystemMessage, userPayload);
+            String briefing = aiChatRouter.getBriefingResponse(Constants.scoreBriefingSystemMessage, userPayload);
             if (StringUtils.isBlank(briefing)) {
                 return Result.failed("AI 未返回有效内容，请检查管理员 API 连接配置");
             }
@@ -141,7 +142,7 @@ public class ScoreAiBriefingServiceImpl implements IScoreAiBriefingService {
 
     /** 与 AI 助手、阅卷一致：优先管理员库内配置。 */
     private boolean isAiConfigured() {
-        LlmResolvedConfig active = aiPlatformConfigService.resolveActive();
+        LlmResolvedConfig active = aiPlatformConfigService.resolveForFeature(AiFeatureCode.BRIEFING);
         return active != null && StringUtils.isNotBlank(active.getApiKey());
     }
 
