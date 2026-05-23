@@ -101,6 +101,16 @@ public class ExamDetailVO {
     private Integer saqScore;
 
     /**
+     * 复合题数量
+     */
+    private Integer compoundCount;
+
+    /**
+     * 复合题成绩     数据库存储*100，前端正常输入和展示/100
+     */
+    private Integer compoundScore;
+
+    /**
      * 开始时间     YYYY-MM-DD hh:mm:ss
      */
     private LocalDateTime startTime;

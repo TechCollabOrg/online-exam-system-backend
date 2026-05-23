@@ -178,9 +178,6 @@ public class AutoScoringServiceImpl extends ServiceImpl<ExamQuAnswerMapper, Exam
         persistAiResult(examId, userId, questionId, finalScore, reason);
     }
 
-    /**
-     * 从模型返回的评分数组中按题目 ID 匹配；单题请求时若 ID 不一致则仍采用该条结果并记日志。
-     */
     private JSONObject findScoreItem(JSONArray scoreArray, Integer questionId) {
         for (int i = 0; i < scoreArray.size(); i++) {
             JSONObject item = scoreArray.getJSONObject(i);
@@ -189,7 +186,7 @@ public class AutoScoringServiceImpl extends ServiceImpl<ExamQuAnswerMapper, Exam
                     return item;
                 }
             } catch (Exception ignored) {
-                // 跳过无法解析 ID 的项
+                // skip
             }
         }
         JSONObject fallback = scoreArray.getJSONObject(0);

@@ -42,4 +42,12 @@ public interface ExamQuAnswerMapper extends BaseMapper<ExamQuAnswer> {
      * @param userId 考生用户 ID
      */
     List<QuestionScoreVO> getQuestionsForGrading(Integer examId, Integer userId);
+
+    /**
+     * 写回单题得分（客观题交卷或教师批改后）。
+     */
+    int updateQuestionScore(@Param("examId") Integer examId,
+                            @Param("userId") Integer userId,
+                            @Param("questionId") Integer questionId,
+                            @Param("score") Integer score);
 }

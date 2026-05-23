@@ -83,6 +83,15 @@ public class Exam implements Serializable {
     @ApiModelProperty("简答题成绩")
     private Integer saqScore;
 
+    @ApiModelProperty("复合题数量")
+    private Integer compoundCount;
+
+    /**
+     * 数据库存储*100，前端正常输入和展示/100
+     */
+    @ApiModelProperty("复合题成绩")
+    private Integer compoundScore;
+
     /**
      * YYYY-MM-DD hh:mm:ss
      */

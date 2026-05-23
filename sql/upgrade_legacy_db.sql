@@ -12,8 +12,14 @@ SOURCE alter_question_sub_items.sql;
 -- 题目表：材料题 parent_qu_id
 SOURCE alter_question_parent_qu_id.sql;
 
+-- 作答表：单题得分 score（阅卷、考后详情需要）
+SOURCE alter_t_exam_qu_answer_score.sql;
+
 -- 可选：题干/选项/图片字段扩为 MEDIUMTEXT（大段 HTML、Base64 图）
 -- SOURCE alter_t_question_content_mediumtext.sql;
 -- SOURCE alter_t_option_content_mediumtext.sql;
 -- SOURCE alter_question_option_image_mediumtext.sql;
 -- SOURCE alter_t_option_analysis_mediumtext.sql;
+
+-- 注册邀请码（教师/管理员注册须凭码）
+-- SOURCE create_t_invite_code.sql;

@@ -92,6 +92,16 @@ public class ExamAddForm {
     @Pattern(regexp = "^\\d+(,\\d+)*$|^\\d+$", message = "简答题分数格式错误，请使用 0 或 1,1,1")
     private String saqScore;
 
+    // 复合题数量
+    @NotBlank(message = "复合题数量不能为空")
+    @Pattern(regexp = "^\\d+(,\\d+)*$|^\\d+$", message = "复合题数量格式错误，请使用 0 或 0,1,2")
+    private String compoundCount;
+
+    // 复合题分数
+    @NotBlank(message = "复合题分数不能为空")
+    @Pattern(regexp = "^\\d+(,\\d+)*$|^\\d+$", message = "复合题分数格式错误，请使用 0 或 1,1,1")
+    private String compoundScore;
+
     // 简答题分数
     @NotBlank(message = "添加试题类型不能为空")
     private String addQuype;

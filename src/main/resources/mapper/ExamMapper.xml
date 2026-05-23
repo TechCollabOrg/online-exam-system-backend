@@ -43,10 +43,12 @@
         e.judge_count as judgeCount,e.judge_score as judgeScore,e.saq_count as saqCount,e.saq_score as saqScore,
         e.start_time as startTime,e.end_time as endTime,e.create_time as createTime,u.user_time as userTime,u.user_score
         as userScore,
-        u.limit_time as limitTime
+        u.limit_time as limitTime,u.whether_mark as whetherMark
         from t_exam e
         join t_user_exams_score as u on u.exam_id = e.id
-        where u.user_id = #{userId} and u.whether_mark in (-1,1) and e.is_deleted = 0
+        where u.user_id = #{userId}
+        and (u.state = 1 or u.limit_time is not null)
+        and e.is_deleted = 0
         <if test='examName!=null and examName!=""'>
             and e.title like concat('%',#{examName},'%')
         </if>

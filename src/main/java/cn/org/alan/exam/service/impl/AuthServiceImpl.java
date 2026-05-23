@@ -16,6 +16,7 @@ import cn.org.alan.exam.model.form.auth.VerifyCodeForm;
 import cn.org.alan.exam.model.form.user.UserForm;
 import cn.org.alan.exam.model.vo.auth.CaptchaVO;
 import cn.org.alan.exam.service.IAuthService;
+import cn.org.alan.exam.service.IInviteCodeService;
 import cn.org.alan.exam.service.ILogService;
 import cn.org.alan.exam.utils.*;
 import cn.org.alan.exam.utils.security.SysUserDetails;
@@ -36,6 +37,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import javax.servlet.ServletOutputStream;
@@ -73,7 +75,15 @@ import java.util.regex.Pattern;
 @Service
 public class AuthServiceImpl implements IAuthService {
     private static final String HEARTBEAT_KEY_PREFIX = "user:heartbeat:";
-    private static final long HEARTBEAT_INTERVAL_MILLIS = 10 * 60 * 1000; // 10分钟
+    /** 与前端 store 心跳间隔一致（5 分钟） */
+    private static final long HEARTBEAT_INTERVAL_MILLIS = 5 * 60 * 1000L;
+    /** 单次心跳最多计入的在线秒数（略大于间隔，容忍网络延迟） */
+    private static final int HEARTBEAT_MAX_CREDIT_SECONDS = (int) (HEARTBEAT_INTERVAL_MILLIS / 1000) + 60;
+    /** 超过该间隔视为已离线，不再把空窗时间计入（避免关浏览器后隔天登录一次累加整天） */
+    private static final int HEARTBEAT_OFFLINE_THRESHOLD_SECONDS = HEARTBEAT_MAX_CREDIT_SECONDS + 60;
+    private static final long HEARTBEAT_REDIS_TTL_MINUTES = 15L;
+    /** 单日在线时长物理上限（秒），防止异常累加超过 24 小时 */
+    private static final int MAX_DAILY_ONLINE_SECONDS = 24 * 60 * 60;
     /** 图形验证码答案在 Redis 中的前缀（与 Session 解耦，避免 img 请求与 axios 会话不一致） */
     private static final String CAPTCHA_CODE_KEY_PREFIX = "captcha:code:";
     /**
@@ -110,6 +120,8 @@ public class AuthServiceImpl implements IAuthService {
     HttpServletRequest httpServletRequest;
     @Autowired
     private ILogService logService;
+    @Resource
+    private IInviteCodeService inviteCodeService;
 
     /**
      * 用户名密码登录：可选图形验证码前置校验；密码经客户端 AES 解密后与 BCrypt 比对；
@@ -183,6 +195,9 @@ public class AuthServiceImpl implements IAuthService {
                 .behavior("设备登录")
                 .userId(user.getId()).build();
         logService.add(log);
+        if (user.getRoleId() != null && user.getRoleId() == 1) {
+            clearHeartbeatKey(user.getId());
+        }
         return Result.success("登录成功", token);
     }
 
@@ -221,6 +236,10 @@ public class AuthServiceImpl implements IAuthService {
                     .behavior("设备登出")
                     .userId(userIdForLog).build();
             logService.add(logEntry);
+            User logoutUser = resolveUserForLogout(token);
+            if (logoutUser != null && logoutUser.getRoleId() != null && logoutUser.getRoleId() == 1) {
+                flushLoginDurationSinceLastHeartbeat(logoutUser.getId());
+            }
             token = stripBearerPrefix(token);
             stringRedisTemplate.delete("token:" + request.getSession().getId());
             session.invalidate();
@@ -336,9 +355,10 @@ public class AuthServiceImpl implements IAuthService {
     }
 
     /**
-     * 学生注册：须先通过验证码校验；两次密码一致后 BCrypt 入库，默认角色为学生（{@code roleId=1}）。
+     * 用户注册：须先通过验证码校验；可选学生/教师/管理员；教师与管理员须有效邀请码。
      */
     @Override
+    @Transactional
     public Result<String> register(HttpServletRequest request, UserForm userForm) {
         if (captchaEnabled) {
             if (StringUtils.isBlank(userForm.getCaptchaId())) {
@@ -350,66 +370,140 @@ public class AuthServiceImpl implements IAuthService {
             }
             stringRedisTemplate.delete(regOkKey);
         }
-        // 判断两次密码是否一致
         if (!SecretUtils.desEncrypt(userForm.getPassword()).equals(SecretUtils.desEncrypt(userForm.getCheckedPassword()))) {
             throw new ServiceRuntimeException("两次密码不一致");
         }
+        Integer roleId = userForm.getRoleId();
+        if (roleId == null || roleId < 1 || roleId > 3) {
+            throw new ServiceRuntimeException("请选择有效的注册身份");
+        }
+        if (roleId == 2 || roleId == 3) {
+            inviteCodeService.validateAndConsumeForRegister(userForm.getInviteCode(), roleId);
+        }
+        LambdaQueryWrapper<User> existWrapper = new LambdaQueryWrapper<>();
+        existWrapper.eq(User::getUserName, userForm.getUserName());
+        if (userMapper.selectCount(existWrapper) > 0) {
+            throw new ServiceRuntimeException("用户名已存在");
+        }
         User user = userConverter.fromToEntity(userForm);
         user.setPassword(new BCryptPasswordEncoder().encode(SecretUtils.desEncrypt(user.getPassword())));
-        user.setRoleId(1);
+        user.setRoleId(roleId);
+        if (roleId != 1) {
+            user.setGradeId(null);
+        }
         userMapper.insert(user);
         return Result.success("注册成功");
     }
 
     /**
-     * 学生心跳：维护 Redis 上次活跃时间，用于统计在线时长并写入 {@link UserDailyLoginDuration}（间隔超过阈值累加）。
+     * 学生心跳：维护 Redis 上次活跃时间，按 capped 间隔累加在线秒数到 {@link UserDailyLoginDuration}。
      */
     @Override
     public Result<String> sendHeartbeat(HttpServletRequest request) {
-        // 创建Redis键
-        String key = HEARTBEAT_KEY_PREFIX + SecurityUtil.getUserId();
         if (SecurityUtil.getRoleCode() == 1) {
-            // 删除该键值并获取上一次的心跳时间
-            String lastHeartbeatStr = stringRedisTemplate.opsForValue().get(key);
-            // 获取当前时间
-            LocalDateTime utcTime = LocalDateTime.now(ZoneOffset.UTC);
-            LocalDateTime now = utcTime.atZone(ZoneOffset.UTC).withZoneSameInstant(ZoneId.of("Asia/Shanghai")).toLocalDateTime();
-            // 设置新的时间
-            stringRedisTemplate.opsForValue().set(key, now.toString());
-            LocalDateTime lastHeartbeat = null;
-            // 将上次时间字符串转换为时间对象
-            if (lastHeartbeatStr == null) {
-                lastHeartbeat = now;
-            } else {
-                lastHeartbeat = LocalDateTime.parse(lastHeartbeatStr);
-            }
-            // 计算上次和现在过了多久 连个时间的时间差
-            Duration durationSinceLastHeartbeat = Duration.between(lastHeartbeat, now);
-            // 获取今天日期
-            LocalDate date = DateTimeUtil.getDate();
-            // 实现累加逻辑，比如更新数据库中的记录
-            // 获取当前用户的今天的记录
-            Integer userId = SecurityUtil.getUserId();
-            UserDailyLoginDuration userDailyLogin = userDailyLoginDurationMapper.getTodayRecord(userId, date);
-            // 如果记录为空
-            if (Objects.isNull(userDailyLogin)) {
-                // 如果没记录
-                UserDailyLoginDuration userDailyLoginDuration = new UserDailyLoginDuration();
-                // 设置用户id
-                userDailyLoginDuration.setUserId(userId);
-                // 设置今天日期
-                userDailyLoginDuration.setLoginDate(date);
-                // 存入秒数
-                userDailyLoginDuration.setTotalSeconds((int) durationSinceLastHeartbeat.getSeconds());
-                userDailyLoginDurationMapper.insert(userDailyLoginDuration);
-            } else {
-                // 如果有记录
-                // 累加今天的时长
-                userDailyLogin.setTotalSeconds(userDailyLogin.getTotalSeconds()
-                        + (int) durationSinceLastHeartbeat.getSeconds());
-                userDailyLoginDurationMapper.updateById(userDailyLogin);
-            }
+            recordStudentPresenceInterval(SecurityUtil.getUserId());
         }
         return Result.success("请求成功");
+    }
+
+    private static LocalDateTime nowInShanghai() {
+        return LocalDateTime.now(ZoneId.of("Asia/Shanghai"));
+    }
+
+    private String heartbeatRedisKey(Integer userId) {
+        return HEARTBEAT_KEY_PREFIX + userId;
+    }
+
+    private void clearHeartbeatKey(Integer userId) {
+        if (userId != null) {
+            stringRedisTemplate.delete(heartbeatRedisKey(userId));
+        }
+    }
+
+    /**
+     * 根据与上次心跳的间隔计算本次应计入的秒数：离线过久不计；在线则封顶为一次心跳周期。
+     */
+    private int computeSecondsToCredit(Duration gap) {
+        if (gap == null || gap.isNegative()) {
+            return 0;
+        }
+        long rawSeconds = gap.getSeconds();
+        if (rawSeconds > HEARTBEAT_OFFLINE_THRESHOLD_SECONDS) {
+            return 0;
+        }
+        return (int) Math.min(rawSeconds, HEARTBEAT_MAX_CREDIT_SECONDS);
+    }
+
+    private void accumulateDailyLoginSeconds(Integer userId, int secondsToAdd) {
+        if (userId == null || secondsToAdd <= 0) {
+            return;
+        }
+        LocalDate date = DateTimeUtil.getDate();
+        UserDailyLoginDuration userDailyLogin = userDailyLoginDurationMapper.getTodayRecord(userId, date);
+        if (Objects.isNull(userDailyLogin)) {
+            UserDailyLoginDuration row = new UserDailyLoginDuration();
+            row.setUserId(userId);
+            row.setLoginDate(date);
+            row.setTotalSeconds(Math.min(secondsToAdd, MAX_DAILY_ONLINE_SECONDS));
+            userDailyLoginDurationMapper.insert(row);
+        } else {
+            int current = userDailyLogin.getTotalSeconds() == null ? 0 : userDailyLogin.getTotalSeconds();
+            int next = Math.min(current + secondsToAdd, MAX_DAILY_ONLINE_SECONDS);
+            userDailyLogin.setTotalSeconds(next);
+            userDailyLoginDurationMapper.updateById(userDailyLogin);
+        }
+    }
+
+    /**
+     * 读取 Redis 中上次心跳，累加 capped 时长后刷新心跳时间（带 TTL，避免长期残留导致虚高）。
+     */
+    private void recordStudentPresenceInterval(Integer userId) {
+        String key = heartbeatRedisKey(userId);
+        LocalDateTime now = nowInShanghai();
+        String lastHeartbeatStr = stringRedisTemplate.opsForValue().get(key);
+        int secondsToAdd = 0;
+        if (lastHeartbeatStr != null) {
+            try {
+                LocalDateTime lastHeartbeat = LocalDateTime.parse(lastHeartbeatStr);
+                secondsToAdd = computeSecondsToCredit(Duration.between(lastHeartbeat, now));
+            } catch (Exception e) {
+                log.warn("heartbeat parse failed for user {}: {}", userId, e.getMessage());
+            }
+        }
+        accumulateDailyLoginSeconds(userId, secondsToAdd);
+        stringRedisTemplate.opsForValue().set(key, now.toString(), HEARTBEAT_REDIS_TTL_MINUTES, TimeUnit.MINUTES);
+    }
+
+    /** 登出时结算本段在线时长并清除心跳键。 */
+    private void flushLoginDurationSinceLastHeartbeat(Integer userId) {
+        String key = heartbeatRedisKey(userId);
+        String lastHeartbeatStr = stringRedisTemplate.opsForValue().get(key);
+        if (lastHeartbeatStr != null) {
+            try {
+                LocalDateTime lastHeartbeat = LocalDateTime.parse(lastHeartbeatStr);
+                int secondsToAdd = computeSecondsToCredit(Duration.between(lastHeartbeat, nowInShanghai()));
+                accumulateDailyLoginSeconds(userId, secondsToAdd);
+            } catch (Exception e) {
+                log.warn("logout heartbeat flush failed for user {}: {}", userId, e.getMessage());
+            }
+        }
+        clearHeartbeatKey(userId);
+    }
+
+    private User resolveUserForLogout(String authorizationHeader) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof SysUserDetails) {
+            return ((SysUserDetails) authentication.getPrincipal()).getUser();
+        }
+        try {
+            String raw = stripBearerPrefix(authorizationHeader);
+            String userInfo = jwtUtil.getUser(raw);
+            if (StringUtils.isNotBlank(userInfo)) {
+                return objectMapper.readValue(userInfo, User.class);
+            }
+        } catch (Exception e) {
+            log.warn("logout: parse user from token failed: {}", e.getMessage());
+        }
+        return null;
     }
 }

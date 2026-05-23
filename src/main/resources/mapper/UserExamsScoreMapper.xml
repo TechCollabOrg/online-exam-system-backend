@@ -114,6 +114,33 @@
         </foreach>
     </select>
 
+    <!-- 缺考：考试关联班级内未交卷的学生 -->
+    <select id="absentUsers" resultType="cn.org.alan.exam.model.vo.answer.AbsentUserVO">
+        select u.id as userId,
+               u.real_name as userName,
+               g.id as gradeId,
+               g.grade_name as gradeName
+        from t_exam_grade eg
+        inner join t_grade g on eg.grade_id = g.id
+        inner join t_user u on u.grade_id = g.id
+        inner join t_role r on u.role_id = r.id and r.code = 'student'
+        where eg.exam_id = #{examId}
+          and (u.status is null or u.status = 1)
+          and not exists (
+              select 1 from t_user_exams_score ues
+              where ues.user_id = u.id
+                and ues.exam_id = #{examId}
+                and (ues.state = 1 or ues.limit_time is not null)
+          )
+        <if test="gradeId != null and gradeId != 0">
+            and g.id = #{gradeId}
+        </if>
+        <if test='realName != null and realName != ""'>
+            and u.real_name like concat('%', #{realName}, '%')
+        </if>
+        order by g.grade_name, u.real_name
+    </select>
+
     <!-- 获取未批改用户信息 -->
     <select id="uncorrectedUser" resultType="cn.org.alan.exam.model.vo.answer.UncorrectedUserVO">
         select u.id as userId,

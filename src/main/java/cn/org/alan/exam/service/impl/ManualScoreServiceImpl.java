@@ -16,6 +16,8 @@ import cn.org.alan.exam.model.form.question.QuestionSubItemForm;
 
 import cn.org.alan.exam.model.form.question.QuestionSubItemOptionForm;
 
+import cn.org.alan.exam.model.vo.answer.AbsentUserVO;
+
 import cn.org.alan.exam.model.vo.answer.AnswerExamVO;
 
 import cn.org.alan.exam.model.vo.answer.UncorrectedUserVO;
@@ -422,6 +424,14 @@ public class ManualScoreServiceImpl extends ServiceImpl<ManualScoreMapper, Manua
 
         return Result.success(null, page);
 
+    }
+
+    @Override
+    public Result<IPage<AbsentUserVO>> absentExamPage(Integer pageNum, Integer pageSize,
+                                                     Integer examId, Integer gradeId, String realName) {
+        IPage<AbsentUserVO> page = new Page<>(pageNum, pageSize);
+        page = userExamsScoreMapper.absentUsers(page, examId, gradeId, realName);
+        return Result.success(null, page);
     }
 
 

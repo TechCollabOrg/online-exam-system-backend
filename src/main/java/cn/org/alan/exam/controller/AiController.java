@@ -2,8 +2,11 @@ package cn.org.alan.exam.controller;
 
 import cn.org.alan.exam.common.result.Result;
 import cn.org.alan.exam.model.form.ai.AiChatForm;
+import cn.org.alan.exam.model.form.ai.AiQuestionReviewForm;
 import cn.org.alan.exam.model.vo.ai.AiChatReplyVO;
+import cn.org.alan.exam.model.vo.ai.AiQuestionReviewVO;
 import cn.org.alan.exam.service.IAiChatService;
+import cn.org.alan.exam.service.IAiQuestionReviewService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -25,11 +28,20 @@ public class AiController {
 
     @Resource
     private IAiChatService aiChatService;
+    @Resource
+    private IAiQuestionReviewService aiQuestionReviewService;
 
     @ApiOperation("发送消息并获取 AI 回复（阻塞，可能较慢）")
     @PostMapping("/chat")
     @PreAuthorize("hasAnyAuthority('role_student','role_teacher','role_admin')")
     public Result<AiChatReplyVO> chat(@Validated @RequestBody AiChatForm form) {
         return aiChatService.chat(form);
+    }
+
+    @ApiOperation("考后单题 AI 解析（学生/教师查看答卷）")
+    @PostMapping("/question-review")
+    @PreAuthorize("hasAnyAuthority('role_student','role_teacher','role_admin')")
+    public Result<AiQuestionReviewVO> questionReview(@Validated @RequestBody AiQuestionReviewForm form) {
+        return aiQuestionReviewService.analyzeQuestion(form);
     }
 }

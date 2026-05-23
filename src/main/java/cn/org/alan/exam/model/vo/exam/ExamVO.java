@@ -97,6 +97,16 @@ public class ExamVO {
     private Integer saqScore;
 
     /**
+     * 复合题数量
+     */
+    private Integer compoundCount;
+
+    /**
+     * 复合题成绩     数据库存储*100，前端正常输入和展示/100
+     */
+    private Integer compoundScore;
+
+    /**
      * 开始时间     YYYY-MM-DD hh:mm:ss
      */
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")

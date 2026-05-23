@@ -136,6 +136,9 @@ public class ExamRecordVO {
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime limitTime;
 
-
+    /**
+     * 阅卷状态：-1 无主观题、0 待教师批改、1 已批改
+     */
+    private Integer whetherMark;
 
 }

@@ -62,6 +62,10 @@ public class ExerciseRecordServiceImpl extends ServiceImpl<ExerciseRecordMapper,
     private ExerciseConverter exerciseConverter;
     @Resource
     private ExerciseRecordMapper exerciseRecordMapper;
+    @Resource
+    private UserExamsScoreMapper userExamsScoreMapper;
+    @Resource
+    private ManualScoreMapper manualScoreMapper;
 
     /** 某题库下指定题型的刷题答题卡列表（Mapper 按用户过滤已练状态等）。 */
     @Override
@@ -78,20 +82,18 @@ public class ExerciseRecordServiceImpl extends ServiceImpl<ExerciseRecordMapper,
         // 创建page对象
         Page<ExamRecordVO> examPage = new Page<>(pageNum, pageSize);
         
-        // 获取当前用户ID和角色
         Integer userId = SecurityUtil.getUserId();
-        Integer roleCode = SecurityUtil.getRoleCode();
-        
-        // 根据不同角色查询不同的试卷
-        if (roleCode==3) {
-            // 管理员查询所有已作答的试卷
+        String role = SecurityUtil.getRole();
+
+        if ("role_admin".equals(role)) {
             examPage = examMapper.getAllExamRecordPage(examPage, examName, isASC);
-        } else if (roleCode==2) {
-            // 教师查询自己创建的试卷
+        } else if ("role_teacher".equals(role)) {
             examPage = examMapper.getTeacherExamRecordPage(examPage, userId, examName, isASC);
-        } else {
-            // 学生查询自己的试卷
+        } else if ("role_student".equals(role)) {
+            // 学生：已交卷即可见（含 whetherMark=0 待批改）
             examPage = examMapper.getExamRecordPage(examPage, userId, examName, isASC);
+        } else {
+            return Result.failed("无权限查看考试记录");
         }
         
         return Result.success("分页查询已考试试卷成功", examPage);
@@ -102,12 +104,31 @@ public class ExerciseRecordServiceImpl extends ServiceImpl<ExerciseRecordMapper,
      */
     @Override
     public Result<List<ExamRecordDetailVO>> getExamRecordDetail(Integer examId, Integer userId) {
-        if(userId==null){
-            userId =SecurityUtil.getUserId();
+        if (userId == null) {
+            userId = SecurityUtil.getUserId();
         }
-        // 1、题干 2、选项 3、自己的答案 4、正确的答案 5、是否正确 6、试题分析
+        String role = SecurityUtil.getRole();
+        LambdaQueryWrapper<UserExamsScore> scoreQw = new LambdaQueryWrapper<>();
+        scoreQw.eq(UserExamsScore::getUserId, userId)
+                .eq(UserExamsScore::getExamId, examId)
+                .last("limit 1");
+        UserExamsScore userScore = userExamsScoreMapper.selectOne(scoreQw);
+        if ("role_student".equals(role)) {
+            if (userScore == null) {
+                return Result.failed("无权限查看该考试记录");
+            }
+            boolean submitted = Integer.valueOf(1).equals(userScore.getState())
+                    || userScore.getLimitTime() != null;
+            if (!submitted) {
+                return Result.failed("考试尚未交卷，暂不可查看记录");
+            }
+        }
+
+        Map<Integer, Integer> questionScoreMap = loadExamQuestionScoreMap(examId);
+        Map<Integer, Integer> teacherManualScoreByAnswerId = loadTeacherManualScoreMap(examId, userId);
+        Integer whetherMark = userScore != null ? userScore.getWhetherMark() : null;
+
         List<ExamRecordDetailVO> examRecordDetailVOS = new ArrayList<>();
-        // 查询该考试的试题
         LambdaQueryWrapper<ExamQuestion> examQuestionWrapper = new LambdaQueryWrapper<>();
         examQuestionWrapper.eq(ExamQuestion::getExamId, examId)
                 .orderByAsc(ExamQuestion::getSort);
@@ -127,10 +148,13 @@ public class ExerciseRecordServiceImpl extends ServiceImpl<ExerciseRecordMapper,
                 continue;
             }
             ExamRecordDetailVO examRecordDetailVO = new ExamRecordDetailVO();
+            examRecordDetailVO.setQuId(temp.getId());
             examRecordDetailVO.setImage(temp.getImage());
             examRecordDetailVO.setTitle(temp.getContent());
             examRecordDetailVO.setQuType(temp.getQuType());
             examRecordDetailVO.setAnalyse(temp.getAnalysis());
+            Integer fullScore = eq.getScore() != null ? eq.getScore() : questionScoreMap.get(temp.getId());
+            examRecordDetailVO.setTotalScore(fullScore);
             Integer quType = temp.getQuType();
 
             if (Integer.valueOf(5).equals(quType)) {
@@ -168,6 +192,7 @@ public class ExerciseRecordServiceImpl extends ServiceImpl<ExerciseRecordMapper,
             if (examQuAnswer == null) {
                 examRecordDetailVO.setMyOption(null);
                 examRecordDetailVO.setIsRight(-1);
+                applyQuestionScore(examRecordDetailVO, null, fullScore, whetherMark);
                 examRecordDetailVOS.add(examRecordDetailVO);
                 continue;
             }
@@ -247,10 +272,117 @@ public class ExerciseRecordServiceImpl extends ServiceImpl<ExerciseRecordMapper,
                 default:
                     break;
             }
+            applyQuestionScore(examRecordDetailVO, examQuAnswer, fullScore, whetherMark,
+                    teacherManualScoreByAnswerId.get(examQuAnswer.getId()));
             examRecordDetailVOS.add(examRecordDetailVO);
         }
 
         return Result.success("查询考试的信息成功", examRecordDetailVOS);
+    }
+
+    private Map<Integer, Integer> loadExamQuestionScoreMap(Integer examId) {
+        LambdaQueryWrapper<ExamQuestion> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(ExamQuestion::getExamId, examId);
+        List<ExamQuestion> list = examQuestionMapper.selectList(wrapper);
+        Map<Integer, Integer> map = new HashMap<>();
+        for (ExamQuestion eq : list) {
+            if (eq.getQuestionId() != null && eq.getScore() != null) {
+                map.put(eq.getQuestionId(), eq.getScore());
+            }
+        }
+        return map;
+    }
+
+    /** 教师确认过的人工分（按作答记录 id）。 */
+    private Map<Integer, Integer> loadTeacherManualScoreMap(Integer examId, Integer userId) {
+        LambdaQueryWrapper<ExamQuAnswer> answerQw = new LambdaQueryWrapper<>();
+        answerQw.eq(ExamQuAnswer::getExamId, examId).eq(ExamQuAnswer::getUserId, userId);
+        List<ExamQuAnswer> answers = examQuAnswerMapper.selectList(answerQw);
+        if (answers.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        List<Integer> answerIds = answers.stream().map(ExamQuAnswer::getId).filter(Objects::nonNull).collect(Collectors.toList());
+        if (answerIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        LambdaQueryWrapper<ManualScore> msQw = new LambdaQueryWrapper<>();
+        msQw.in(ManualScore::getExamQuAnswerId, answerIds).isNotNull(ManualScore::getUserId);
+        List<ManualScore> manualScores = manualScoreMapper.selectList(msQw);
+        Map<Integer, Integer> map = new HashMap<>();
+        for (ManualScore ms : manualScores) {
+            if (ms.getExamQuAnswerId() != null && ms.getScore() != null) {
+                map.merge(ms.getExamQuAnswerId(), ms.getScore(), Integer::sum);
+            }
+        }
+        return map;
+    }
+
+    private void applyQuestionScore(ExamRecordDetailVO vo, ExamQuAnswer answer, Integer fullScore, Integer whetherMark) {
+        applyQuestionScore(vo, answer, fullScore, whetherMark, null);
+    }
+
+    private void applyQuestionScore(ExamRecordDetailVO vo, ExamQuAnswer answer, Integer fullScore,
+                                    Integer whetherMark, Integer teacherManualScore) {
+        int full = fullScore != null ? fullScore : 0;
+        if (answer == null) {
+            vo.setQuScore(0);
+            vo.setScoreLabel(null);
+            return;
+        }
+        Integer quType = vo.getQuType();
+        if (answer.getScore() != null) {
+            vo.setQuScore(answer.getScore());
+            vo.setScoreLabel(null);
+            return;
+        }
+        if (teacherManualScore != null) {
+            vo.setQuScore(teacherManualScore);
+            vo.setScoreLabel(null);
+            return;
+        }
+        if (quType != null && (quType == 1 || quType == 2 || quType == 3)) {
+            if (Integer.valueOf(1).equals(answer.getIsRight())) {
+                vo.setQuScore(full);
+            } else {
+                vo.setQuScore(0);
+            }
+            vo.setScoreLabel(null);
+            return;
+        }
+        if (Integer.valueOf(5).equals(quType)) {
+            if (Integer.valueOf(1).equals(answer.getIsRight())) {
+                vo.setQuScore(full);
+                vo.setScoreLabel(null);
+                return;
+            }
+            if (Integer.valueOf(0).equals(answer.getIsRight())) {
+                vo.setQuScore(0);
+                vo.setScoreLabel(null);
+                return;
+            }
+        }
+        if (Integer.valueOf(1).equals(whetherMark) && Integer.valueOf(1).equals(answer.getIsRight())) {
+            vo.setQuScore(full);
+            vo.setScoreLabel(null);
+            return;
+        }
+        if (Integer.valueOf(0).equals(answer.getIsRight())) {
+            vo.setQuScore(0);
+            vo.setScoreLabel(null);
+            return;
+        }
+        if (answer.getAiScore() != null && !Integer.valueOf(1).equals(whetherMark)) {
+            vo.setQuScore(answer.getAiScore());
+            vo.setScoreLabel("AI 建议分");
+            return;
+        }
+        if (Integer.valueOf(-1).equals(answer.getIsRight()) || Integer.valueOf(0).equals(whetherMark)) {
+            vo.setQuScore(null);
+            vo.setScoreLabel("待批改");
+            return;
+        }
+        vo.setQuScore(null);
+        vo.setScoreLabel(null);
     }
 
     /** 当前用户已练习过的题库分页（实体仍为 {@link Repo} 分页再转 VO）。 */

@@ -3,6 +3,7 @@ package cn.org.alan.exam.service;
 import cn.org.alan.exam.common.result.Result;
 import cn.org.alan.exam.model.entity.ManualScore;
 import cn.org.alan.exam.model.form.answer.CorrectAnswerFrom;
+import cn.org.alan.exam.model.vo.answer.AbsentUserVO;
 import cn.org.alan.exam.model.vo.answer.AnswerExamVO;
 import cn.org.alan.exam.model.vo.answer.UncorrectedUserVO;
 import cn.org.alan.exam.model.vo.answer.UserAnswerDetailVO;
@@ -53,5 +54,11 @@ public interface IManualScoreService extends IService<ManualScore> {
      * @return
      */
     Result<IPage<UncorrectedUserVO>> stuExamPage(Integer pageNum, Integer pageSize, Integer examId, String realName);
+
+    /**
+     * 某场考试（可选班级）未交卷学生分页。
+     */
+    Result<IPage<AbsentUserVO>> absentExamPage(Integer pageNum, Integer pageSize,
+                                               Integer examId, Integer gradeId, String realName);
 
 }

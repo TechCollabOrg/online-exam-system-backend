@@ -3,6 +3,7 @@ package cn.org.alan.exam.controller;
 import cn.org.alan.exam.common.group.AnswerGroup;
 import cn.org.alan.exam.common.result.Result;
 import cn.org.alan.exam.model.form.answer.CorrectAnswerFrom;
+import cn.org.alan.exam.model.vo.answer.AbsentUserVO;
 import cn.org.alan.exam.model.vo.answer.AnswerExamVO;
 import cn.org.alan.exam.model.vo.answer.UncorrectedUserVO;
 import cn.org.alan.exam.model.vo.answer.UserAnswerDetailVO;
@@ -83,5 +84,17 @@ public class AnswerController {
                                                         @RequestParam(value = "examId") Integer examId,
                                                         @RequestParam(value = "realName", required = false) String realName) {
         return manualScoreService.stuExamPage(pageNum, pageSize, examId, realName);
+    }
+
+    /** GET 某场考试关联班级中未交卷（缺考）学生分页。 */
+    @ApiOperation("查询缺考学生")
+    @GetMapping("/exam/absent")
+    @PreAuthorize("hasAnyAuthority('role_teacher','role_admin')")
+    public Result<IPage<AbsentUserVO>> absentExamPage(@RequestParam(value = "pageNum", required = false, defaultValue = "1") Integer pageNum,
+                                                      @RequestParam(value = "pageSize", required = false, defaultValue = "10") Integer pageSize,
+                                                      @RequestParam(value = "examId") Integer examId,
+                                                      @RequestParam(value = "gradeId", required = false) Integer gradeId,
+                                                      @RequestParam(value = "realName", required = false) String realName) {
+        return manualScoreService.absentExamPage(pageNum, pageSize, examId, gradeId, realName);
     }
 }

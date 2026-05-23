@@ -27,4 +27,7 @@ public class RepoListVO {
 
     // 简答题数量
     private Integer saqNum;
+
+    // 复合题数量
+    private Integer compoundNum;
 }
