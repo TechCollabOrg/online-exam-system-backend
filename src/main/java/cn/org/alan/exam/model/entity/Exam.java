@@ -40,6 +40,18 @@ public class Exam implements Serializable {
     @ApiModelProperty("最大切屏次数")
     private Integer maxCount;
 
+    @ApiModelProperty("1 启用摄像头监考")
+    private Integer proctorEnabled;
+
+    @ApiModelProperty("1 允许暂离")
+    private Integer allowLeave;
+
+    @ApiModelProperty("单次暂离最长分钟")
+    private Integer leaveMaxMinutes;
+
+    @ApiModelProperty("整场最多暂离次数")
+    private Integer leaveMaxCount;
+
     @ApiModelProperty("创建者ID")
     @TableField(fill = FieldFill.INSERT)
     private Integer userId;

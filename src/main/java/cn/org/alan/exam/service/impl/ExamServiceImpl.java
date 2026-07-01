@@ -153,6 +153,10 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
         exam.setTitle(examAddForm.getTitle());
         exam.setExamDuration(examAddForm.getExamDuration());
         exam.setMaxCount(examAddForm.getMaxCount());
+        exam.setProctorEnabled(examAddForm.getProctorEnabled() != null ? examAddForm.getProctorEnabled() : 0);
+        exam.setAllowLeave(examAddForm.getAllowLeave() != null ? examAddForm.getAllowLeave() : 0);
+        exam.setLeaveMaxMinutes(examAddForm.getLeaveMaxMinutes() != null ? examAddForm.getLeaveMaxMinutes() : 5);
+        exam.setLeaveMaxCount(examAddForm.getLeaveMaxCount() != null ? examAddForm.getLeaveMaxCount() : 1);
         exam.setPassedScore(examAddForm.getPassedScore());
         exam.setStartTime(examAddForm.getStartTime());
         exam.setEndTime(examAddForm.getEndTime());

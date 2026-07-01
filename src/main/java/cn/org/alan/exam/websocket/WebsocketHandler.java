@@ -119,6 +119,26 @@ public class WebsocketHandler {
         });
     }
 
+    /**
+     * 向指定用户推送文本（供监考告警等）。
+     */
+    public static void sendToUser(Integer userId, String message) {
+        if (userId == null || message == null) {
+            return;
+        }
+        Session session = SESSION_MAP.get(userId);
+        if (session == null || !session.isOpen()) {
+            return;
+        }
+        try {
+            synchronized (WebsocketHandler.class) {
+                session.getBasicRemote().sendText(message);
+            }
+        } catch (IOException e) {
+            log.warn("WebSocket 推送失败 userId={}: {}", userId, e.getMessage());
+        }
+    }
+
 
     /**
      * 从握手 URL 的 Query 串解析用户 ID（约定形如 {@code …?userId=123}，取最后一个 {@code =} 右侧整数）。

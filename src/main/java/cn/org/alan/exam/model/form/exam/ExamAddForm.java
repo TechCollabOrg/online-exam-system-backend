@@ -26,6 +26,18 @@ public class ExamAddForm {
     // 最大切屏次数
     private Integer maxCount;
 
+    /** 1 启用摄像头监考 */
+    private Integer proctorEnabled;
+
+    /** 1 允许暂离 */
+    private Integer allowLeave;
+
+    /** 单次暂离最长分钟 */
+    private Integer leaveMaxMinutes;
+
+    /** 整场最多暂离次数 */
+    private Integer leaveMaxCount;
+
     // 及格分
     @Min(value=0,message = "及格分数必须大于0")
     @NotNull(message = "及格分不能为空")

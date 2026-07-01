@@ -104,6 +104,14 @@ serper:
   api-key: ${SERPER_API_KEY:}
   api-url: ${SERPER_API_URL:https://google.serper.dev/search}
 
+# LiveKit 监考（自托管：docker run --rm -p 7880:7880 livekit/livekit-server --dev --bind 0.0.0.0）
+livekit:
+  enabled: ${LIVEKIT_ENABLED:true}
+  url: ${LIVEKIT_URL:ws://127.0.0.1:7880}
+  api-key: ${LIVEKIT_API_KEY:devkey}
+  api-secret: ${LIVEKIT_API_SECRET:secret}
+  token-ttl-sec: ${LIVEKIT_TOKEN_TTL:7200}
+
 online-exam:
   crypto:
     # 须与前端 VUE_APP_CRYPTO_KEY / VUE_APP_CRYPTO_IV 一致（各 16 字符）

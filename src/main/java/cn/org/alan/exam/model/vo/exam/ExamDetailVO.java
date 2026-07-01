@@ -50,6 +50,14 @@ public class ExamDetailVO {
      */
     private Integer maxCount;
 
+    private Integer proctorEnabled;
+
+    private Integer allowLeave;
+
+    private Integer leaveMaxMinutes;
+
+    private Integer leaveMaxCount;
+
     /**
      * 创建者id
      */
