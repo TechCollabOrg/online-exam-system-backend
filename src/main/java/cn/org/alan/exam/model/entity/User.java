@@ -45,6 +45,9 @@ public class User implements Serializable {
     @ApiModelProperty("加入到班级ID")
     private Integer gradeId;
 
+    @ApiModelProperty("专业（学生）")
+    private String major;
+
     /**
      * YYYY-MM-DD hh:mm:ss
      */

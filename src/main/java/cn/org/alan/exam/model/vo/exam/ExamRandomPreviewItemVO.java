@@ -16,6 +16,8 @@ public class ExamRandomPreviewItemVO {
 
     private String image;
 
+    private String audio;
+
     private String content;
 
     private Integer repoId;
@@ -24,6 +26,6 @@ public class ExamRandomPreviewItemVO {
 
     private LocalDateTime createTime;
 
-    /** 按题型默认分给出的建议分值，可在保存前由前端修改 */
-    private Integer assignScore;
+    /** 按题型默认分给出的建议分值（展示分，可带两位小数），可在保存前由前端修改 */
+    private Double assignScore;
 }

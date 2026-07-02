@@ -20,8 +20,8 @@ public class UserScoreVO {
     // 真实姓名
     private  String realName;
     private Integer userTime;
-    // 用户分数
-    private Integer userScore;
+    /** 用户分数（展示分，支持 0.5 等小数） */
+    private Double userScore;
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime limitTime;
     private Integer count;

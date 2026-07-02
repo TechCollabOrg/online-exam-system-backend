@@ -22,9 +22,10 @@ public class StudentExamRankPointVO implements Serializable {
      */
     private String subjectLabel;
 
-    private Integer userScore;
-    /** 试卷满分（总分） */
-    private Integer grossScore;
+    /** 用户得分（展示分） */
+    private Double userScore;
+    /** 试卷满分（展示分） */
+    private Double grossScore;
     /** 班级内名次，1 表示最高 */
     private Integer rankInClass;
     /** 该场考试本班有成绩记录的人数 */

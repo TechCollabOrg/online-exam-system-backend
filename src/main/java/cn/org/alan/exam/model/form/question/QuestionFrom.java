@@ -36,6 +36,10 @@ public class QuestionFrom {
      * 试题图片
      */
     private String image;
+
+    /** 试题音频（如英语听力） */
+    private String audio;
+
     private String analysis;
 
     /**

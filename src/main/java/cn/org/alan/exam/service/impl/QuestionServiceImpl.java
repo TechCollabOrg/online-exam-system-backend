@@ -16,6 +16,7 @@ import cn.org.alan.exam.model.form.question.QuestionSubItemForm;
 import cn.org.alan.exam.model.form.question.QuestionSubItemOptionForm;
 import cn.org.alan.exam.model.vo.question.QuestionVO;
 import cn.org.alan.exam.service.IQuestionService;
+import cn.org.alan.exam.service.IRepoKnowledgeTreeService;
 import cn.org.alan.exam.utils.QuestionImportValidators;
 import cn.org.alan.exam.utils.QuestionSubItemsUtil;
 import cn.org.alan.exam.utils.SecurityUtil;
@@ -55,6 +56,8 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
     private OptionMapper optionMapper;
     @Resource
     private ExerciseRecordMapper exerciseRecordMapper;
+    @Resource
+    private IRepoKnowledgeTreeService repoKnowledgeTreeService;
 
     /** 新增单题：客观题写入选项；简答题每空一条选项；复合题（类型5）小题存 sub_items JSON。 */
     @Override
@@ -107,13 +110,26 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
         return Result.success("批量删除试题成功");
     }
 
-    /** 试题分页：按当前用户角色过滤教师题库；支持标题、题型、所属题库筛选。 */
+    /** 试题分页：按当前用户角色过滤教师题库；支持标题、题型、所属题库、知识点筛选。 */
     @Override
-    public Result<IPage<QuestionVO>> pagingQuestion(Integer pageNum, Integer pageSize, String title, Integer type, Integer repoId) {
+    public Result<IPage<QuestionVO>> pagingQuestion(Integer pageNum, Integer pageSize, String title, Integer type,
+                                                      Integer repoId, String knowledgePointPath) {
+        if (StringUtils.isNotBlank(knowledgePointPath) && repoId == null) {
+            return Result.failed("按知识点筛选须先选择题库");
+        }
+        List<Integer> questionIds = null;
+        if (StringUtils.isNotBlank(knowledgePointPath)) {
+            questionIds = repoKnowledgeTreeService.resolveQuestionIds(repoId, knowledgePointPath);
+            if (questionIds.isEmpty()) {
+                IPage<QuestionVO> empty = new Page<>(pageNum, pageSize, 0);
+                empty.setRecords(Collections.emptyList());
+                return Result.success("分页查询试题成功", empty);
+            }
+        }
         IPage<QuestionVO> page = new Page<>(pageNum, pageSize);
         Integer userId = SecurityUtil.getUserId();
         Integer roleCode = SecurityUtil.getRoleCode();
-        page = questionMapper.selectQuestionPage(page, userId, roleCode, title, type, repoId);
+        page = questionMapper.selectQuestionPage(page, userId, roleCode, title, type, repoId, questionIds);
         return Result.success("分页查询试题成功", page);
     }
 

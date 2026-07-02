@@ -3,8 +3,11 @@ package cn.org.alan.exam.controller;
 
 import cn.org.alan.exam.common.result.Result;
 import cn.org.alan.exam.model.entity.Repo;
+import cn.org.alan.exam.model.vo.repo.RepoKnowledgePointOptionVO;
+import cn.org.alan.exam.model.vo.repo.RepoKnowledgeTreeVO;
 import cn.org.alan.exam.model.vo.repo.RepoListVO;
 import cn.org.alan.exam.model.vo.repo.RepoVO;
+import cn.org.alan.exam.service.IRepoKnowledgeTreeService;
 import cn.org.alan.exam.service.IRepoService;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 
@@ -30,6 +33,8 @@ public class RepoController {
 
     @Resource
     private IRepoService iRepoService;
+    @Resource
+    private IRepoKnowledgeTreeService repoKnowledgeTreeService;
 
     /** POST 新建题库 Body 为 {@link Repo}。 */
     @PostMapping
@@ -83,6 +88,30 @@ public class RepoController {
             @RequestParam(value = "pageNum", required = false, defaultValue = "1") Integer pageNum,
             @RequestParam(value = "pageSize", required = false, defaultValue = "10") Integer pageSize) {
         return iRepoService.getReposByCategory(categoryId, pageNum, pageSize);
+    }
+
+    /** GET 获取题库已保存的知识树。 */
+    @ApiOperation("获取题库知识树")
+    @GetMapping("/{id}/knowledge-tree")
+    @PreAuthorize("hasAnyAuthority('role_teacher','role_admin')")
+    public Result<RepoKnowledgeTreeVO> getKnowledgeTree(@PathVariable("id") Integer id) {
+        return repoKnowledgeTreeService.getKnowledgeTree(id);
+    }
+
+    /** POST 调用 AI 分析题目并生成/覆盖知识树。 */
+    @ApiOperation("生成题库知识树")
+    @PostMapping("/{id}/knowledge-tree/generate")
+    @PreAuthorize("hasAnyAuthority('role_teacher','role_admin')")
+    public Result<RepoKnowledgeTreeVO> generateKnowledgeTree(@PathVariable("id") Integer id) {
+        return repoKnowledgeTreeService.generateKnowledgeTree(id);
+    }
+
+    /** GET 获取知识树下拉选项（按知识点筛选题目用）。 */
+    @ApiOperation("获取题库知识点选项")
+    @GetMapping("/{id}/knowledge-points")
+    @PreAuthorize("hasAnyAuthority('role_teacher','role_admin')")
+    public Result<List<RepoKnowledgePointOptionVO>> listKnowledgePoints(@PathVariable("id") Integer id) {
+        return repoKnowledgeTreeService.listKnowledgePointOptions(id);
     }
 
 }

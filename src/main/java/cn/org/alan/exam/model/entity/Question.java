@@ -33,6 +33,9 @@ public class Question implements Serializable {
     @ApiModelProperty("试题图片")
     private String image;
 
+    @ApiModelProperty("试题音频（如英语听力）")
+    private String audio;
+
     @ApiModelProperty("题干")
     private String content;
 

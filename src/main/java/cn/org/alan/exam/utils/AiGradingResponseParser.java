@@ -45,28 +45,31 @@ public final class AiGradingResponseParser {
     }
 
     /**
-     * 解析「最终得分」，支持整数与小数。
+     * 解析「最终得分」展示分，保留小数（最多两位，与 {@link ExamScoreUtil} 一致）。
      */
-    public static int parseFinalScore(JSONObject item) {
+    public static double parseFinalScore(JSONObject item) {
         if (item == null) {
-            return 0;
+            return 0D;
         }
         Object raw = item.get("最终得分");
         if (raw == null) {
-            return 0;
+            return 0D;
         }
+        double value;
         if (raw instanceof Number) {
-            return (int) Math.round(((Number) raw).doubleValue());
+            value = ((Number) raw).doubleValue();
+        } else {
+            String s = String.valueOf(raw).trim();
+            if (s.isEmpty()) {
+                return 0D;
+            }
+            try {
+                value = Double.parseDouble(s);
+            } catch (NumberFormatException e) {
+                return 0D;
+            }
         }
-        String s = String.valueOf(raw).trim();
-        if (s.isEmpty()) {
-            return 0;
-        }
-        try {
-            return (int) Math.round(Double.parseDouble(s));
-        } catch (NumberFormatException e) {
-            return 0;
-        }
+        return ExamScoreUtil.toDisplay(ExamScoreUtil.toStorage(value)).doubleValue();
     }
 
     public static Integer parseQuestionId(JSONObject item) {

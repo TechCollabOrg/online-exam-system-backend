@@ -36,8 +36,8 @@ public class LocalStorageFileService implements FileService {
             throw new IOException("文件名缺少扩展名");
         }
         String ext = originalFilename.substring(dot).toLowerCase();
-        if (!isImage("x" + ext)) {
-            throw new IOException("不支持的图片扩展名");
+        if (!isImage("x" + ext) && !isAudio("x" + ext)) {
+            throw new IOException("不支持的文件扩展名");
         }
         String fileName = UUID.randomUUID().toString().replace("-", "") + ext;
 
@@ -61,6 +61,16 @@ public class LocalStorageFileService implements FileService {
         }
         String lastName = filename.substring(d + 1).toLowerCase();
         return Arrays.asList("png", "jpg", "jpeg", "bmp").contains(lastName);
+    }
+
+    @Override
+    public boolean isAudio(String filename) {
+        int d = filename.lastIndexOf('.');
+        if (d < 0 || d == filename.length() - 1) {
+            return false;
+        }
+        String lastName = filename.substring(d + 1).toLowerCase();
+        return Arrays.asList("mp3", "wav", "m4a", "ogg", "aac", "webm").contains(lastName);
     }
 
     @Override

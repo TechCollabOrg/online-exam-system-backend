@@ -20,7 +20,7 @@ public class ExamRandomPreviewForm {
     private String radioCount;
 
     @NotBlank(message = "单选题分数不能为空")
-    @Pattern(regexp = "^\\d+(,\\d+)*$|^\\d+$", message = "单选题分数格式错误")
+    @Pattern(regexp = "^(\\d+(\\.\\d{1,2})?)(,(\\d+(\\.\\d{1,2})?))*$|^(\\d+(\\.\\d{1,2})?)$", message = "单选题分数格式错误，请使用 0、1.5 或 1,1,1.5")
     private String radioScore;
 
     @NotBlank(message = "多选题数量不能为空")
@@ -28,7 +28,7 @@ public class ExamRandomPreviewForm {
     private String multiCount;
 
     @NotBlank(message = "多选题分数不能为空")
-    @Pattern(regexp = "^\\d+(,\\d+)*$|^\\d+$", message = "多选题分数格式错误")
+    @Pattern(regexp = "^(\\d+(\\.\\d{1,2})?)(,(\\d+(\\.\\d{1,2})?))*$|^(\\d+(\\.\\d{1,2})?)$", message = "多选题分数格式错误，请使用 0、1.5 或 1,1,1.5")
     private String multiScore;
 
     @NotBlank(message = "判断题数量不能为空")
@@ -36,7 +36,7 @@ public class ExamRandomPreviewForm {
     private String judgeCount;
 
     @NotBlank(message = "判断题分数不能为空")
-    @Pattern(regexp = "^\\d+(,\\d+)*$|^\\d+$", message = "判断题分数格式错误")
+    @Pattern(regexp = "^(\\d+(\\.\\d{1,2})?)(,(\\d+(\\.\\d{1,2})?))*$|^(\\d+(\\.\\d{1,2})?)$", message = "判断题分数格式错误，请使用 0、1.5 或 1,1,1.5")
     private String judgeScore;
 
     @NotBlank(message = "简答题数量不能为空")
@@ -44,7 +44,7 @@ public class ExamRandomPreviewForm {
     private String saqCount;
 
     @NotBlank(message = "简答题分数不能为空")
-    @Pattern(regexp = "^\\d+(,\\d+)*$|^\\d+$", message = "简答题分数格式错误")
+    @Pattern(regexp = "^(\\d+(\\.\\d{1,2})?)(,(\\d+(\\.\\d{1,2})?))*$|^(\\d+(\\.\\d{1,2})?)$", message = "简答题分数格式错误，请使用 0、1.5 或 1,1,1.5")
     private String saqScore;
 
     @NotBlank(message = "复合题数量不能为空")
@@ -52,6 +52,6 @@ public class ExamRandomPreviewForm {
     private String compoundCount;
 
     @NotBlank(message = "复合题分数不能为空")
-    @Pattern(regexp = "^\\d+(,\\d+)*$|^\\d+$", message = "复合题分数格式错误")
+    @Pattern(regexp = "^(\\d+(\\.\\d{1,2})?)(,(\\d+(\\.\\d{1,2})?))*$|^(\\d+(\\.\\d{1,2})?)$", message = "复合题分数格式错误，请使用 0、1.5 或 1,1,1.5")
     private String compoundScore;
 }

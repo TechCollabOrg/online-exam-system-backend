@@ -18,6 +18,7 @@ import cn.org.alan.exam.model.vo.record.ExerciseRecordDetailVO;
 import cn.org.alan.exam.model.vo.record.ExerciseRecordVO;
 import cn.org.alan.exam.service.IExerciseRecordService;
 import cn.org.alan.exam.service.IOptionService;
+import cn.org.alan.exam.utils.ExamScoreUtil;
 import cn.org.alan.exam.utils.SecurityUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -95,7 +96,10 @@ public class ExerciseRecordServiceImpl extends ServiceImpl<ExerciseRecordMapper,
         } else {
             return Result.failed("无权限查看考试记录");
         }
-        
+
+        if (examPage.getRecords() != null) {
+            examPage.getRecords().forEach(ExamScoreUtil::applyDisplay);
+        }
         return Result.success("分页查询已考试试卷成功", examPage);
     }
 
@@ -150,11 +154,12 @@ public class ExerciseRecordServiceImpl extends ServiceImpl<ExerciseRecordMapper,
             ExamRecordDetailVO examRecordDetailVO = new ExamRecordDetailVO();
             examRecordDetailVO.setQuId(temp.getId());
             examRecordDetailVO.setImage(temp.getImage());
+            examRecordDetailVO.setAudio(temp.getAudio());
             examRecordDetailVO.setTitle(temp.getContent());
             examRecordDetailVO.setQuType(temp.getQuType());
             examRecordDetailVO.setAnalyse(temp.getAnalysis());
             Integer fullScore = eq.getScore() != null ? eq.getScore() : questionScoreMap.get(temp.getId());
-            examRecordDetailVO.setTotalScore(fullScore);
+            examRecordDetailVO.setTotalScore(ExamScoreUtil.toDisplayDouble(fullScore));
             Integer quType = temp.getQuType();
 
             if (Integer.valueOf(5).equals(quType)) {
@@ -323,56 +328,56 @@ public class ExerciseRecordServiceImpl extends ServiceImpl<ExerciseRecordMapper,
 
     private void applyQuestionScore(ExamRecordDetailVO vo, ExamQuAnswer answer, Integer fullScore,
                                     Integer whetherMark, Integer teacherManualScore) {
-        int full = fullScore != null ? fullScore : 0;
+        double fullDisplay = ExamScoreUtil.toDisplayDouble(fullScore);
         if (answer == null) {
-            vo.setQuScore(0);
+            vo.setQuScore(0D);
             vo.setScoreLabel(null);
             return;
         }
         Integer quType = vo.getQuType();
         if (answer.getScore() != null) {
-            vo.setQuScore(answer.getScore());
+            vo.setQuScore(ExamScoreUtil.toDisplayDouble(answer.getScore()));
             vo.setScoreLabel(null);
             return;
         }
         if (teacherManualScore != null) {
-            vo.setQuScore(teacherManualScore);
+            vo.setQuScore(ExamScoreUtil.toDisplayDouble(teacherManualScore));
             vo.setScoreLabel(null);
             return;
         }
         if (quType != null && (quType == 1 || quType == 2 || quType == 3)) {
             if (Integer.valueOf(1).equals(answer.getIsRight())) {
-                vo.setQuScore(full);
+                vo.setQuScore(fullDisplay);
             } else {
-                vo.setQuScore(0);
+                vo.setQuScore(0D);
             }
             vo.setScoreLabel(null);
             return;
         }
         if (Integer.valueOf(5).equals(quType)) {
             if (Integer.valueOf(1).equals(answer.getIsRight())) {
-                vo.setQuScore(full);
+                vo.setQuScore(fullDisplay);
                 vo.setScoreLabel(null);
                 return;
             }
             if (Integer.valueOf(0).equals(answer.getIsRight())) {
-                vo.setQuScore(0);
+                vo.setQuScore(0D);
                 vo.setScoreLabel(null);
                 return;
             }
         }
         if (Integer.valueOf(1).equals(whetherMark) && Integer.valueOf(1).equals(answer.getIsRight())) {
-            vo.setQuScore(full);
+            vo.setQuScore(fullDisplay);
             vo.setScoreLabel(null);
             return;
         }
         if (Integer.valueOf(0).equals(answer.getIsRight())) {
-            vo.setQuScore(0);
+            vo.setQuScore(0D);
             vo.setScoreLabel(null);
             return;
         }
         if (answer.getAiScore() != null && !Integer.valueOf(1).equals(whetherMark)) {
-            vo.setQuScore(answer.getAiScore());
+            vo.setQuScore(ExamScoreUtil.toDisplayDouble(answer.getAiScore()));
             vo.setScoreLabel("AI 建议分");
             return;
         }
@@ -412,6 +417,7 @@ public class ExerciseRecordServiceImpl extends ServiceImpl<ExerciseRecordMapper,
         for (Question temp : questions1) {
             ExerciseRecordDetailVO exerciseRecordDetailVO = new ExerciseRecordDetailVO();
             exerciseRecordDetailVO.setImage(temp.getImage());
+            exerciseRecordDetailVO.setAudio(temp.getAudio());
             exerciseRecordDetailVO.setTitle(temp.getContent());
             exerciseRecordDetailVO.setAnalyse(temp.getAnalysis());
             exerciseRecordDetailVO.setQuType(temp.getQuType());
@@ -661,6 +667,7 @@ public class ExerciseRecordServiceImpl extends ServiceImpl<ExerciseRecordMapper,
         }
         vo.setStemContent(stem.getContent());
         vo.setStemImage(stem.getImage());
+        vo.setStemAudio(stem.getAudio());
     }
 
     private void fillCompoundStemOnExerciseRecordDetail(Question child, ExerciseRecordDetailVO vo) {
@@ -674,5 +681,6 @@ public class ExerciseRecordServiceImpl extends ServiceImpl<ExerciseRecordMapper,
         vo.setParentQuId(child.getParentQuId());
         vo.setStemContent(stem.getContent());
         vo.setStemImage(stem.getImage());
+        vo.setStemAudio(stem.getAudio());
     }
 }

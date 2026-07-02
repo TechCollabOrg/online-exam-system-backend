@@ -19,4 +19,8 @@ public interface UserGroup {
     /** 用户自主注册时的字段校验分组。 */
     interface RegisterGroup extends UserGroup {
     }
+
+    /** 管理员维护学生班级与专业时的字段校验分组。 */
+    interface AdminUpdateUserGroup extends UserGroup {
+    }
 }

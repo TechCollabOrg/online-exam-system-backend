@@ -49,4 +49,10 @@ public class Repo implements Serializable {
     
     @ApiModelProperty(value = "分类ID")
     private Integer categoryId;
+
+    @ApiModelProperty("知识树 JSON（AI 生成）")
+    private String knowledgeTree;
+
+    @ApiModelProperty("知识树最近生成时间")
+    private LocalDateTime knowledgeTreeTime;
 }

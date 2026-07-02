@@ -18,6 +18,7 @@ import cn.org.alan.exam.model.vo.score.QuestionAnalyseVO;
 import cn.org.alan.exam.model.dto.LlmResolvedConfig;
 import cn.org.alan.exam.service.IAiPlatformConfigService;
 import cn.org.alan.exam.service.IScoreAiBriefingService;
+import cn.org.alan.exam.utils.ExamScoreUtil;
 import cn.org.alan.exam.utils.ScoreBriefingStatsUtil;
 import cn.org.alan.exam.utils.agent.AIChat;
 import cn.org.alan.exam.utils.agent.Constants;
@@ -82,20 +83,22 @@ public class ScoreAiBriefingServiceImpl implements IScoreAiBriefingService {
         if (rows == null || rows.isEmpty()) {
             return Result.failed("暂无已出分的参考成绩，无法生成简报");
         }
+        rows.forEach(ExamScoreUtil::applyDisplay);
 
-        int fullScore = exam.getGrossScore() != null && exam.getGrossScore() > 0 ? exam.getGrossScore() : 100;
-        int passScore = ScoreBriefingStatsUtil.resolvePassScore(exam.getPassedScore(), fullScore);
+        double fullScore = exam.getGrossScore() != null && exam.getGrossScore() > 0
+                ? ExamScoreUtil.toDisplayDouble(exam.getGrossScore()) : 100D;
+        double passScore = ScoreBriefingStatsUtil.resolvePassScore(exam.getPassedScore(), fullScore);
         boolean passDefault = exam.getPassedScore() == null || exam.getPassedScore() <= 0;
 
-        List<Integer> scoreList = rows.stream()
+        List<Double> scoreList = rows.stream()
                 .map(ScoreBriefingRowVO::getUserScore)
                 .filter(s -> s != null)
                 .collect(Collectors.toList());
 
         int attend = scoreList.size();
-        int max = scoreList.stream().max(Integer::compareTo).orElse(0);
-        int min = scoreList.stream().min(Integer::compareTo).orElse(0);
-        double avg = scoreList.stream().mapToInt(Integer::intValue).average().orElse(0);
+        double max = scoreList.stream().max(Double::compareTo).orElse(0D);
+        double min = scoreList.stream().min(Double::compareTo).orElse(0D);
+        double avg = scoreList.stream().mapToDouble(Double::doubleValue).average().orElse(0);
         long passCount = scoreList.stream().filter(s -> s >= passScore).count();
         double passRate = attend > 0 ? Math.round(passCount * 1000.0 / attend) / 10.0 : 0;
 

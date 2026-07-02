@@ -18,6 +18,7 @@ import cn.org.alan.exam.service.IUserExamsScoreService;
 import cn.org.alan.exam.mapper.ExamQuestionMapper;
 import cn.org.alan.exam.mapper.QuestionMapper;
 import cn.org.alan.exam.utils.ExamGradingUtil;
+import cn.org.alan.exam.utils.ExamScoreUtil;
 import cn.org.alan.exam.utils.SecurityUtil;
 import cn.org.alan.exam.utils.excel.ExcelUtils;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
@@ -63,6 +64,9 @@ public class UserExamsScoreServiceImpl extends ServiceImpl<UserExamsScoreMapper,
     public Result<IPage<UserScoreVO>> pagingScore(Integer pageNum, Integer pageSize, Integer gradeId, Integer examId, String realName) {
         IPage<UserScoreVO> page = new Page<>(pageNum, pageSize);
         page = userExamsScoreMapper.pagingScore(page, gradeId, examId, realName);
+        if (page.getRecords() != null) {
+            page.getRecords().forEach(ExamScoreUtil::applyDisplay);
+        }
         return Result.success(null, page);
     }
 
@@ -73,6 +77,7 @@ public class UserExamsScoreServiceImpl extends ServiceImpl<UserExamsScoreMapper,
     public void exportScores(HttpServletResponse response, Integer examId, Integer gradeId) {
         // 获取成绩信息
         List<ExportScoreVO> scores = userExamsScoreMapper.selectScores(examId, gradeId);
+        scores.forEach(ExamScoreUtil::applyDisplay);
         final int[] sort = {0};
         scores.forEach(exportScoreVO -> exportScoreVO.setRanking(++sort[0]));
         // 获取考试名
@@ -98,6 +103,9 @@ public class UserExamsScoreServiceImpl extends ServiceImpl<UserExamsScoreMapper,
         repairObjectiveOnlyPendingMarks();
         Integer roleCode = SecurityUtil.getRoleCode();
         page = userExamsScoreMapper.scoreStatistics(page, gradeId, examTitle, userId, roleCode, gradeIdList);
+        if (page.getRecords() != null) {
+            page.getRecords().forEach(ExamScoreUtil::applyDisplay);
+        }
         return Result.success("查询成功", page);
     }
 
@@ -126,10 +134,10 @@ public class UserExamsScoreServiceImpl extends ServiceImpl<UserExamsScoreMapper,
         for (MyExamScoreRow row : mine) {
             List<PeerExamScoreRow> list = byExam.getOrDefault(row.getExamId(), Collections.emptyList());
             int classSize = list.size();
-            int myScore = row.getUserScore() == null ? Integer.MIN_VALUE : row.getUserScore();
+            int myScoreStorage = row.getUserScore() == null ? Integer.MIN_VALUE : row.getUserScore();
             long higher = list.stream()
                     .mapToInt(p -> p.getUserScore() == null ? Integer.MIN_VALUE : p.getUserScore())
-                    .filter(sc -> sc > myScore)
+                    .filter(sc -> sc > myScoreStorage)
                     .count();
             int rank = (int) higher + 1;
 
@@ -137,8 +145,8 @@ public class UserExamsScoreServiceImpl extends ServiceImpl<UserExamsScoreMapper,
             vo.setExamId(row.getExamId());
             vo.setExamTitle(row.getExamTitle());
             vo.setSubjectLabel(deriveSubjectLabel(row.getExamTitle()));
-            vo.setUserScore(row.getUserScore());
-            vo.setGrossScore(row.getGrossScore());
+            vo.setUserScore(ExamScoreUtil.toDisplayDoubleOrNull(row.getUserScore()));
+            vo.setGrossScore(ExamScoreUtil.toDisplayDoubleOrNull(row.getGrossScore()));
             vo.setRankInClass(rank);
             vo.setClassAttendCount(classSize);
             vo.setExamTime(row.getLimitTime());

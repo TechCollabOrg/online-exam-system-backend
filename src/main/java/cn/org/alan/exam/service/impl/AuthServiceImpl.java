@@ -186,17 +186,19 @@ public class AuthServiceImpl implements IAuthService {
 
         // 用户信息存放进上下文
         SecurityContextHolder.getContext().setAuthentication(usernamePasswordAuthenticationToken);
-        // 记录日志
-        String device = httpServletRequest.getHeader("User-Agent");
-        String ipRegion = Optional.ofNullable(IPUtils.getIPRegion(httpServletRequest)).orElse("暂无信息");
+        // 记录日志（使用本次请求的 request，确保能读到前端上报的 X-Client-Public-Ip）
+        String device = request.getHeader("User-Agent");
+        String ipRegion = Optional.ofNullable(IPUtils.getIPRegion(request)).orElse("暂无信息");
         Log log = Log.builder()
                 .place(ipRegion)
                 .device(extractDeviceType(device))
                 .behavior("设备登录")
                 .userId(user.getId()).build();
         logService.add(log);
+        // 学生：仅重置 Redis 会话起点，不向库写入时长（禁止登录即记满 24 小时）
         if (user.getRoleId() != null && user.getRoleId() == 1) {
-            clearHeartbeatKey(user.getId());
+            resetTodayInflatedOnlineRecord(user.getId());
+            startOnlineSession(user.getId());
         }
         return Result.success("登录成功", token);
     }
@@ -206,15 +208,19 @@ public class AuthServiceImpl implements IAuthService {
      * 从 HTTP {@code User-Agent} 头括号段截取简要设备/平台片段，用于日志展示。
      */
     public static String extractDeviceType(String userAgent) {
+        if (StringUtils.isBlank(userAgent)) {
+            return "未知设备";
+        }
         // 定义正则表达式模式
         String pattern = "\\((.*?);";
         Pattern r = Pattern.compile(pattern);
         Matcher m = r.matcher(userAgent);
         if (m.find()) {
-            // 返回匹配到的设备类型
-            return m.group(1);
+            String device = m.group(1);
+            return StringUtils.isNotBlank(device) ? device.trim() : "未知设备";
         }
-        return null;
+        // User-Agent 无括号段（部分脚本/代理客户端）时仍须写入非空 device，避免 t_log.device NOT NULL 导致登录 500
+        return userAgent.length() > 64 ? userAgent.substring(0, 64) : userAgent;
     }
 
     /**
@@ -228,8 +234,8 @@ public class AuthServiceImpl implements IAuthService {
         if (StringUtils.isNotBlank(token) && session != null) {
             // 记录日志：JWT 未通过过滤器落到 SysUserDetails 时 principal 可能为匿名 String，不可强转
             Integer userIdForLog = resolveUserIdForLogout(token);
-            String device = httpServletRequest.getHeader("User-Agent");
-            String ipRegion = Optional.ofNullable(IPUtils.getIPRegion(httpServletRequest)).orElse("暂无信息");
+            String device = request.getHeader("User-Agent");
+            String ipRegion = Optional.ofNullable(IPUtils.getIPRegion(request)).orElse("暂无信息");
             Log logEntry = Log.builder()
                     .place(ipRegion)
                     .device(extractDeviceType(device))
@@ -380,6 +386,11 @@ public class AuthServiceImpl implements IAuthService {
         if (roleId == 2 || roleId == 3) {
             inviteCodeService.validateAndConsumeForRegister(userForm.getInviteCode(), roleId);
         }
+        if (Integer.valueOf(1).equals(roleId)) {
+            if (StringUtils.isBlank(userForm.getMajor())) {
+                throw new ServiceRuntimeException("学生注册须填写专业");
+            }
+        }
         LambdaQueryWrapper<User> existWrapper = new LambdaQueryWrapper<>();
         existWrapper.eq(User::getUserName, userForm.getUserName());
         if (userMapper.selectCount(existWrapper) > 0) {
@@ -390,6 +401,7 @@ public class AuthServiceImpl implements IAuthService {
         user.setRoleId(roleId);
         if (roleId != 1) {
             user.setGradeId(null);
+            user.setMajor(null);
         }
         userMapper.insert(user);
         return Result.success("注册成功");
@@ -417,6 +429,37 @@ public class AuthServiceImpl implements IAuthService {
     private void clearHeartbeatKey(Integer userId) {
         if (userId != null) {
             stringRedisTemplate.delete(heartbeatRedisKey(userId));
+        }
+    }
+
+    /**
+     * 登录成功：在 Redis 记录本次上线时刻，供后续心跳/登出按实际间隔累加秒数。
+     * 不在此写入 {@link UserDailyLoginDuration}。
+     */
+    private void startOnlineSession(Integer userId) {
+        if (userId == null) {
+            return;
+        }
+        stringRedisTemplate.opsForValue().set(
+                heartbeatRedisKey(userId),
+                nowInShanghai().toString(),
+                HEARTBEAT_REDIS_TTL_MINUTES,
+                TimeUnit.MINUTES);
+    }
+
+    /**
+     * 兼容旧版「登录即写满 86400 秒」的脏数据：学生再次登录且当日已达上限时归零，由心跳重新累计。
+     */
+    private void resetTodayInflatedOnlineRecord(Integer userId) {
+        if (userId == null) {
+            return;
+        }
+        LocalDate date = DateTimeUtil.getDate();
+        UserDailyLoginDuration rec = userDailyLoginDurationMapper.getTodayRecord(userId, date);
+        if (rec != null && rec.getTotalSeconds() != null
+                && rec.getTotalSeconds() >= MAX_DAILY_ONLINE_SECONDS) {
+            rec.setTotalSeconds(0);
+            userDailyLoginDurationMapper.updateById(rec);
         }
     }
 

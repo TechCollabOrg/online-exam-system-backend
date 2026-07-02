@@ -19,6 +19,7 @@ import cn.org.alan.exam.service.IOptionService;
 import cn.org.alan.exam.service.IQuestionService;
 import cn.org.alan.exam.utils.ClassTokenGenerator;
 import cn.org.alan.exam.utils.ExamGradingUtil;
+import cn.org.alan.exam.utils.ExamScoreUtil;
 import cn.org.alan.exam.utils.QuestionSubItemsUtil;
 import cn.org.alan.exam.utils.SecurityUtil;
 import com.alibaba.fastjson.JSON;
@@ -84,6 +85,10 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
     private IAutoScoringService autoScoringService;
     @Resource
     private RepoMapper repoMapper;
+    @Resource
+    private ExamUserMapper examUserMapper;
+    @Resource
+    private UserGradeMapper userGradeMapper;
 
     /**
      * 创建一场考试：写 {@link Exam}、绑定班级 {@code exam_grade}、关联题库 {@link ExamRepo}；
@@ -132,11 +137,11 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
         List<Integer> judgeCountsByRepo = expandPerRepoValues(examAddForm.getJudgeCount(), expandSize, "判断题数量");
         List<Integer> saqCountsByRepo = expandPerRepoValues(examAddForm.getSaqCount(), expandSize, "简答题数量");
         List<Integer> compoundCountsByRepo = expandPerRepoValues(examAddForm.getCompoundCount(), expandSize, "复合题数量");
-        List<Integer> radioScoresByRepo = expandPerRepoValues(examAddForm.getRadioScore(), expandSize, "单选题分数");
-        List<Integer> multiScoresByRepo = expandPerRepoValues(examAddForm.getMultiScore(), expandSize, "多选题分数");
-        List<Integer> judgeScoresByRepo = expandPerRepoValues(examAddForm.getJudgeScore(), expandSize, "判断题分数");
-        List<Integer> saqScoresByRepo = expandPerRepoValues(examAddForm.getSaqScore(), expandSize, "简答题分数");
-        List<Integer> compoundScoresByRepo = expandPerRepoValues(examAddForm.getCompoundScore(), expandSize, "复合题分数");
+        List<Integer> radioScoresByRepo = expandPerRepoScoreValues(examAddForm.getRadioScore(), expandSize, "单选题分数");
+        List<Integer> multiScoresByRepo = expandPerRepoScoreValues(examAddForm.getMultiScore(), expandSize, "多选题分数");
+        List<Integer> judgeScoresByRepo = expandPerRepoScoreValues(examAddForm.getJudgeScore(), expandSize, "判断题分数");
+        List<Integer> saqScoresByRepo = expandPerRepoScoreValues(examAddForm.getSaqScore(), expandSize, "简答题分数");
+        List<Integer> compoundScoresByRepo = expandPerRepoScoreValues(examAddForm.getCompoundScore(), expandSize, "复合题分数");
 
         int radioCount = sumList(radioCountsByRepo);
         int multiCount = sumList(multiCountsByRepo);
@@ -153,7 +158,7 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
         exam.setTitle(examAddForm.getTitle());
         exam.setExamDuration(examAddForm.getExamDuration());
         exam.setMaxCount(examAddForm.getMaxCount());
-        exam.setPassedScore(examAddForm.getPassedScore());
+        exam.setPassedScore(ExamScoreUtil.toStorage(examAddForm.getPassedScore()));
         exam.setStartTime(examAddForm.getStartTime());
         exam.setEndTime(examAddForm.getEndTime());
         exam.setCertificateId(parseFirstIntOrNull(examAddForm.getCertificateId(), "证书ID"));
@@ -167,14 +172,16 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
         exam.setSaqScore(saqScore);
         exam.setCompoundCount(compoundCount);
         exam.setCompoundScore(compoundScore);
+        int targetType = (examAddForm.getTargetType() != null && examAddForm.getTargetType() == 2) ? 2 : 1;
+        exam.setTargetType(targetType);
         // 添加考试信息到考试表
         // 计算总分
         Map<Integer, Integer> quScoreMap = fixedQuestionPick
-                ? parseQuScoreMap(examAddForm.getQuIds(), examAddForm.getQuScores())
+                ? ExamScoreUtil.parseQuScoreMap(examAddForm.getQuIds(), examAddForm.getQuScores())
                 : Collections.emptyMap();
         int grossScore;
         if (fixedQuestionPick && !quScoreMap.isEmpty()) {
-            grossScore = quScoreMap.values().stream().mapToInt(Integer::intValue).sum();
+            grossScore = ExamScoreUtil.sumStorage(quScoreMap);
         } else {
             grossScore = radioCount * radioScore
                     + multiCount * multiScore
@@ -188,13 +195,45 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
         if (examRows < 1) {
             throw new ServiceRuntimeException("添加考试到数据库失败!");
         }
-        // 添加考试班级
-        // 获取班级ID列表
-        String gradeIdsStr = examAddForm.getGradeIds();
-        List<Integer> gradeIds = Arrays.stream(gradeIdsStr.split(","))
-                .map(Integer::parseInt)
-                .collect(Collectors.toList());
-        // 建立考试与班级到联系
+        List<Integer> gradeIds;
+        if (targetType == 2) {
+            List<Integer> assignUserIds = parseCsvToIntList(examAddForm.getUserIds(), "学生ID");
+            List<User> students = userMapper.selectBatchIds(assignUserIds);
+            if (students == null || students.size() != assignUserIds.size()) {
+                throw new ServiceRuntimeException("部分指定学生不存在");
+            }
+            LinkedHashSet<Integer> gradeSet = new LinkedHashSet<>();
+            for (User student : students) {
+                if (!Integer.valueOf(1).equals(student.getRoleId())) {
+                    throw new ServiceRuntimeException("只能指定学生参加考试");
+                }
+                if (student.getGradeId() == null) {
+                    String name = StringUtils.isNotBlank(student.getRealName()) ? student.getRealName() : student.getUserName();
+                    throw new ServiceRuntimeException("学生「" + name + "」未加入班级，无法指定参加考试");
+                }
+                gradeSet.add(student.getGradeId());
+            }
+            assertTeacherCanAssignGrades(gradeSet);
+            gradeIds = new ArrayList<>(gradeSet);
+            Integer userRows = examUserMapper.addExamUsers(exam.getId(), assignUserIds);
+            if (userRows == null || userRows < 1) {
+                throw new ServiceRuntimeException("指定学生关联失败");
+            }
+        } else {
+            if (StringUtils.isBlank(examAddForm.getGradeIds())) {
+                throw new ServiceRuntimeException("班级参数不能为空");
+            }
+            gradeIds = Arrays.stream(examAddForm.getGradeIds().split(","))
+                    .map(String::trim)
+                    .filter(StringUtils::isNotBlank)
+                    .map(Integer::parseInt)
+                    .distinct()
+                    .collect(Collectors.toList());
+            if (gradeIds.isEmpty()) {
+                throw new ServiceRuntimeException("班级参数不能为空");
+            }
+            assertTeacherCanAssignGrades(new LinkedHashSet<>(gradeIds));
+        }
         Integer gradeRows = examGradeMapper.addExamGrade(exam.getId(), gradeIds);
         if (gradeRows < 1) {
             throw new ServiceRuntimeException("创建失败!");
@@ -340,11 +379,11 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
         List<Integer> judgeCountsByRepo = expandPerRepoValues(form.getJudgeCount(), expandSize, "判断题数量");
         List<Integer> saqCountsByRepo = expandPerRepoValues(form.getSaqCount(), expandSize, "简答题数量");
         List<Integer> compoundCountsByRepo = expandPerRepoValues(form.getCompoundCount(), expandSize, "复合题数量");
-        List<Integer> radioScoresByRepo = expandPerRepoValues(form.getRadioScore(), expandSize, "单选题分数");
-        List<Integer> multiScoresByRepo = expandPerRepoValues(form.getMultiScore(), expandSize, "多选题分数");
-        List<Integer> judgeScoresByRepo = expandPerRepoValues(form.getJudgeScore(), expandSize, "判断题分数");
-        List<Integer> saqScoresByRepo = expandPerRepoValues(form.getSaqScore(), expandSize, "简答题分数");
-        List<Integer> compoundScoresByRepo = expandPerRepoValues(form.getCompoundScore(), expandSize, "复合题分数");
+        List<Integer> radioScoresByRepo = expandPerRepoScoreValues(form.getRadioScore(), expandSize, "单选题分数");
+        List<Integer> multiScoresByRepo = expandPerRepoScoreValues(form.getMultiScore(), expandSize, "多选题分数");
+        List<Integer> judgeScoresByRepo = expandPerRepoScoreValues(form.getJudgeScore(), expandSize, "判断题分数");
+        List<Integer> saqScoresByRepo = expandPerRepoScoreValues(form.getSaqScore(), expandSize, "简答题分数");
+        List<Integer> compoundScoresByRepo = expandPerRepoScoreValues(form.getCompoundScore(), expandSize, "复合题分数");
 
         int totalDraw = sumList(radioCountsByRepo) + sumList(multiCountsByRepo) + sumList(judgeCountsByRepo)
                 + sumList(saqCountsByRepo) + sumList(compoundCountsByRepo);
@@ -400,6 +439,7 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
             vo.setId(q.getId());
             vo.setQuType(q.getQuType());
             vo.setImage(q.getImage());
+            vo.setAudio(q.getAudio());
             vo.setContent(q.getContent());
             vo.setRepoId(q.getRepoId());
             vo.setCreateTime(q.getCreateTime());
@@ -407,7 +447,8 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
                 vo.setRepoTitle(repoTitleMap.get(q.getRepoId()));
             }
             Integer defaultScore = quTypeToScore.get(q.getQuType());
-            vo.setAssignScore(defaultScore != null && defaultScore > 0 ? defaultScore : 0);
+            vo.setAssignScore(defaultScore != null && defaultScore > 0
+                    ? ExamScoreUtil.toDisplayDouble(defaultScore) : 0D);
             items.add(vo);
         }
         return Result.success("预览成功", items);
@@ -634,6 +675,7 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
             // 遍历试卷和试题的关联
             for (ExamQuestionVO temp : examQuestionVOS) {
                 LambdaQueryWrapper<ExamQuAnswer> examQuAnswerLambdaQueryWrapper = new LambdaQueryWrapper<>();
+                selectExamQuAnswerColumns(examQuAnswerLambdaQueryWrapper);
                 examQuAnswerLambdaQueryWrapper.eq(ExamQuAnswer::getQuestionId, temp.getQuestionId())
                         .eq(ExamQuAnswer::getExamId, examId)
                         .eq(ExamQuAnswer::getUserId, userId);
@@ -686,12 +728,14 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
         Question quById = questionService.getById(quId);
         // 基本信息
         examQuDetailVO.setImage(quById.getImage());
+        examQuDetailVO.setAudio(quById.getAudio());
         examQuDetailVO.setContent(quById.getContent());
         examQuDetailVO.setQuType(quById.getQuType());
 
         if (quById.getQuType() == 5) {
             List<QuestionSubItemVO> subItems = QuestionSubItemsUtil.parseToVoList(quById.getSubItems());
             LambdaQueryWrapper<ExamQuAnswer> compoundAnsQw = new LambdaQueryWrapper<>();
+            selectExamQuAnswerColumns(compoundAnsQw);
             compoundAnsQw.eq(ExamQuAnswer::getQuestionId, quId)
                     .eq(ExamQuAnswer::getExamId, examId)
                     .eq(ExamQuAnswer::getUserId, SecurityUtil.getUserId());
@@ -716,6 +760,7 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
 
         if (quById.getQuType() == 4) {
             LambdaQueryWrapper<ExamQuAnswer> saqAnsQw = new LambdaQueryWrapper<>();
+            selectExamQuAnswerColumns(saqAnsQw);
             saqAnsQw.eq(ExamQuAnswer::getQuestionId, quId)
                     .eq(ExamQuAnswer::getExamId, examId)
                     .eq(ExamQuAnswer::getUserId, SecurityUtil.getUserId());
@@ -734,6 +779,7 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
 
         for (OptionVO temp : optionVOS) {
             LambdaQueryWrapper<ExamQuAnswer> examQuAnswerLambdaQueryWrapper = new LambdaQueryWrapper<>();
+            selectExamQuAnswerColumns(examQuAnswerLambdaQueryWrapper);
             examQuAnswerLambdaQueryWrapper.eq(ExamQuAnswer::getQuestionId, temp.getQuId())
                     .eq(ExamQuAnswer::getExamId, examId)
                     .eq(ExamQuAnswer::getUserId, SecurityUtil.getUserId());
@@ -820,6 +866,7 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
 
             // 设置是否正确
             LambdaQueryWrapper<ExamQuAnswer> examQuAnswerWrapper = new LambdaQueryWrapper<>();
+            selectExamQuAnswerColumns(examQuAnswerWrapper);
             examQuAnswerWrapper.eq(ExamQuAnswer::getUserId, SecurityUtil.getUserId())
                     .eq(ExamQuAnswer::getExamId, examId)
                     .eq(ExamQuAnswer::getQuestionId, temp.getId());
@@ -932,6 +979,7 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
         Integer quType = qu.getQuType();
         // 查询是否有记录
         LambdaQueryWrapper<ExamQuAnswer> examQuAnswerLambdaQueryWrapper = new LambdaQueryWrapper<>();
+        selectExamQuAnswerColumns(examQuAnswerLambdaQueryWrapper);
         examQuAnswerLambdaQueryWrapper.eq(ExamQuAnswer::getExamId, examQuAnswerForm.getExamId())
                 .eq(ExamQuAnswer::getQuestionId, examQuAnswerForm.getQuId())
                 .eq(ExamQuAnswer::getUserId, SecurityUtil.getUserId());
@@ -1229,6 +1277,7 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
         for (Question temp : orderedQuestions) {
             ExamRecordDetailVO examRecordDetailVO = new ExamRecordDetailVO();
             examRecordDetailVO.setImage(temp.getImage());
+            examRecordDetailVO.setAudio(temp.getAudio());
             examRecordDetailVO.setTitle(temp.getContent());
             examRecordDetailVO.setQuType(temp.getQuType());
             examRecordDetailVO.setAnalyse(temp.getAnalysis());
@@ -1281,6 +1330,9 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
             examGradeMapper.selectTeacherClassExam(examPage, userId, title, isASC);
         } else {
             return Result.failed("当前角色不支持按班级查询考试列表");
+        }
+        if (examPage.getRecords() != null) {
+            examPage.getRecords().forEach(ExamScoreUtil::applyDisplay);
         }
         // 根据考试id查找考试
         return Result.success("查询成功", examPage);
@@ -1380,6 +1432,7 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
 
         // 查询用户答题记录
         LambdaQueryWrapper<ExamQuAnswer> examQuAnswerLambdaQuery = new LambdaQueryWrapper<>();
+        selectExamQuAnswerColumns(examQuAnswerLambdaQuery);
         examQuAnswerLambdaQuery.eq(ExamQuAnswer::getUserId, SecurityUtil.getUserId())
                 .eq(ExamQuAnswer::getExamId, examId);
         List<ExamQuAnswer> examQuAnswer = examQuAnswerMapper.selectList(examQuAnswerLambdaQuery);
@@ -1538,6 +1591,26 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
         return (int) Math.round(full * (stat[1] * 1.0 / stat[0]));
     }
 
+    private void assertTeacherCanAssignGrades(Set<Integer> gradeIds) {
+        if (gradeIds == null || gradeIds.isEmpty()) {
+            return;
+        }
+        Integer roleCode = SecurityUtil.getRoleCode();
+        if (!Integer.valueOf(2).equals(roleCode)) {
+            return;
+        }
+        List<Integer> allowed = userGradeMapper.getGradeIdListByUserId(SecurityUtil.getUserId());
+        if (allowed == null || allowed.isEmpty()) {
+            throw new ServiceRuntimeException("教师尚未加入班级，无法发布考试");
+        }
+        Set<Integer> allowedSet = new HashSet<>(allowed);
+        for (Integer gradeId : gradeIds) {
+            if (!allowedSet.contains(gradeId)) {
+                throw new ServiceRuntimeException("无权向所选班级或学生发布考试");
+            }
+        }
+    }
+
     private List<Integer> parseCsvToIntList(String raw, String fieldName) {
         if (StringUtils.isBlank(raw)) {
             throw new ServiceRuntimeException(fieldName + "不能为空");
@@ -1572,6 +1645,17 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
         throw new ServiceRuntimeException(fieldName + "与题库数量不一致");
     }
 
+    private List<Integer> expandPerRepoScoreValues(String raw, int repoSize, String fieldName) {
+        List<Integer> values = ExamScoreUtil.parseCsvToStorageList(raw, fieldName);
+        if (values.size() == repoSize) {
+            return values;
+        }
+        if (values.size() == 1) {
+            return Collections.nCopies(repoSize, values.get(0));
+        }
+        throw new ServiceRuntimeException(fieldName + "与题库数量不一致");
+    }
+
     private int sumList(List<Integer> values) {
         return values.stream().filter(Objects::nonNull).mapToInt(Integer::intValue).sum();
     }
@@ -1593,35 +1677,6 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
             }
         }
         return score;
-    }
-
-    /**
-     * 解析自己选题时与 quIds 顺序一致的分值列表。
-     */
-    private Map<Integer, Integer> parseQuScoreMap(String quIds, String quScores) {
-        if (StringUtils.isBlank(quIds) || StringUtils.isBlank(quScores)) {
-            return Collections.emptyMap();
-        }
-        String[] ids = quIds.split(",");
-        String[] scores = quScores.split(",");
-        if (ids.length != scores.length) {
-            throw new ServiceRuntimeException("题目与分值数量不一致");
-        }
-        Map<Integer, Integer> map = new LinkedHashMap<>();
-        for (int i = 0; i < ids.length; i++) {
-            String idStr = ids[i].trim();
-            String scoreStr = scores[i].trim();
-            if (idStr.isEmpty() || scoreStr.isEmpty()) {
-                continue;
-            }
-            int quId = Integer.parseInt(idStr);
-            int score = Integer.parseInt(scoreStr);
-            if (score <= 0) {
-                throw new ServiceRuntimeException("题目 ID " + quId + " 分值必须大于 0");
-            }
-            map.put(quId, score);
-        }
-        return map;
     }
 
     private Map<Integer, Integer> loadExamQuestionScoreMap(Integer examId) {
@@ -1667,6 +1722,26 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
 
     private static int safeInt(Integer value) {
         return value == null ? 0 : value;
+    }
+
+    /**
+     * 仅选择当前业务会用到的字段，避免旧库缺失扩展列（如 score）导致查询失败。
+     */
+    private static void selectExamQuAnswerColumns(LambdaQueryWrapper<ExamQuAnswer> wrapper) {
+        wrapper.select(
+                ExamQuAnswer::getId,
+                ExamQuAnswer::getUserId,
+                ExamQuAnswer::getExamId,
+                ExamQuAnswer::getQuestionId,
+                ExamQuAnswer::getQuestionType,
+                ExamQuAnswer::getAnswerId,
+                ExamQuAnswer::getAnswerContent,
+                ExamQuAnswer::getCheckout,
+                ExamQuAnswer::getIsSign,
+                ExamQuAnswer::getIsRight,
+                ExamQuAnswer::getAiScore,
+                ExamQuAnswer::getAiReason
+        );
     }
 
     /**

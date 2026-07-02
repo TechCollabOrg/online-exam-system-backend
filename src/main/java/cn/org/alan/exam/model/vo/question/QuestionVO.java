@@ -19,6 +19,8 @@ public class QuestionVO {
 
     private String image;
 
+    private String audio;
+
     private String content;
 
     private String analysis;
@@ -42,4 +44,7 @@ public class QuestionVO {
 
     /** 共用题干图片 */
     private String stemImage;
+
+    /** 共用题干音频 */
+    private String stemAudio;
 }

@@ -15,6 +15,7 @@ import cn.org.alan.exam.service.IAutoScoringService;
 import cn.org.alan.exam.utils.AiGradingQuestionLoader;
 import cn.org.alan.exam.utils.AiGradingResponseParser;
 import cn.org.alan.exam.utils.AiGradingTextUtil;
+import cn.org.alan.exam.utils.ExamScoreUtil;
 import cn.org.alan.exam.utils.agent.AIChat;
 import cn.org.alan.exam.utils.agent.Constants;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
@@ -166,15 +167,16 @@ public class AutoScoringServiceImpl extends ServiceImpl<ExamQuAnswerMapper, Exam
         }
 
         JSONObject item = findScoreItem(scoreArray, questionId);
-        int rawScore = AiGradingResponseParser.parseFinalScore(item);
-        int finalScore = AiGradingTextUtil.clampScore(rawScore, question.getTotalScore());
+        double rawScore = AiGradingResponseParser.parseFinalScore(item);
+        double finalDisplay = AiGradingTextUtil.clampDisplayScore(rawScore, question.getTotalScore());
+        int storageScore = ExamScoreUtil.toStorage(finalDisplay);
         String reason = AiGradingTextUtil.formatAiReason(item.getStr("扣分原因"));
-        if (rawScore != finalScore) {
+        if (Math.abs(rawScore - finalDisplay) > 0.001) {
             reason = AiGradingTextUtil.formatAiReason(
                     item.getStr("扣分原因") + "（已按满分" + question.getTotalScore() + "分钳制）");
         }
 
-        persistAiResult(examId, userId, questionId, finalScore, reason);
+        persistAiResult(examId, userId, questionId, storageScore, reason);
     }
 
     private JSONObject findScoreItem(JSONArray scoreArray, Integer questionId) {

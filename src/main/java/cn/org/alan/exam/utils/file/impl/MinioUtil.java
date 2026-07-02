@@ -86,6 +86,17 @@ public class MinioUtil implements FileService {
     }
 
     @Override
+    public boolean isAudio(String filename) {
+        int dot = filename.lastIndexOf('.');
+        if (dot < 0 || dot == filename.length() - 1) {
+            return false;
+        }
+        String lastName = filename.substring(dot + 1).toLowerCase();
+        String[] lastnames = {"mp3", "wav", "m4a", "ogg", "aac", "webm"};
+        return Arrays.asList(lastnames).contains(lastName);
+    }
+
+    @Override
     public boolean isOverSize(MultipartFile file) {
         return file.getSize() > 20 * 1024 * 1024;
     }

@@ -24,7 +24,11 @@ CREATE DATABASE db_exam DEFAULT CHARACTER SET utf8mb4;
 
 在 MySQL 中执行 `sql/db_exam.sql`。若从旧库升级，按需执行 `sql/` 下以 `alter_` 开头的脚本（详见根 README「试题图片」「材料题」等章节）。  
 **注册邀请码**：对已有库执行一次 `sql/create_t_invite_code.sql`（教师/管理员自助注册须凭码）。  
-**进入考试报 `Unknown column 'score' in 'field list'`**：对已有库执行一次 `sql/alter_t_exam_qu_answer_score.sql`（为 `t_exam_qu_answer` 增加 `score` 列）。
+**进入考试报 `Unknown column 'score' in 'field list'`**：对已有库执行一次 `sql/alter_t_exam_qu_answer_score.sql`（为 `t_exam_qu_answer` 增加 `score` 列）。  
+**考试管理报 `Unknown column 'compound_count' in 'field list'`**：对已有库执行一次 `sql/alter_t_exam_compound_type.sql`（为 `t_exam` 增加 `compound_count`、`compound_score` 列），然后重启后端。  
+**组卷分值要支持小数（如 0.5、2.5 分）且旧库此前按「整分」直存**：对已有库执行一次 `sql/alter_score_storage_x100.sql`（或 `sql/upgrade_legacy_db.sql` 已包含该步骤），将历史分值统一为「库内整数 = 展示分 × 100」。新装库直接执行 `db_exam.sql` 即可；**勿重复执行**升级脚本。执行前请备份。
+**学生专业字段**：对已有库执行一次 `sql/alter_t_user_major.sql`（或 `upgrade_legacy_db.sql` 已包含），为 `t_user` 增加 `major` 列。  
+**按学生发布考试**：对已有库执行一次 `sql/alter_t_exam_user.sql`（或 `upgrade_legacy_db.sql` 已包含），为 `t_exam` 增加 `target_type` 并创建 `t_exam_user` 表。
 
 ### 启动
 
@@ -132,13 +136,20 @@ online-exam-system-backend/
 | GET | `/api/records/exam/detail` | 考后详情，含每题 `totalScore` / `quScore` |
 | GET | `/api/answers/exam/absent` | 教师：某场考试缺考学生（未交卷；可选 `gradeId`、姓名） |
 | POST | `/api/exams/random-preview` | 教师：随机组卷预览（按题库与题型数量抽题，返回题目列表，不落库） |
-| POST | `/api/auths/register` | 注册：Body 含 `roleId`（1/2/3）；教师/管理员须 `inviteCode` |
+| POST | `/api/auths/register` | 注册：Body 含 `roleId`（1/2/3）；学生须 `major`；教师/管理员须 `inviteCode` |
 | POST | `/api/invite-codes` | 管理员：生成邀请码 |
 | GET | `/api/invite-codes/paging` | 管理员：邀请码分页 |
 | PUT | `/api/invite-codes/{id}/disable` | 管理员：禁用邀请码 |
 | DELETE | `/api/invite-codes/{ids}` | 管理员：批量删除邀请码 |
+| PUT | `/api/user/{id}/profile` | 管理员：维护学生班级（`gradeId`，可空）与专业（`major`） |
+| GET | `/api/repo/{id}/knowledge-tree` | 教师/管理员：获取题库已保存的知识树 |
+| POST | `/api/repo/{id}/knowledge-tree/generate` | 教师/管理员：AI 分析题目并生成/覆盖知识树 |
+| GET | `/api/repo/{id}/knowledge-points` | 教师/管理员：知识树下拉选项（按知识点筛题） |
+| GET | `/api/questions/paging` | 新增可选参数 `knowledgePointPath`（须同时传 `repoId`） |
+| POST | `/api/questions/uploadAudio` | 教师/管理员：上传试题听力音频（multipart `file`） |
 
-创建考试 `POST /api/exams`：随机模式（`addQuype=1`）若同时提交 `quIds` 与 `quScores`（与预览列表一致），则按确认后的题目与分值组卷，不再重新洗牌。
+创建考试 `POST /api/exams`：随机模式（`addQuype=1`）若同时提交 `quIds` 与 `quScores`（与预览列表一致），则按确认后的题目与分值组卷，不再重新洗牌。  
+发布范围：`targetType=1`（默认）按班级，传 `gradeIds`；`targetType=2` 按指定学生，传 `userIds`（逗号分隔），`gradeIds` 可由所选学生班级自动推导。
 
 ---
 
@@ -169,9 +180,27 @@ online-exam-system-backend/
 
 检查 `EXAM_AES_KEY` / `EXAM_AES_IV` 是否与前端 `VUE_APP_CRYPTO_*` 完全一致。
 
+### 登录接口 HTTP 500（`Field 'device' doesn't have a default value`）
+
+部分客户端（脚本、代理）不带常见 `User-Agent` 时，登录写 `t_log` 会因 `device` 为空失败。当前版本已对空设备名写入默认值「未知设备」；改代码后请 **重启后端**。
+
+### 登录日志「登录地点」显示内网 IP、`Reserved` 或无法识别
+
+- 登录地点格式为 **国家 省 市**（如 `中国 广东省 深圳市`）；**每次登录实时查询，不做缓存**。
+- 本机 `127.0.0.1` 时，前端会在登录前通过浏览器查询当前公网 IP 并传给后端（`X-Client-Public-Ip`），可反映 **VPN 切换**；请同时重启前后端使改动生效。
+- 公网 IP 优先用离线库 `ip2region.xdb`；识别失败时再调在线接口。
+- 若经 Nginx 反向代理部署，请转发 `X-Real-IP` / `X-Forwarded-For`，否则后端只能看到代理机 IP。
+- 开发时前端 `vue.config.js` 已配置代理转发真实客户端 IP；修改后需 **重启 `npm run dev`**。
+
 ### Maven 依赖下载 SSL 失败
 
 配置阿里云镜像，见根 [README.md](../README.md)「问题 3」。
+
+### 学生首页「在线时长」一登录就显示 24 小时
+
+1. 确认已用当前源码重新编译并重启后端（`mvn compile` 或 `mvn spring-boot:run`），旧 `target` 里可能仍含「登录写满 86400 秒」的字节码。
+2. 学生端登录后由前端每约 5 分钟调用 `POST /api/auths/track-presence`；库表按**秒**累计，图表按**分钟**展示。
+3. 若当日数据已被旧版写满，重新登录学生账号会自动把当日记录归零后按心跳重算；仍异常可手动改 `t_user_daily_login_duration` 当日 `total_seconds`。
 
 ---
 
@@ -181,4 +210,4 @@ Spring Boot 2 · MyBatis-Plus · Spring Security + JWT · Redis · WebSocket · 
 
 ---
 
-*最后更新：2026-05-21*
+*最后更新：2026-07-02*

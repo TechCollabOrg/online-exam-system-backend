@@ -38,12 +38,12 @@ public class ExamDetailVO {
     /**
      * 及格分
      */
-    private Integer passedScore;
+    private Double passedScore;
 
     /**
-     * 总分数
+     * 总分数（展示分）
      */
-    private Integer grossScore;
+    private Double grossScore;
 
     /**
      * 最大切屏次数
@@ -68,7 +68,7 @@ public class ExamDetailVO {
     /**
      * 单选题成绩     数据库存储*100，前端正常输入和展示/100
      */
-    private Integer radioScore;
+    private Double radioScore;
 
     /**
      * 多选题数量
@@ -78,7 +78,7 @@ public class ExamDetailVO {
     /**
      * 多选题成绩     数据库存储*100，前端正常输入和展示/100
      */
-    private Integer multiScore;
+    private Double multiScore;
 
     /**
      * 判断题数量
@@ -88,7 +88,7 @@ public class ExamDetailVO {
     /**
      * 判断题成绩     数据库存储*100，前端正常输入和展示/100
      */
-    private Integer judgeScore;
+    private Double judgeScore;
 
     /**
      * 简答题数量
@@ -98,7 +98,7 @@ public class ExamDetailVO {
     /**
      * 简答题成绩     数据库存储*100，前端正常输入和展示/100
      */
-    private Integer saqScore;
+    private Double saqScore;
 
     /**
      * 复合题数量
@@ -108,7 +108,7 @@ public class ExamDetailVO {
     /**
      * 复合题成绩     数据库存储*100，前端正常输入和展示/100
      */
-    private Integer compoundScore;
+    private Double compoundScore;
 
     /**
      * 开始时间     YYYY-MM-DD hh:mm:ss

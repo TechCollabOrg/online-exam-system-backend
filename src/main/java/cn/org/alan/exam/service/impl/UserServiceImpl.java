@@ -16,6 +16,7 @@ import cn.org.alan.exam.utils.SecurityUtil;
 import cn.org.alan.exam.utils.excel.ExcelUtils;
 import cn.org.alan.exam.utils.file.FileService;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -77,6 +78,13 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         }
         if(userForm.getRoleId()==2&&userForm.getGradeId()!=null){
             throw new ServiceRuntimeException("教师无法设置单一班级");
+        }
+        if (Integer.valueOf(1).equals(userForm.getRoleId())) {
+            if (StringUtils.isBlank(userForm.getMajor())) {
+                throw new ServiceRuntimeException("学生须填写专业");
+            }
+        } else {
+            userForm.setMajor(null);
         }
         // 避免管理员创建用户不传递角色
         if (userForm.getRoleId() == null || userForm.getRoleId() == 0) {
@@ -217,6 +225,47 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
             page = userMapper.pagingUser(page, gradeId, realName, userId, null, null);
         }
         return Result.success("分页获取用户信息成功", page);
+    }
+
+    /**
+     * 管理员维护学生班级与专业：仅可修改学生（roleId=1），不可修改管理员账号。
+     */
+    @Override
+    public Result<String> updateUserByAdmin(UserForm userForm) {
+        if (!Integer.valueOf(3).equals(SecurityUtil.getRoleCode())) {
+            throw new ServiceRuntimeException("仅管理员可维护用户信息");
+        }
+        if (userForm.getId() == null) {
+            throw new ServiceRuntimeException("用户ID不能为空");
+        }
+        User target = userMapper.selectById(userForm.getId());
+        if (target == null) {
+            throw new ServiceRuntimeException("用户不存在");
+        }
+        if (Integer.valueOf(3).equals(target.getRoleId())) {
+            throw new ServiceRuntimeException("无法修改管理员账号");
+        }
+        if (!Integer.valueOf(1).equals(target.getRoleId())) {
+            throw new ServiceRuntimeException("仅支持维护学生用户的班级与专业");
+        }
+        if (StringUtils.isBlank(userForm.getMajor())) {
+            throw new ServiceRuntimeException("学生须填写专业");
+        }
+        if (userForm.getGradeId() != null) {
+            Grade grade = gradeMapper.selectById(userForm.getGradeId());
+            if (grade == null) {
+                throw new ServiceRuntimeException("班级不存在");
+            }
+        }
+        LambdaUpdateWrapper<User> wrapper = new LambdaUpdateWrapper<>();
+        wrapper.eq(User::getId, userForm.getId())
+                .set(User::getGradeId, userForm.getGradeId())
+                .set(User::getMajor, userForm.getMajor().trim());
+        int updated = userMapper.update(null, wrapper);
+        if (updated > 0) {
+            return Result.success("用户信息更新成功");
+        }
+        throw new ServiceRuntimeException("用户信息更新失败");
     }
 
     /** 调用文件服务上传头像并回写用户表 {@code avatar} 字段。 */

@@ -21,6 +21,7 @@ import java.time.LocalDateTime;
 @Data
 public class UserForm {
     // 用户ID
+    @NotNull(groups = {UserGroup.AdminUpdateUserGroup.class}, message = "用户ID不能为空")
     private Integer id;
 
     // 创建试卷
@@ -53,6 +54,10 @@ public class UserForm {
 
     // 班级ID
     private Integer gradeId;
+
+    /** 学生专业 */
+    @ExcelImport(value = "专业")
+    private String major;
 
     // 旧密码
     @NotBlank(groups = {UserGroup.UpdatePasswordGroup.class}, message = "原密码不能为空")

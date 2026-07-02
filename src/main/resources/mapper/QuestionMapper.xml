@@ -19,10 +19,10 @@
         select q.id,
         q.content,
         q.image,
+        q.audio,
         q.analysis,
         q.qu_type,
         q.repo_id,
-        q.parent_qu_id as parentQuId,
         r.title as repoTitle
         from t_question as q
         join t_repo as r on q.repo_id = r.id
@@ -50,9 +50,9 @@
         select q.id,
         q.content,
         q.image,
+        q.audio,
         q.repo_id,
         q.qu_type,
-        q.parent_qu_id as parentQuId,
         r.title as repoTitle
         from t_question as q
         join t_repo as r on q.repo_id = r.id
@@ -79,6 +79,12 @@
             </if>
             <if test='type != null and type != 0'>
                 and q.qu_type = #{type}
+            </if>
+            <if test='questionIds != null and questionIds.size() > 0'>
+                and q.id in
+                <foreach collection="questionIds" item="qid" open="(" separator="," close=")">
+                    #{qid}
+                </foreach>
             </if>
             <if test='roleCode == 2'>
                 and q.user_id = #{userId}

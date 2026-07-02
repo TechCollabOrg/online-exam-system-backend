@@ -32,6 +32,8 @@ import cn.org.alan.exam.utils.ClassTokenGenerator;
 
 import cn.org.alan.exam.utils.ExamGradingUtil;
 
+import cn.org.alan.exam.utils.ExamScoreUtil;
+
 import cn.org.alan.exam.utils.QuestionSubItemsUtil;
 
 import cn.org.alan.exam.utils.SecurityUtil;
@@ -290,13 +292,20 @@ public class ManualScoreServiceImpl extends ServiceImpl<ManualScoreMapper, Manua
 
             manualScore.setExamQuAnswerId(examQuAnswer.getId());
 
-            manualScore.setScore(correctAnswerFrom.getScore());
+            int storageScore = ExamScoreUtil.toStorage(correctAnswerFrom.getScore());
+
+            manualScore.setScore(storageScore);
 
             manualScore.setUserId(teacherId);
 
             list.add(manualScore);
 
-            manualTotalScore.addAndGet(correctAnswerFrom.getScore() == null ? 0 : correctAnswerFrom.getScore());
+            manualTotalScore.addAndGet(storageScore);
+
+            ExamQuAnswer scoreRow = new ExamQuAnswer();
+            scoreRow.setId(examQuAnswer.getId());
+            scoreRow.setScore(storageScore);
+            examQuAnswerMapper.updateById(scoreRow);
 
         });
 
@@ -545,16 +554,17 @@ public class ManualScoreServiceImpl extends ServiceImpl<ManualScoreMapper, Manua
         vo.setQuTitle(question.getContent());
 
         vo.setQuImg(question.getImage());
+        vo.setQuAudio(question.getAudio());
 
         vo.setAnswer(answer != null && answer.getAnswerContent() != null ? answer.getAnswerContent() : "");
 
         vo.setRefAnswer(loadRefAnswer(question.getId()));
 
-        vo.setAiScore(answer != null ? answer.getAiScore() : null);
+        vo.setAiScore(answer != null ? ExamScoreUtil.toDisplayDouble(answer.getAiScore()) : null);
 
         vo.setAiReason(answer != null ? answer.getAiReason() : null);
 
-        vo.setTotalScore(examQuestion.getScore());
+        vo.setTotalScore(ExamScoreUtil.toDisplayDouble(examQuestion.getScore()));
 
         return vo;
 
@@ -619,6 +629,7 @@ public class ManualScoreServiceImpl extends ServiceImpl<ManualScoreMapper, Manua
         vo.setQuTitle(question.getContent());
 
         vo.setQuImg(question.getImage());
+        vo.setQuAudio(question.getAudio());
 
         vo.setSubItemList(subItemList);
 
@@ -626,11 +637,11 @@ public class ManualScoreServiceImpl extends ServiceImpl<ManualScoreMapper, Manua
 
         vo.setRefAnswer(formatCompoundReferenceAnswer(subItems));
 
-        vo.setAiScore(answer != null ? answer.getAiScore() : null);
+        vo.setAiScore(answer != null ? ExamScoreUtil.toDisplayDouble(answer.getAiScore()) : null);
 
         vo.setAiReason(answer != null ? answer.getAiReason() : null);
 
-        vo.setTotalScore(examQuestion.getScore());
+        vo.setTotalScore(ExamScoreUtil.toDisplayDouble(examQuestion.getScore()));
 
         return vo;
 

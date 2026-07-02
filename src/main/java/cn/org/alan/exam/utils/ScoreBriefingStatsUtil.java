@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 与前端成绩详情页一致的五档（E～A）分段统计。
+ * 与前端成绩详情页一致的五档（E～A）分段统计（使用展示分）。
  */
 public final class ScoreBriefingStatsUtil {
 
@@ -20,27 +20,28 @@ public final class ScoreBriefingStatsUtil {
     private ScoreBriefingStatsUtil() {
     }
 
-    public static int resolvePassScore(Integer examPassedScore, int fullScore) {
-        if (examPassedScore != null && examPassedScore > 0) {
-            return examPassedScore;
+    public static double resolvePassScore(Integer examPassedScoreStorage, double fullScoreDisplay) {
+        if (examPassedScoreStorage != null && examPassedScoreStorage > 0) {
+            return ExamScoreUtil.toDisplayDouble(examPassedScoreStorage);
         }
-        if (fullScore > 0) {
-            return (int) Math.round(fullScore * 0.6);
+        if (fullScoreDisplay > 0) {
+            return Math.round(fullScoreDisplay * 60.0) / 100.0;
         }
         return 0;
     }
 
-    public static List<Map<String, Object>> buildGradeBuckets(List<ScoreBriefingRowVO> rows, int fullScore, int passScore) {
-        List<Integer> scores = new ArrayList<>();
+    public static List<Map<String, Object>> buildGradeBuckets(List<ScoreBriefingRowVO> rows, double fullScoreDisplay, double passScoreDisplay) {
+        List<Double> scores = new ArrayList<>();
         for (ScoreBriefingRowVO row : rows) {
             if (row.getUserScore() != null) {
                 scores.add(row.getUserScore());
             }
         }
-        int total = fullScore > 0 ? fullScore : (scores.isEmpty() ? 0 : scores.stream().max(Integer::compareTo).orElse(0));
-        int pass = clampPass(passScore, total);
+        double total = fullScoreDisplay > 0 ? fullScoreDisplay
+                : (scores.isEmpty() ? 0 : scores.stream().max(Double::compareTo).orElse(0D));
+        double pass = clampPass(passScoreDisplay, total);
         int[] counts = new int[GRADE_LETTERS.length];
-        for (int s : scores) {
+        for (double s : scores) {
             int bi = bucketIndex(s, total, pass);
             counts[bi]++;
         }
@@ -57,27 +58,27 @@ public final class ScoreBriefingStatsUtil {
         return out;
     }
 
-    private static int clampPass(int pass, int full) {
+    private static double clampPass(double pass, double full) {
         if (full <= 0) {
             return 0;
         }
-        int p = pass;
+        double p = pass;
         if (p <= 0) {
-            p = (int) Math.round(full * 0.6);
+            p = Math.round(full * 60.0) / 100.0;
         }
         if (p >= full) {
-            p = (int) Math.round(full * 0.6);
+            p = Math.round(full * 60.0) / 100.0;
         }
         return p;
     }
 
-    private static int bucketIndex(int score, int full, int pass) {
-        int x = Math.min(Math.max(score, 0), full);
+    private static int bucketIndex(double score, double full, double pass) {
+        double x = Math.min(Math.max(score, 0), full);
         if (x < pass) {
-            int mid = pass / 2;
+            double mid = pass / 2.0;
             return x < mid ? 0 : 1;
         }
-        int span = full - pass;
+        double span = full - pass;
         if (span <= 0) {
             return GRADE_LETTERS.length - 1;
         }

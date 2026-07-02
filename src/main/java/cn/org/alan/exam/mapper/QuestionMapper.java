@@ -53,6 +53,7 @@ public interface QuestionMapper extends BaseMapper<Question> {
      * @param repoId   题库Id
      * @return 分页结果
      */
-    IPage<QuestionVO> selectQuestionPage(IPage<QuestionVO> page, Integer userId, Integer roleCode, String title, Integer type, Integer repoId);
+    IPage<QuestionVO> selectQuestionPage(IPage<QuestionVO> page, Integer userId, Integer roleCode, String title,
+                                         Integer type, Integer repoId, List<Integer> questionIds);
 
 }

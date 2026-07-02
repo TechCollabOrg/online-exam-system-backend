@@ -97,4 +97,14 @@ public class UserController {
     public Result<String> uploadAvatar(@RequestPart("file") MultipartFile file) {
         return iUserService.uploadAvatar(file);
     }
+
+    /** PUT 管理员维护学生班级与专业。 */
+    @ApiOperation("管理员维护学生班级与专业")
+    @PutMapping("/{id}/profile")
+    @PreAuthorize("hasAuthority('role_admin')")
+    public Result<String> updateUserByAdmin(@PathVariable("id") Integer id,
+                                            @RequestBody UserForm userForm) {
+        userForm.setId(id);
+        return iUserService.updateUserByAdmin(userForm);
+    }
 }

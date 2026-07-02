@@ -43,7 +43,8 @@ public interface IQuestionService extends IService<Question> {
      * @param repoId   题库id
      * @return 响应
      */
-    Result<IPage<QuestionVO>> pagingQuestion(Integer pageNum, Integer pageSize, String content, Integer type, Integer repoId);
+    Result<IPage<QuestionVO>> pagingQuestion(Integer pageNum, Integer pageSize, String content, Integer type, Integer repoId,
+                                             String knowledgePointPath);
 
     /**
      * 根据试题id获取单题详情

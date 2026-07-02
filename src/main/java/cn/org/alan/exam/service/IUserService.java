@@ -83,4 +83,12 @@ public interface IUserService extends IService<User> {
      */
     Result<String> uploadAvatar(MultipartFile file);
 
+    /**
+     * 管理员维护学生班级与专业
+     *
+     * @param userForm 含用户 id、gradeId、major
+     * @return 操作结果
+     */
+    Result<String> updateUserByAdmin(UserForm userForm);
+
 }

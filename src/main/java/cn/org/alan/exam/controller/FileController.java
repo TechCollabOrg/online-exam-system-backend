@@ -36,7 +36,7 @@ import java.util.regex.Pattern;
 @RequestMapping("/api/upload")
 public class FileController {
     private static final Pattern LOCAL_FILE =
-            Pattern.compile("^[a-f0-9]{32}\\.(png|jpg|jpeg|bmp)$", Pattern.CASE_INSENSITIVE);
+            Pattern.compile("^[a-f0-9]{32}\\.(png|jpg|jpeg|bmp|mp3|wav|m4a|ogg|aac|webm)$", Pattern.CASE_INSENSITIVE);
 
     @Autowired
     private IFileService fileService;
@@ -72,6 +72,18 @@ public class FileController {
             mediaType = MediaType.IMAGE_JPEG;
         } else if (lower.endsWith(".bmp")) {
             mediaType = MediaType.parseMediaType("image/bmp");
+        } else if (lower.endsWith(".mp3")) {
+            mediaType = MediaType.parseMediaType("audio/mpeg");
+        } else if (lower.endsWith(".wav")) {
+            mediaType = MediaType.parseMediaType("audio/wav");
+        } else if (lower.endsWith(".m4a")) {
+            mediaType = MediaType.parseMediaType("audio/mp4");
+        } else if (lower.endsWith(".ogg")) {
+            mediaType = MediaType.parseMediaType("audio/ogg");
+        } else if (lower.endsWith(".aac")) {
+            mediaType = MediaType.parseMediaType("audio/aac");
+        } else if (lower.endsWith(".webm")) {
+            mediaType = MediaType.parseMediaType("audio/webm");
         }
         InputStream in = Files.newInputStream(file);
         InputStreamResource body = new InputStreamResource(in);

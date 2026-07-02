@@ -18,7 +18,8 @@ public class GradeScoreVO {
     private Integer examId;
     // 班级ID
     private Integer gradeId;
-    private Integer passedScore;
+    /** 及格分（展示分） */
+    private Double passedScore;
     // 试卷标题
     private String examTitle;
     // 班级名称
@@ -26,12 +27,12 @@ public class GradeScoreVO {
     // 创建试卷
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createTime;
-    // 平均分
-    private Integer avgScore;
-    // 最高分
-    private Integer maxScore;
-    // 最低分
-    private Integer minScore;
+    /** 平均分（展示分） */
+    private Double avgScore;
+    /** 最高分（展示分） */
+    private Double maxScore;
+    /** 最低分（展示分） */
+    private Double minScore;
     // 参考人数
     private Integer attendNum;
     // 缺考人数

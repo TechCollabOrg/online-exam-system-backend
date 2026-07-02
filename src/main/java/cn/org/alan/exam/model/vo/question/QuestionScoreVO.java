@@ -25,10 +25,10 @@ public class QuestionScoreVO {
     private String questionContent;
 
     /**
-     * 题目总分
+     * 题目总分（展示分）
      */
     @JsonProperty("题目总分")
-    private Integer totalScore;
+    private Double totalScore;
 
     /**
      * 标准答案（多选项已聚合）

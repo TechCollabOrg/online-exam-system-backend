@@ -29,6 +29,8 @@ public class UserVO {
     private String gradeName;
     // 班级ID
     private Integer gradeId;
+    // 专业（学生）
+    private String major;
     // 班级创建人Id
     private Integer userId;
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")

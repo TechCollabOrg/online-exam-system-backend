@@ -26,10 +26,10 @@ public class ExamAddForm {
     // 最大切屏次数
     private Integer maxCount;
 
-    // 及格分
-    @Min(value=0,message = "及格分数必须大于0")
+    // 及格分（展示分，可带两位小数）
     @NotNull(message = "及格分不能为空")
-    private Integer passedScore;
+    @DecimalMin(value = "0", inclusive = false, message = "及格分数必须大于0")
+    private Double passedScore;
 
     // 开始时间
     @DateTimeFormat(pattern = "yyyy-MM-dd hh:mm:ss")
@@ -39,10 +39,20 @@ public class ExamAddForm {
     // @Future(message = "结束时间必须是一个必须是一个将来的日期")
     @DateTimeFormat(pattern = "yyyy-MM-dd hh:mm:ss")
     private LocalDateTime endTime;
-    // 考试班级
-    @NotBlank(message = "班级不能为空")
-    @Pattern(regexp = "^\\d+(,\\d+)*$|^\\d+$", message = "班级参数错误，请将传输格式改为 1,2,3,4...且至少包含一个班级ID")
+    /**
+     * 发布范围：1按班级（默认），2按指定学生。
+     */
+    private Integer targetType;
+
+    // 考试班级（按班级发布时必填；按学生发布时由所选学生班级推导，也可前端一并传入）
+    @Pattern(regexp = "^$|^\\d+(,\\d+)*$|^\\d+$", message = "班级参数错误，请将传输格式改为 1,2,3,4...且至少包含一个班级ID")
     private String gradeIds;
+
+    /**
+     * 指定学生 ID，逗号分隔；{@code targetType=2} 时必填。
+     */
+    @Pattern(regexp = "^$|^\\d+(,\\d+)*$|^\\d+$", message = "学生参数错误，请使用 1,2,3 格式")
+    private String userIds;
 
     // 题库ID（随机抽题必填，支持 1 或 1,2,3）；自己选题时由服务端根据所选试题推导，可留空
     @Pattern(regexp = "^$|^\\d+(,\\d+)*$|^\\d+$", message = "题库参数错误，请使用 1 或 1,2,3 格式")
@@ -59,7 +69,7 @@ public class ExamAddForm {
 
     // 单选题分数
     @NotBlank(message = "单选题分数不能为空")
-    @Pattern(regexp = "^\\d+(,\\d+)*$|^\\d+$", message = "单选题分数格式错误，请使用 0 或 1,1,1")
+    @Pattern(regexp = "^$|^(\\d+(\\.\\d{1,2})?)(,(\\d+(\\.\\d{1,2})?))*$|^(\\d+(\\.\\d{1,2})?)$", message = "单选题分数格式错误，请使用 0、1.5 或 1,1,1.5")
     private String radioScore;
 
     // 多选题数量
@@ -69,7 +79,7 @@ public class ExamAddForm {
 
     // 多选题分数
     @NotBlank(message = "多选题分数不能为空")
-    @Pattern(regexp = "^\\d+(,\\d+)*$|^\\d+$", message = "多选题分数格式错误，请使用 0 或 1,1,1")
+    @Pattern(regexp = "^$|^(\\d+(\\.\\d{1,2})?)(,(\\d+(\\.\\d{1,2})?))*$|^(\\d+(\\.\\d{1,2})?)$", message = "多选题分数格式错误，请使用 0、1.5 或 1,1,1.5")
     private String multiScore;
 
     // 判断题数量
@@ -79,7 +89,7 @@ public class ExamAddForm {
 
     // 判断题分数
     @NotBlank(message = "判断题分数不能为空")
-    @Pattern(regexp = "^\\d+(,\\d+)*$|^\\d+$", message = "判断题分数格式错误，请使用 0 或 1,1,1")
+    @Pattern(regexp = "^$|^(\\d+(\\.\\d{1,2})?)(,(\\d+(\\.\\d{1,2})?))*$|^(\\d+(\\.\\d{1,2})?)$", message = "判断题分数格式错误，请使用 0、1.5 或 1,1,1.5")
     private String judgeScore;
 
     // 简答题数量
@@ -89,7 +99,7 @@ public class ExamAddForm {
 
     // 简答题分数
     @NotBlank(message = "简答题分数不能为空")
-    @Pattern(regexp = "^\\d+(,\\d+)*$|^\\d+$", message = "简答题分数格式错误，请使用 0 或 1,1,1")
+    @Pattern(regexp = "^$|^(\\d+(\\.\\d{1,2})?)(,(\\d+(\\.\\d{1,2})?))*$|^(\\d+(\\.\\d{1,2})?)$", message = "简答题分数格式错误，请使用 0、1.5 或 1,1,1.5")
     private String saqScore;
 
     // 复合题数量
@@ -99,7 +109,7 @@ public class ExamAddForm {
 
     // 复合题分数
     @NotBlank(message = "复合题分数不能为空")
-    @Pattern(regexp = "^\\d+(,\\d+)*$|^\\d+$", message = "复合题分数格式错误，请使用 0 或 1,1,1")
+    @Pattern(regexp = "^$|^(\\d+(\\.\\d{1,2})?)(,(\\d+(\\.\\d{1,2})?))*$|^(\\d+(\\.\\d{1,2})?)$", message = "复合题分数格式错误，请使用 0、1.5 或 1,1,1.5")
     private String compoundScore;
 
     // 简答题分数
@@ -111,6 +121,6 @@ public class ExamAddForm {
     /**
      * 自己选题时每题分值，与 quIds 顺序一致，逗号分隔，如 2,3,5
      */
-    @Pattern(regexp = "^$|^\\d+(,\\d+)*$|^\\d+$", message = "题目分值格式错误，请使用 2,3,5 格式")
+    @Pattern(regexp = "^$|^(\\d+(\\.\\d{1,2})?)(,(\\d+(\\.\\d{1,2})?))*$|^(\\d+(\\.\\d{1,2})?)$", message = "题目分值格式错误，请使用 2,3.5,5 格式")
     private String quScores;
 }

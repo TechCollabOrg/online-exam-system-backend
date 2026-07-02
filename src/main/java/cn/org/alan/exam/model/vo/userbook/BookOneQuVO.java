@@ -21,6 +21,9 @@ public class BookOneQuVO {
      */
     private String image;
 
+    /** 听力音频 */
+    private String audio;
+
     /**
      * 题目内容
      */
@@ -38,6 +41,7 @@ public class BookOneQuVO {
 
     private String stemContent;
     private String stemImage;
+    private String stemAudio;
     private Integer parentQuId;
 
     /** 复合题小题列表（quType=5） */

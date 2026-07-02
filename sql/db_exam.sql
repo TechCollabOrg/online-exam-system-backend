@@ -126,10 +126,13 @@ CREATE TABLE `t_exam` (
   `judge_score` int(11) DEFAULT NULL COMMENT '判断题成绩     数据库存储*100，前端正常输入和展示/100',
   `saq_count` int(11) DEFAULT NULL COMMENT '简答题数量',
   `saq_score` int(11) DEFAULT NULL COMMENT '简答题成绩     数据库存储*100，前端正常输入和展示/100',
+  `compound_count` int(11) NOT NULL DEFAULT '0' COMMENT '复合题数量',
+  `compound_score` int(11) NOT NULL DEFAULT '0' COMMENT '复合题成绩     数据库存储*100，前端正常输入和展示/100',
   `start_time` datetime DEFAULT NULL COMMENT '开始时间     YYYY-MM-DD hh:mm:ss',
   `end_time` datetime DEFAULT NULL COMMENT '结束时间     YYYY-MM-DD hh:mm:ss',
   `create_time` datetime DEFAULT NULL COMMENT '创建时间     YYYY-MM-DD hh:mm:ss  ',
   `is_deleted` int(11) NOT NULL DEFAULT '0' COMMENT '逻辑删除：0代表未删除，1代表删除',
+  `target_type` tinyint NOT NULL DEFAULT '1' COMMENT '发布范围：1按班级 2按学生',
   PRIMARY KEY (`id`,`passed_score`) USING BTREE
 ) ENGINE=InnoDB AUTO_INCREMENT=121 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin ROW_FORMAT=DYNAMIC;
 
@@ -137,8 +140,8 @@ CREATE TABLE `t_exam` (
 -- Records of t_exam
 -- ----------------------------
 BEGIN;
-INSERT INTO `t_exam` (`id`, `title`, `exam_duration`, `passed_score`, `gross_score`, `max_count`, `user_id`, `certificate_id`, `radio_count`, `radio_score`, `multi_count`, `multi_score`, `judge_count`, `judge_score`, `saq_count`, `saq_score`, `start_time`, `end_time`, `create_time`, `is_deleted`) VALUES (119, 'test3', 1, 1, 21, 1, 163, NULL, 0, 0, 0, 0, 3, 7, 0, 0, '2025-04-20 16:00:00', '2025-05-14 16:00:00', '2025-04-26 14:07:42', 0);
-INSERT INTO `t_exam` (`id`, `title`, `exam_duration`, `passed_score`, `gross_score`, `max_count`, `user_id`, `certificate_id`, `radio_count`, `radio_score`, `multi_count`, `multi_score`, `judge_count`, `judge_score`, `saq_count`, `saq_score`, `start_time`, `end_time`, `create_time`, `is_deleted`) VALUES (120, 'test1', 100, 1, 20, 100, 163, NULL, 0, 0, 0, 0, 10, 2, 0, 0, '2025-04-09 16:00:00', '2025-05-27 16:00:00', '2025-04-26 14:34:59', 0);
+INSERT INTO `t_exam` (`id`, `title`, `exam_duration`, `passed_score`, `gross_score`, `max_count`, `user_id`, `certificate_id`, `radio_count`, `radio_score`, `multi_count`, `multi_score`, `judge_count`, `judge_score`, `saq_count`, `saq_score`, `start_time`, `end_time`, `create_time`, `is_deleted`) VALUES (119, 'test3', 1, 100, 2100, 1, 163, NULL, 0, 0, 0, 0, 3, 700, 0, 0, '2025-04-20 16:00:00', '2025-05-14 16:00:00', '2025-04-26 14:07:42', 0);
+INSERT INTO `t_exam` (`id`, `title`, `exam_duration`, `passed_score`, `gross_score`, `max_count`, `user_id`, `certificate_id`, `radio_count`, `radio_score`, `multi_count`, `multi_score`, `judge_count`, `judge_score`, `saq_count`, `saq_score`, `start_time`, `end_time`, `create_time`, `is_deleted`) VALUES (120, 'test1', 100, 100, 2000, 100, 163, NULL, 0, 0, 0, 0, 10, 200, 0, 0, '2025-04-09 16:00:00', '2025-05-27 16:00:00', '2025-04-26 14:34:59', 0);
 COMMIT;
 
 -- ----------------------------
@@ -164,6 +167,24 @@ INSERT INTO `t_exam_grade` (`id`, `exam_id`, `grade_id`) VALUES (206, 120, 124);
 COMMIT;
 
 -- ----------------------------
+-- Table structure for t_exam_user
+-- ----------------------------
+DROP TABLE IF EXISTS `t_exam_user`;
+CREATE TABLE `t_exam_user` (
+  `id` int NOT NULL AUTO_INCREMENT COMMENT '考试与学生关系表ID',
+  `exam_id` int NOT NULL COMMENT '考试ID',
+  `user_id` int NOT NULL COMMENT '学生用户ID',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_exam_user` (`exam_id`, `user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='考试与指定学生关联';
+
+-- ----------------------------
+-- Records of t_exam_user
+-- ----------------------------
+BEGIN;
+COMMIT;
+
+-- ----------------------------
 -- Table structure for t_exam_qu_answer
 -- ----------------------------
 DROP TABLE IF EXISTS `t_exam_qu_answer`;
@@ -178,6 +199,7 @@ CREATE TABLE `t_exam_qu_answer` (
   `checkout` int(11) DEFAULT NULL COMMENT '是否选中   0未选中  1选中',
   `is_sign` int(11) DEFAULT NULL COMMENT '是否标记   0未标记  1标记',
   `is_right` int(11) DEFAULT NULL COMMENT '是否正确   用于客观题，0错误 1正确',
+  `score` int(11) DEFAULT NULL COMMENT '该题得分',
   `ai_score` int(11) DEFAULT NULL COMMENT 'ai评分',
   `ai_reason` varchar(255) COLLATE utf8mb4_bin DEFAULT NULL COMMENT 'ai评分原因',
   PRIMARY KEY (`id`) USING BTREE,
@@ -188,16 +210,16 @@ CREATE TABLE `t_exam_qu_answer` (
 -- Records of t_exam_qu_answer
 -- ----------------------------
 BEGIN;
-INSERT INTO `t_exam_qu_answer` (`id`, `user_id`, `exam_id`, `question_id`, `question_type`, `answer_id`, `answer_content`, `checkout`, `is_sign`, `is_right`, `ai_score`, `ai_reason`) VALUES (284, 164, 120, 718, 3, '2642', NULL, NULL, NULL, 1, NULL, NULL);
-INSERT INTO `t_exam_qu_answer` (`id`, `user_id`, `exam_id`, `question_id`, `question_type`, `answer_id`, `answer_content`, `checkout`, `is_sign`, `is_right`, `ai_score`, `ai_reason`) VALUES (285, 164, 120, 719, 3, '2645', NULL, NULL, NULL, 0, NULL, NULL);
-INSERT INTO `t_exam_qu_answer` (`id`, `user_id`, `exam_id`, `question_id`, `question_type`, `answer_id`, `answer_content`, `checkout`, `is_sign`, `is_right`, `ai_score`, `ai_reason`) VALUES (286, 164, 120, 720, 3, '2647', NULL, NULL, NULL, 0, NULL, NULL);
-INSERT INTO `t_exam_qu_answer` (`id`, `user_id`, `exam_id`, `question_id`, `question_type`, `answer_id`, `answer_content`, `checkout`, `is_sign`, `is_right`, `ai_score`, `ai_reason`) VALUES (287, 164, 120, 721, 3, '2648', NULL, NULL, NULL, 1, NULL, NULL);
-INSERT INTO `t_exam_qu_answer` (`id`, `user_id`, `exam_id`, `question_id`, `question_type`, `answer_id`, `answer_content`, `checkout`, `is_sign`, `is_right`, `ai_score`, `ai_reason`) VALUES (288, 164, 120, 722, 3, '2651', NULL, NULL, NULL, 0, NULL, NULL);
-INSERT INTO `t_exam_qu_answer` (`id`, `user_id`, `exam_id`, `question_id`, `question_type`, `answer_id`, `answer_content`, `checkout`, `is_sign`, `is_right`, `ai_score`, `ai_reason`) VALUES (289, 164, 120, 723, 3, '2652', NULL, NULL, NULL, 1, NULL, NULL);
-INSERT INTO `t_exam_qu_answer` (`id`, `user_id`, `exam_id`, `question_id`, `question_type`, `answer_id`, `answer_content`, `checkout`, `is_sign`, `is_right`, `ai_score`, `ai_reason`) VALUES (290, 164, 120, 724, 3, '2655', NULL, NULL, NULL, 0, NULL, NULL);
-INSERT INTO `t_exam_qu_answer` (`id`, `user_id`, `exam_id`, `question_id`, `question_type`, `answer_id`, `answer_content`, `checkout`, `is_sign`, `is_right`, `ai_score`, `ai_reason`) VALUES (291, 164, 120, 725, 3, '2656', NULL, NULL, NULL, 1, NULL, NULL);
-INSERT INTO `t_exam_qu_answer` (`id`, `user_id`, `exam_id`, `question_id`, `question_type`, `answer_id`, `answer_content`, `checkout`, `is_sign`, `is_right`, `ai_score`, `ai_reason`) VALUES (292, 164, 120, 726, 3, '2659', NULL, NULL, NULL, 0, NULL, NULL);
-INSERT INTO `t_exam_qu_answer` (`id`, `user_id`, `exam_id`, `question_id`, `question_type`, `answer_id`, `answer_content`, `checkout`, `is_sign`, `is_right`, `ai_score`, `ai_reason`) VALUES (293, 164, 120, 727, 3, '2660', NULL, NULL, NULL, 1, NULL, NULL);
+INSERT INTO `t_exam_qu_answer` (`id`, `user_id`, `exam_id`, `question_id`, `question_type`, `answer_id`, `answer_content`, `checkout`, `is_sign`, `is_right`, `score`, `ai_score`, `ai_reason`) VALUES (284, 164, 120, 718, 3, '2642', NULL, NULL, NULL, 1, NULL, NULL, NULL);
+INSERT INTO `t_exam_qu_answer` (`id`, `user_id`, `exam_id`, `question_id`, `question_type`, `answer_id`, `answer_content`, `checkout`, `is_sign`, `is_right`, `score`, `ai_score`, `ai_reason`) VALUES (285, 164, 120, 719, 3, '2645', NULL, NULL, NULL, 0, NULL, NULL, NULL);
+INSERT INTO `t_exam_qu_answer` (`id`, `user_id`, `exam_id`, `question_id`, `question_type`, `answer_id`, `answer_content`, `checkout`, `is_sign`, `is_right`, `score`, `ai_score`, `ai_reason`) VALUES (286, 164, 120, 720, 3, '2647', NULL, NULL, NULL, 0, NULL, NULL, NULL);
+INSERT INTO `t_exam_qu_answer` (`id`, `user_id`, `exam_id`, `question_id`, `question_type`, `answer_id`, `answer_content`, `checkout`, `is_sign`, `is_right`, `score`, `ai_score`, `ai_reason`) VALUES (287, 164, 120, 721, 3, '2648', NULL, NULL, NULL, 1, NULL, NULL, NULL);
+INSERT INTO `t_exam_qu_answer` (`id`, `user_id`, `exam_id`, `question_id`, `question_type`, `answer_id`, `answer_content`, `checkout`, `is_sign`, `is_right`, `score`, `ai_score`, `ai_reason`) VALUES (288, 164, 120, 722, 3, '2651', NULL, NULL, NULL, 0, NULL, NULL, NULL);
+INSERT INTO `t_exam_qu_answer` (`id`, `user_id`, `exam_id`, `question_id`, `question_type`, `answer_id`, `answer_content`, `checkout`, `is_sign`, `is_right`, `score`, `ai_score`, `ai_reason`) VALUES (289, 164, 120, 723, 3, '2652', NULL, NULL, NULL, 1, NULL, NULL, NULL);
+INSERT INTO `t_exam_qu_answer` (`id`, `user_id`, `exam_id`, `question_id`, `question_type`, `answer_id`, `answer_content`, `checkout`, `is_sign`, `is_right`, `score`, `ai_score`, `ai_reason`) VALUES (290, 164, 120, 724, 3, '2655', NULL, NULL, NULL, 0, NULL, NULL, NULL);
+INSERT INTO `t_exam_qu_answer` (`id`, `user_id`, `exam_id`, `question_id`, `question_type`, `answer_id`, `answer_content`, `checkout`, `is_sign`, `is_right`, `score`, `ai_score`, `ai_reason`) VALUES (291, 164, 120, 725, 3, '2656', NULL, NULL, NULL, 1, NULL, NULL, NULL);
+INSERT INTO `t_exam_qu_answer` (`id`, `user_id`, `exam_id`, `question_id`, `question_type`, `answer_id`, `answer_content`, `checkout`, `is_sign`, `is_right`, `score`, `ai_score`, `ai_reason`) VALUES (292, 164, 120, 726, 3, '2659', NULL, NULL, NULL, 0, NULL, NULL, NULL);
+INSERT INTO `t_exam_qu_answer` (`id`, `user_id`, `exam_id`, `question_id`, `question_type`, `answer_id`, `answer_content`, `checkout`, `is_sign`, `is_right`, `score`, `ai_score`, `ai_reason`) VALUES (293, 164, 120, 727, 3, '2660', NULL, NULL, NULL, 1, NULL, NULL, NULL);
 COMMIT;
 
 -- ----------------------------
@@ -218,25 +240,25 @@ CREATE TABLE `t_exam_question` (
 -- Records of t_exam_question
 -- ----------------------------
 BEGIN;
-INSERT INTO `t_exam_question` (`id`, `exam_id`, `question_id`, `score`, `sort`, `type`) VALUES (521, 118, 718, 7, 0, 3);
-INSERT INTO `t_exam_question` (`id`, `exam_id`, `question_id`, `score`, `sort`, `type`) VALUES (522, 118, 718, 7, 0, 3);
-INSERT INTO `t_exam_question` (`id`, `exam_id`, `question_id`, `score`, `sort`, `type`) VALUES (523, 118, 719, 7, 1, 3);
-INSERT INTO `t_exam_question` (`id`, `exam_id`, `question_id`, `score`, `sort`, `type`) VALUES (524, 118, 720, 7, 2, 3);
-INSERT INTO `t_exam_question` (`id`, `exam_id`, `question_id`, `score`, `sort`, `type`) VALUES (525, 118, 718, 7, 0, 3);
-INSERT INTO `t_exam_question` (`id`, `exam_id`, `question_id`, `score`, `sort`, `type`) VALUES (526, 118, 719, 7, 1, 3);
-INSERT INTO `t_exam_question` (`id`, `exam_id`, `question_id`, `score`, `sort`, `type`) VALUES (527, 119, 718, 7, 0, 3);
-INSERT INTO `t_exam_question` (`id`, `exam_id`, `question_id`, `score`, `sort`, `type`) VALUES (528, 119, 719, 7, 1, 3);
-INSERT INTO `t_exam_question` (`id`, `exam_id`, `question_id`, `score`, `sort`, `type`) VALUES (529, 119, 720, 7, 2, 3);
-INSERT INTO `t_exam_question` (`id`, `exam_id`, `question_id`, `score`, `sort`, `type`) VALUES (530, 120, 718, 2, 0, 3);
-INSERT INTO `t_exam_question` (`id`, `exam_id`, `question_id`, `score`, `sort`, `type`) VALUES (531, 120, 719, 2, 1, 3);
-INSERT INTO `t_exam_question` (`id`, `exam_id`, `question_id`, `score`, `sort`, `type`) VALUES (532, 120, 720, 2, 2, 3);
-INSERT INTO `t_exam_question` (`id`, `exam_id`, `question_id`, `score`, `sort`, `type`) VALUES (533, 120, 721, 2, 3, 3);
-INSERT INTO `t_exam_question` (`id`, `exam_id`, `question_id`, `score`, `sort`, `type`) VALUES (534, 120, 722, 2, 4, 3);
-INSERT INTO `t_exam_question` (`id`, `exam_id`, `question_id`, `score`, `sort`, `type`) VALUES (535, 120, 723, 2, 5, 3);
-INSERT INTO `t_exam_question` (`id`, `exam_id`, `question_id`, `score`, `sort`, `type`) VALUES (536, 120, 724, 2, 6, 3);
-INSERT INTO `t_exam_question` (`id`, `exam_id`, `question_id`, `score`, `sort`, `type`) VALUES (537, 120, 725, 2, 7, 3);
-INSERT INTO `t_exam_question` (`id`, `exam_id`, `question_id`, `score`, `sort`, `type`) VALUES (538, 120, 726, 2, 8, 3);
-INSERT INTO `t_exam_question` (`id`, `exam_id`, `question_id`, `score`, `sort`, `type`) VALUES (539, 120, 727, 2, 9, 3);
+INSERT INTO `t_exam_question` (`id`, `exam_id`, `question_id`, `score`, `sort`, `type`) VALUES (521, 118, 718, 700, 0, 3);
+INSERT INTO `t_exam_question` (`id`, `exam_id`, `question_id`, `score`, `sort`, `type`) VALUES (522, 118, 718, 700, 0, 3);
+INSERT INTO `t_exam_question` (`id`, `exam_id`, `question_id`, `score`, `sort`, `type`) VALUES (523, 118, 719, 700, 1, 3);
+INSERT INTO `t_exam_question` (`id`, `exam_id`, `question_id`, `score`, `sort`, `type`) VALUES (524, 118, 720, 700, 2, 3);
+INSERT INTO `t_exam_question` (`id`, `exam_id`, `question_id`, `score`, `sort`, `type`) VALUES (525, 118, 718, 700, 0, 3);
+INSERT INTO `t_exam_question` (`id`, `exam_id`, `question_id`, `score`, `sort`, `type`) VALUES (526, 118, 719, 700, 1, 3);
+INSERT INTO `t_exam_question` (`id`, `exam_id`, `question_id`, `score`, `sort`, `type`) VALUES (527, 119, 718, 700, 0, 3);
+INSERT INTO `t_exam_question` (`id`, `exam_id`, `question_id`, `score`, `sort`, `type`) VALUES (528, 119, 719, 700, 1, 3);
+INSERT INTO `t_exam_question` (`id`, `exam_id`, `question_id`, `score`, `sort`, `type`) VALUES (529, 119, 720, 700, 2, 3);
+INSERT INTO `t_exam_question` (`id`, `exam_id`, `question_id`, `score`, `sort`, `type`) VALUES (530, 120, 718, 200, 0, 3);
+INSERT INTO `t_exam_question` (`id`, `exam_id`, `question_id`, `score`, `sort`, `type`) VALUES (531, 120, 719, 200, 1, 3);
+INSERT INTO `t_exam_question` (`id`, `exam_id`, `question_id`, `score`, `sort`, `type`) VALUES (532, 120, 720, 200, 2, 3);
+INSERT INTO `t_exam_question` (`id`, `exam_id`, `question_id`, `score`, `sort`, `type`) VALUES (533, 120, 721, 200, 3, 3);
+INSERT INTO `t_exam_question` (`id`, `exam_id`, `question_id`, `score`, `sort`, `type`) VALUES (534, 120, 722, 200, 4, 3);
+INSERT INTO `t_exam_question` (`id`, `exam_id`, `question_id`, `score`, `sort`, `type`) VALUES (535, 120, 723, 200, 5, 3);
+INSERT INTO `t_exam_question` (`id`, `exam_id`, `question_id`, `score`, `sort`, `type`) VALUES (536, 120, 724, 200, 6, 3);
+INSERT INTO `t_exam_question` (`id`, `exam_id`, `question_id`, `score`, `sort`, `type`) VALUES (537, 120, 725, 200, 7, 3);
+INSERT INTO `t_exam_question` (`id`, `exam_id`, `question_id`, `score`, `sort`, `type`) VALUES (538, 120, 726, 200, 8, 3);
+INSERT INTO `t_exam_question` (`id`, `exam_id`, `question_id`, `score`, `sort`, `type`) VALUES (539, 120, 727, 200, 9, 3);
 COMMIT;
 
 -- ----------------------------
@@ -619,6 +641,7 @@ CREATE TABLE `t_question` (
   `id` int(11) NOT NULL AUTO_INCREMENT COMMENT 'id   试题表',
   `qu_type` varchar(255) COLLATE utf8mb4_bin NOT NULL COMMENT '试题类型',
   `image` mediumtext COLLATE utf8mb4_bin COMMENT '试题图片（单张 URL 或多张以 ### 拼接）',
+  `audio` varchar(1024) COLLATE utf8mb4_bin DEFAULT NULL COMMENT '试题音频（如英语听力；单条 URL 或多条以 ### 拼接）',
   `content` mediumtext COLLATE utf8mb4_bin NOT NULL COMMENT '题干（可为含多图的 HTML）；复合题为共用材料',
   `sub_items` mediumtext COLLATE utf8mb4_bin DEFAULT NULL COMMENT '复合题（题型5）小题 JSON',
   `create_time` datetime NOT NULL COMMENT '创建时间',
@@ -684,6 +707,8 @@ CREATE TABLE `t_repo` (
   `create_time` datetime DEFAULT NULL COMMENT '创建时间',
   `is_deleted` int(11) NOT NULL DEFAULT '0' COMMENT '逻辑删除：0代表未删除，1代表删除',
   `is_exercise` int(11) NOT NULL DEFAULT '0',
+  `knowledge_tree` mediumtext COLLATE utf8mb4_bin DEFAULT NULL COMMENT '知识树 JSON',
+  `knowledge_tree_time` datetime DEFAULT NULL COMMENT '知识树最近生成时间',
   PRIMARY KEY (`id`) USING BTREE
 ) ENGINE=InnoDB AUTO_INCREMENT=100 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin ROW_FORMAT=DYNAMIC;
 
@@ -726,6 +751,7 @@ CREATE TABLE `t_user` (
   `avatar` varchar(255) COLLATE utf8mb4_bin DEFAULT 'https://online-exam-system-backend.oss-cn-beijing.aliyuncs.com/da93c2a6-6879-46c3-b38f-a99956f70d22.jpg' COMMENT '头像地址',
   `role_id` int(11) DEFAULT '1' COMMENT '角色id',
   `grade_id` int(11) DEFAULT NULL COMMENT '班级id',
+  `major` varchar(64) COLLATE utf8mb4_bin DEFAULT NULL COMMENT '专业（学生）',
   `create_time` datetime DEFAULT NULL COMMENT '创建时间   YYYY-MM-DD hh:mm:ss',
   `status` int(11) DEFAULT '1' COMMENT '状态  1正常0禁用',
   `is_deleted` int(11) NOT NULL DEFAULT '0' COMMENT '逻辑删除：0代表未删除，1代表删除',
@@ -739,7 +765,7 @@ CREATE TABLE `t_user` (
 BEGIN;
 INSERT INTO `t_user` (`id`, `user_name`, `real_name`, `password`, `avatar`, `role_id`, `grade_id`, `create_time`, `status`, `is_deleted`) VALUES (1, 'admin', '管理员', '$2a$10$/ZdKFY15AWNLOeTqAp91a.uDa0JDioj1wVYGgpn.HKMYh9vq0Uh4S', 'https://online-exam-system-backend.oss-cn-beijing.aliyuncs.com/27eb3a59-4d05-4bce-90ec-4a2457452886.png', 3, 106, '2024-05-23 16:06:07', 1, 0);
 INSERT INTO `t_user` (`id`, `user_name`, `real_name`, `password`, `avatar`, `role_id`, `grade_id`, `create_time`, `status`, `is_deleted`) VALUES (163, 'teacher', '教师测试账号', '$2a$10$odROzQ2vFaHRomD9UG4uWO65twiqI33Y1RktzqtxWNLaVf5.luivy', 'https://online-exam-system-backend.oss-cn-beijing.aliyuncs.com/da93c2a6-6879-46c3-b38f-a99956f70d22.jpg', 2, NULL, '2025-03-22 11:38:18', 1, 0);
-INSERT INTO `t_user` (`id`, `user_name`, `real_name`, `password`, `avatar`, `role_id`, `grade_id`, `create_time`, `status`, `is_deleted`) VALUES (164, 'student', '学生测试账号', '$2a$10$vcnsGkVJdeH0tdKiLa1.d.qbPD/.5B5Ah3qYzeN6rem5P/U8jGiMS', 'https://online-exam-system-backend.oss-cn-beijing.aliyuncs.com/da93c2a6-6879-46c3-b38f-a99956f70d22.jpg', 1, 124, '2025-03-22 11:38:36', 1, 0);
+INSERT INTO `t_user` (`id`, `user_name`, `real_name`, `password`, `avatar`, `role_id`, `grade_id`, `major`, `create_time`, `status`, `is_deleted`) VALUES (164, 'student', '学生测试账号', '$2a$10$vcnsGkVJdeH0tdKiLa1.d.qbPD/.5B5Ah3qYzeN6rem5P/U8jGiMS', 'https://online-exam-system-backend.oss-cn-beijing.aliyuncs.com/da93c2a6-6879-46c3-b38f-a99956f70d22.jpg', 1, 124, '软件工程', '2025-03-22 11:38:36', 1, 0);
 COMMIT;
 
 -- ----------------------------
@@ -813,7 +839,7 @@ CREATE TABLE `t_user_exams_score` (
 -- ----------------------------
 BEGIN;
 INSERT INTO `t_user_exams_score` (`id`, `user_id`, `exam_id`, `total_time`, `user_time`, `user_score`, `limit_time`, `count`, `state`, `create_time`, `whether_mark`) VALUES (204, 164, 119, 1, NULL, 0, NULL, 0, 0, '2025-04-26 14:08:10', NULL);
-INSERT INTO `t_user_exams_score` (`id`, `user_id`, `exam_id`, `total_time`, `user_time`, `user_score`, `limit_time`, `count`, `state`, `create_time`, `whether_mark`) VALUES (205, 164, 120, 100, 19, 10, '2025-04-26 14:35:36', 0, 1, '2025-04-26 14:35:17', -1);
+INSERT INTO `t_user_exams_score` (`id`, `user_id`, `exam_id`, `total_time`, `user_time`, `user_score`, `limit_time`, `count`, `state`, `create_time`, `whether_mark`) VALUES (205, 164, 120, 100, 19, 1000, '2025-04-26 14:35:36', 0, 1, '2025-04-26 14:35:17', -1);
 COMMIT;
 
 -- ----------------------------

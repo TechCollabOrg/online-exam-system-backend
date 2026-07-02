@@ -22,7 +22,7 @@ public class CorrectAnswerFrom {
     // 试题ID
     @NotBlank(message = "试题Id不能为空",groups = AnswerGroup.CorrectGroup.class)
     private Integer questionId;
-    // 分数
+    // 分数（展示分，可带两位小数）
     @NotBlank(message = "分数不能为空",groups = AnswerGroup.CorrectGroup.class)
-    private Integer score;
+    private Double score;
 }

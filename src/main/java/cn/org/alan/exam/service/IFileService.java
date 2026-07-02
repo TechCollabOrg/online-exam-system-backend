@@ -18,4 +18,12 @@ public interface IFileService {
      * @return 返回上传后的地址
      */
     Result<String> uploadImage(MultipartFile file);
+
+    /**
+     * 上传音频（如英语听力）
+     *
+     * @param file 文件
+     * @return 返回上传后的地址
+     */
+    Result<String> uploadAudio(MultipartFile file);
 }

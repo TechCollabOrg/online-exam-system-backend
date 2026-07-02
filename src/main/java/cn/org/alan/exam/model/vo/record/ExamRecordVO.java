@@ -37,14 +37,14 @@ public class ExamRecordVO {
     private Integer examDuration;
 
     /**
-     * 及格分
+     * 及格分（展示分）
      */
-    private Integer passedScore;
+    private Double passedScore;
 
     /**
-     * 总分数
+     * 总分数（展示分）
      */
-    private Integer grossScore;
+    private Double grossScore;
 
     /**
      * 最大切屏次数
@@ -68,9 +68,9 @@ public class ExamRecordVO {
     private Integer radioCount;
 
     /**
-     * 单选题成绩     数据库存储*100，前端正常输入和展示/100
+     * 单选题成绩（展示分）
      */
-    private Integer radioScore;
+    private Double radioScore;
 
     /**
      * 多选题数量
@@ -78,9 +78,9 @@ public class ExamRecordVO {
     private Integer multiCount;
 
     /**
-     * 多选题成绩     数据库存储*100，前端正常输入和展示/100
+     * 多选题成绩（展示分）
      */
-    private Integer multiScore;
+    private Double multiScore;
 
     /**
      * 判断题数量
@@ -88,9 +88,9 @@ public class ExamRecordVO {
     private Integer judgeCount;
 
     /**
-     * 判断题成绩     数据库存储*100，前端正常输入和展示/100
+     * 判断题成绩（展示分）
      */
-    private Integer judgeScore;
+    private Double judgeScore;
 
     /**
      * 简答题数量
@@ -98,9 +98,9 @@ public class ExamRecordVO {
     private Integer saqCount;
 
     /**
-     * 简答题成绩     数据库存储*100，前端正常输入和展示/100
+     * 简答题成绩（展示分）
      */
-    private Integer saqScore;
+    private Double saqScore;
 
     /**
      * 开始时间     YYYY-MM-DD hh:mm:ss
@@ -126,9 +126,9 @@ public class ExamRecordVO {
     private Integer userTime;
 
     /**
-     * 用户得分
+     * 用户得分（展示分）
      */
-    private Integer userScore;
+    private Double userScore;
 
     /**
      * 交卷时间  YYYY-MM-DD hh:mm:ss

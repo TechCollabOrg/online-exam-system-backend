@@ -17,6 +17,8 @@ public class ExamRecordDetailVO {
 
     private String image;
 
+    private String audio;
+
     private String title;
 
     private Integer quType;
@@ -35,11 +37,11 @@ public class ExamRecordDetailVO {
     /** 是否正确：1 对 0 错 -1 未判（如简答） */
     private Integer isRight;
 
-    /** 该题满分（试卷内配置） */
-    private Integer totalScore;
+    /** 该题满分（展示分） */
+    private Double totalScore;
 
-    /** 该题得分；未阅卷完成时可能为 null */
-    private Integer quScore;
+    /** 该题得分（展示分）；未阅卷完成时可能为 null */
+    private Double quScore;
 
     /** 得分说明：如「待批改」 */
     private String scoreLabel;
@@ -52,4 +54,7 @@ public class ExamRecordDetailVO {
 
     /** 共用题干图片 */
     private String stemImage;
+
+    /** 共用题干音频 */
+    private String stemAudio;
 }

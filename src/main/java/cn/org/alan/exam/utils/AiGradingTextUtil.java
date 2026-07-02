@@ -27,8 +27,8 @@ public final class AiGradingTextUtil {
         return StringUtils.isBlank(stripHtml(answer));
     }
 
-    public static int clampScore(int score, Integer totalScore) {
-        int max = totalScore != null && totalScore > 0 ? totalScore : Integer.MAX_VALUE;
+    public static double clampDisplayScore(double score, Double totalScore) {
+        double max = totalScore != null && totalScore > 0 ? totalScore : Double.MAX_VALUE;
         return Math.max(0, Math.min(score, max));
     }
 

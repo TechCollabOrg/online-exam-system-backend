@@ -34,6 +34,9 @@ public class ExerciseRecordDetailVO {
     // 题干图片
     private String image;
 
+    /** 题干音频 */
+    private String audio;
+
     // 试题类型
     private Integer quType;
 
@@ -41,6 +44,8 @@ public class ExerciseRecordDetailVO {
     private String stemContent;
     /** 共用题干附图 */
     private String stemImage;
+    /** 共用题干音频 */
+    private String stemAudio;
     /** 父题 id */
     private Integer parentQuId;
 }

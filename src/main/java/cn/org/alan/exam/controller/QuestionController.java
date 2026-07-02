@@ -58,8 +58,9 @@ public class QuestionController {
                                                     @RequestParam(value = "pageSize", required = false, defaultValue = "10") Integer pageSize,
                                                     @RequestParam(value = "content", required = false) String content,
                                                     @RequestParam(value = "repoId", required = false) Integer repoId,
-                                                    @RequestParam(value = "type", required = false) Integer type) {
-        return iQuestionService.pagingQuestion(pageNum, pageSize, content, type, repoId);
+                                                    @RequestParam(value = "type", required = false) Integer type,
+                                                    @RequestParam(value = "knowledgePointPath", required = false) String knowledgePointPath) {
+        return iQuestionService.pagingQuestion(pageNum, pageSize, content, type, repoId, knowledgePointPath);
     }
 
     /** GET 单题详情。 */
@@ -93,5 +94,13 @@ public class QuestionController {
     @PreAuthorize("hasAnyAuthority('role_teacher','role_admin')")
     public Result<String> uploadImage(@RequestPart("file") MultipartFile file) {
         return fileService.uploadImage(file);
+    }
+
+    /** POST multipart 上传题干音频（委托 {@link IFileService#uploadAudio}）。 */
+    @ApiOperation("上传音频")
+    @PostMapping("/uploadAudio")
+    @PreAuthorize("hasAnyAuthority('role_teacher','role_admin')")
+    public Result<String> uploadAudio(@RequestPart("file") MultipartFile file) {
+        return fileService.uploadAudio(file);
     }
 }

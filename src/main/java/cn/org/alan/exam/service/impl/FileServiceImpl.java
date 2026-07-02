@@ -49,4 +49,27 @@ public class FileServiceImpl implements IFileService {
         return Result.success("图片上传成功", url);
     }
 
+    /** 校验为常见音频后缀且不超过 50MB；上传成功后返回可访问地址。 */
+    @Override
+    public Result<String> uploadAudio(MultipartFile file) {
+        if (!fileService.isAudio(Objects.requireNonNull(file.getOriginalFilename()))) {
+            throw new ServiceRuntimeException("上传文件不是常用音频格式（mp3、wav、m4a、ogg、aac）");
+        }
+        if (file.getSize() > 50L * 1024 * 1024) {
+            throw new ServiceRuntimeException("音频过大，请压缩后重试（单文件不超过 50MB）");
+        }
+        String url;
+        try {
+            url = fileService.upload(file);
+        } catch (IOException e) {
+            log.error("音频上传 IO 异常", e);
+            throw new ServiceRuntimeException(
+                    StringUtils.isNotBlank(e.getMessage()) ? e.getMessage() : "音频上传失败，请检查对象存储服务是否可用");
+        }
+        if (StringUtils.isBlank(url)) {
+            throw new ServiceRuntimeException("音频上传失败，未获得访问地址（请检查 MinIO/OSS 配置与网络）");
+        }
+        return Result.success("音频上传成功", url);
+    }
+
 }

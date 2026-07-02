@@ -115,4 +115,7 @@ public class Exam implements Serializable {
     @ApiModelProperty("逻辑删除字段")
     private Integer isDeleted;
 
+    @ApiModelProperty("发布范围：1按班级 2按指定学生")
+    private Integer targetType;
+
 }

@@ -8,6 +8,7 @@ import lombok.Data;
 @Data
 public class ScoreBriefingRowVO {
     private String realName;
-    private Integer userScore;
+    /** 用户得分（展示分） */
+    private Double userScore;
     private Integer cutScreenCount;
 }

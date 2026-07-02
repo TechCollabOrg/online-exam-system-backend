@@ -81,6 +81,17 @@ public class AliOSSUtil implements FileService {
         return Arrays.asList(lastnames).contains(lastName);
     }
 
+    @Override
+    public boolean isAudio(String filename) {
+        int d = filename.lastIndexOf('.');
+        if (d < 0 || d == filename.length() - 1) {
+            return false;
+        }
+        String lastName = filename.substring(d + 1).toLowerCase();
+        String[] lastnames = {"mp3", "wav", "m4a", "ogg", "aac", "webm"};
+        return Arrays.asList(lastnames).contains(lastName);
+    }
+
     /**
      * 判断文件是否大于10MB
      *

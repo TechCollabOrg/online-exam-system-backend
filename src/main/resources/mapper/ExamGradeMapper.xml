@@ -18,11 +18,22 @@
 
     <!-- 根据考试id获取所有需要参加考试的人数 -->
     <select id="selectClassSize" resultType="java.lang.Integer">
-        select count(*)
-        from t_exam_grade as eg
-        left join t_grade as g on eg.grade_id = g.id
-        left join t_user as u on g.id = u.grade_id
-        where eg.exam_id = #{id}
+        select ifnull(sum(cnt), 0) from (
+            select count(distinct u.id) as cnt
+            from t_exam e
+            inner join t_exam_grade eg on e.id = eg.exam_id
+            inner join t_user u on u.grade_id = eg.grade_id
+            inner join t_role r on u.role_id = r.id and r.code = 'student'
+            where e.id = #{id}
+              and (e.target_type is null or e.target_type = 1)
+              and (u.status is null or u.status = 1)
+            union all
+            select count(distinct eu.user_id) as cnt
+            from t_exam e
+            inner join t_exam_user eu on e.id = eu.exam_id
+            where e.id = #{id}
+              and e.target_type = 2
+        ) t
     </select>
 
     <!-- 查询考试班级关联列表 -->
@@ -30,8 +41,14 @@
         select *
         from t_exam
         where
-        is_deleted = 0 and
-        id in (select exam_id from t_exam_grade where grade_id in (select grade_id from t_user where id = #{userId}))
+        is_deleted = 0
+        and (
+            ((target_type is null or target_type = 1)
+                and id in (select exam_id from t_exam_grade where grade_id in (select grade_id from t_user where id = #{userId})))
+            or
+            (target_type = 2
+                and id in (select exam_id from t_exam_user where user_id = #{userId}))
+        )
         and id not in (select exam_id from t_user_exams_score where user_id = #{userId})
         <if test="title != null">
             and title like concat('%',#{title},'%')

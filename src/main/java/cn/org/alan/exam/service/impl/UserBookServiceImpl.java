@@ -81,6 +81,7 @@ public class UserBookServiceImpl extends ServiceImpl<UserBookMapper, UserBook> i
         }
         // 基本信息
         bookOneQuVO.setImage(quById.getImage());
+        bookOneQuVO.setAudio(quById.getAudio());
         bookOneQuVO.setContent(quById.getContent());
         bookOneQuVO.setQuType(quById.getQuType());
         if (Integer.valueOf(5).equals(quById.getQuType())) {
@@ -95,6 +96,7 @@ public class UserBookServiceImpl extends ServiceImpl<UserBookMapper, UserBook> i
                 bookOneQuVO.setParentQuId(quById.getParentQuId());
                 bookOneQuVO.setStemContent(stem.getContent());
                 bookOneQuVO.setStemImage(stem.getImage());
+                bookOneQuVO.setStemAudio(stem.getAudio());
             }
         }
         // 答案列表

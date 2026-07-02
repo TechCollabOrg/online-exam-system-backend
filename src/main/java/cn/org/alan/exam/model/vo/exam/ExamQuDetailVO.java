@@ -15,6 +15,8 @@ public class ExamQuDetailVO {
 
     private String image;
 
+    private String audio;
+
     private String content;
 
     private Integer quType;

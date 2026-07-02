@@ -64,7 +64,7 @@ public class AiGradingQuestionLoader {
         QuestionScoreVO vo = new QuestionScoreVO();
         vo.setQuestionId(String.valueOf(question.getId()));
         vo.setQuestionContent(question.getContent());
-        vo.setTotalScore(examQuestion.getScore());
+        vo.setTotalScore(ExamScoreUtil.toDisplayDouble(examQuestion.getScore()));
         vo.setQusetionAnswer(loadRefAnswer(question.getId()));
         vo.setQuestionAnalysis(question.getAnalysis());
         vo.setUserAnswer(answer != null && answer.getAnswerContent() != null ? answer.getAnswerContent() : "");
@@ -79,7 +79,7 @@ public class AiGradingQuestionLoader {
         QuestionScoreVO vo = new QuestionScoreVO();
         vo.setQuestionId(String.valueOf(question.getId()));
         vo.setQuestionContent(question.getContent());
-        vo.setTotalScore(examQuestion.getScore());
+        vo.setTotalScore(ExamScoreUtil.toDisplayDouble(examQuestion.getScore()));
         vo.setQusetionAnswer(formatCompoundReferenceAnswer(subItems));
         vo.setQuestionAnalysis(question.getAnalysis());
         vo.setUserAnswer(formatCompoundStudentAnswer(subItems, savedContent));

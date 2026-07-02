@@ -3,7 +3,7 @@
 <mapper namespace="cn.org.alan.exam.mapper.UserMapper">
 
     <sql id="simpleFiled">
-        u.id,u.user_name,u.real_name,u.avatar,u.create_time,u.status
+        u.id,u.user_name,u.real_name,u.avatar,u.major,u.create_time,u.status
     </sql>
 
     <!-- 批量添加用户 -->
@@ -12,7 +12,7 @@
         values
         <foreach collection="list" item="user" separator=",">
             (null,#{user.userName},#{user.realName},#{user.password},
-            null,#{user.roleId},null,#{user.createTime},1,0)
+            null,#{user.roleId},null,#{user.major},#{user.createTime},1,0)
         </foreach>
     </insert>
 
@@ -52,6 +52,8 @@
         u.user_name,
         u.real_name,
         u.role_id as roleId,
+        u.grade_id as gradeId,
+        u.major,
         u.create_time,
         g.grade_name,
         g.user_id

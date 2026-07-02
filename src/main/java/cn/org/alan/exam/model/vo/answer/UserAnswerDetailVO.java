@@ -23,13 +23,16 @@ public class UserAnswerDetailVO {
     private String quTitle;
     // 试题图片
     private String quImg;
+    /** 试题音频 */
+    private String quAudio;
     private String answer;
     private String refAnswer;
-    /** AI 阅卷建议分（教师可修改后提交） */
-    private Integer aiScore;
+    /** AI 阅卷建议分（展示分，教师可修改后提交） */
+    private Double aiScore;
     /** AI 阅卷说明，以【AI阅卷】开头 */
     private String aiReason;
-    private Integer totalScore;
+    /** 本题满分（展示分） */
+    private Double totalScore;
 
     /** 试题类型：1单选 2多选 3判断 4简答 5复合题 */
     private Integer quType;

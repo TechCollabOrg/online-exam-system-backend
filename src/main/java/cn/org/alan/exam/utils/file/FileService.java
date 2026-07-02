@@ -27,6 +27,11 @@ public interface FileService {
     boolean isImage(String filename);
 
     /**
+     * 校验扩展名是否为常见音频类型（如 mp3/wav/m4a/ogg/aac）。
+     */
+    boolean isAudio(String filename);
+
+    /**
      * 是否超过实现类配置的单文件大小上限（业务侧常与「50KB」提示文案对齐）。
      *
      * @param file 上传文件
