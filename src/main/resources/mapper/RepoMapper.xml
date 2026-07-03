@@ -75,17 +75,17 @@
         group by r.id,r.title
     </select>
 
-    <!-- 查找刷题记录 -->
+    <!-- 查找刷题记录：按用户刷题汇总表关联，展示最近刷题时间 -->
     <select id="selectUserExerciseRecord" resultType="cn.org.alan.exam.model.entity.Repo">
-        select *
-        from t_repo r
-        where
-        r.is_deleted = 0
-        and
-        r.id in (select uer.repo_id from t_user_exercise_record uer where uer.user_id = #{userId})
+        select r.id, r.title, uer.create_time as createTime
+        from t_user_exercise_record uer
+        join t_repo r on r.id = uer.repo_id
+        where uer.user_id = #{userId}
+          and r.is_deleted = 0
         <if test="repoName!=null and repoName!=''">
             and r.title like concat('%',#{repoName},'%')
         </if>
+        order by uer.create_time desc
     </select>
 
 </mapper>

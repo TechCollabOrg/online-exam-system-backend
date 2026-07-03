@@ -28,7 +28,8 @@ CREATE DATABASE db_exam DEFAULT CHARACTER SET utf8mb4;
 **考试管理报 `Unknown column 'compound_count' in 'field list'`**：对已有库执行一次 `sql/alter_t_exam_compound_type.sql`（为 `t_exam` 增加 `compound_count`、`compound_score` 列），然后重启后端。  
 **组卷分值要支持小数（如 0.5、2.5 分）且旧库此前按「整分」直存**：对已有库执行一次 `sql/alter_score_storage_x100.sql`（或 `sql/upgrade_legacy_db.sql` 已包含该步骤），将历史分值统一为「库内整数 = 展示分 × 100」。新装库直接执行 `db_exam.sql` 即可；**勿重复执行**升级脚本。执行前请备份。
 **学生专业字段**：对已有库执行一次 `sql/alter_t_user_major.sql`（或 `upgrade_legacy_db.sql` 已包含），为 `t_user` 增加 `major` 列。  
-**按学生发布考试**：对已有库执行一次 `sql/alter_t_exam_user.sql`（或 `upgrade_legacy_db.sql` 已包含），为 `t_exam` 增加 `target_type` 并创建 `t_exam_user` 表。
+**按学生发布考试**：对已有库执行一次 `sql/alter_t_exam_user.sql`（或 `upgrade_legacy_db.sql` 已包含），为 `t_exam` 增加 `target_type` 并创建 `t_exam_user` 表。  
+**刷题/结束刷题后记录为空，或接口报 `Unknown column 'audio' in 'field list'`**：对已有库执行一次 `sql/alter_t_question_audio.sql`（为 `t_question` 增加 `audio` 列），然后重启后端。
 
 ### 启动
 
@@ -142,11 +143,12 @@ online-exam-system-backend/
 | PUT | `/api/invite-codes/{id}/disable` | 管理员：禁用邀请码 |
 | DELETE | `/api/invite-codes/{ids}` | 管理员：批量删除邀请码 |
 | PUT | `/api/user/{id}/profile` | 管理员：维护学生班级（`gradeId`，可空）与专业（`major`） |
+| GET | `/api/discussion/query/page/admin` | 管理员：全站讨论分页（可选 `title`、`gradeId`） |
 | GET | `/api/repo/{id}/knowledge-tree` | 教师/管理员：获取题库已保存的知识树 |
 | POST | `/api/repo/{id}/knowledge-tree/generate` | 教师/管理员：AI 分析题目并生成/覆盖知识树 |
 | GET | `/api/repo/{id}/knowledge-points` | 教师/管理员：知识树下拉选项（按知识点筛题） |
 | GET | `/api/questions/paging` | 新增可选参数 `knowledgePointPath`（须同时传 `repoId`） |
-| POST | `/api/questions/uploadAudio` | 教师/管理员：上传试题听力音频（multipart `file`） |
+| POST | `/api/questions/uploadAudio` | 教师/管理员：上传试题听力音频（multipart `file`，单文件 ≤ 50MB，见 `spring.servlet.multipart`） |
 
 创建考试 `POST /api/exams`：随机模式（`addQuype=1`）若同时提交 `quIds` 与 `quScores`（与预览列表一致），则按确认后的题目与分值组卷，不再重新洗牌。  
 发布范围：`targetType=1`（默认）按班级，传 `gradeIds`；`targetType=2` 按指定学生，传 `userIds`（逗号分隔），`gradeIds` 可由所选学生班级自动推导。
@@ -188,7 +190,8 @@ online-exam-system-backend/
 
 - 登录地点格式为 **国家 省 市**（如 `中国 广东省 深圳市`）；**每次登录/登出实时查询，不做缓存**。
 - 本机或局域网访问时，前端会在登录/登出前通过浏览器多源查询当前公网 IP 并传给后端（请求头 `X-Client-Public-Ip`），可反映 **VPN / 代理切换**；请同时重启前后端使改动生效。
-- 若浏览器无法访问公网 IP 查询接口，地点会显示为 `本机/内网（127.0.0.1）` 等，而不会再误显示为服务器固定出口地。
+- 查询顺序：国内接口优先（pconline JSONP、ipip.net、ip.sb 等）→ 国外接口 → 最后经同源接口 `GET /api/auths/client-public-ip` 由后端查出口 IP。
+- 若浏览器与后端均无法获取公网 IP，后端会再尝试用服务端出口 IP 解析地点；仍失败才显示 `本机/内网（10.x.x.x）`。
 - 公网 IP 优先用离线库 `ip2region.xdb`；识别失败时再调在线接口（pconline / ip-api）。
 - 若经 Nginx 反向代理部署，请转发 `X-Real-IP` / `X-Forwarded-For`，否则后端只能看到代理机 IP。
 - 开发时前端 `vue.config.js` 已配置代理转发真实客户端 IP 与 `X-Client-Public-Ip`；修改后需 **重启 `npm run dev`**。
@@ -197,6 +200,12 @@ online-exam-system-backend/
 
 - 设备名由后端解析 `User-Agent`，格式示例：`Windows 10/11 / Chrome`、`iPhone / iOS / Safari`、`SM-G991B / Android 13 / Chrome`。
 - 学生 Electron 客户端会识别为 `Electron`；若仍显示「未知设备」，请确认客户端未屏蔽 `User-Agent` 请求头。
+
+### 刷题/错题本报 `For input string: "question"`
+
+- 原因：请求 `/api/exercises/question/{题目ID}` 时若 **题目 ID 为空**，Spring 会把路径 `/api/exercises/question` 误当成「题库 ID = question」，从而报类型转换错误。
+- 处理：请使用 **2026-07-03 之后** 的后端与前端；重启后端后重新进入刷题/错题本。复合题（题型 5）需在刷题页显示小题作答区，旧版前端仅显示题干无答题框。
+- 自查：浏览器开发者工具 → Network，确认请求形如 `GET /api/exercises/question/123`（末尾为数字 ID），而不是 `/api/exercises/question` 或 `/api/exercises/question/`。
 
 ### Maven 依赖下载 SSL 失败
 

@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Nullable;
 import javax.annotation.Resource;
+import javax.validation.Valid;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
 import java.util.List;
@@ -38,23 +39,11 @@ public class ExerciseController {
     @Resource
     private IRepoService iRepoService;
 
-    /** GET 某题库答题卡列表；{@code quType} 可选，取值 1–4。 */
-    @ApiOperation("获取试题Id列表")
-    @GetMapping("/{repoId}")
-    @PreAuthorize("hasAnyAuthority('role_student')")
-    public Result<List<QuestionSheetVO>> getQuestion(@PathVariable("repoId") Integer repoId,
-                                                     @Min(value = 1, message = "试题类型最小值应为1")
-                                                     @Max(value = 4, message = "试题类型最大值应为4")
-                                                     @Nullable
-                                                     @RequestParam(value = "quType", required = false) Integer quType) {
-        return iExerciseRecordService.getQuestionSheet(repoId, quType);
-    }
-
     /** POST 提交刷题答案并返回题目信息。 */
     @ApiOperation("填充答案，并返回试题信息")
     @PostMapping("/fillAnswer")
     @PreAuthorize("hasAnyAuthority('role_student')")
-    public Result<QuestionVO> fillAnswer(@RequestBody ExerciseFillAnswerFrom exerciseFillAnswerFrom) {
+    public Result<QuestionVO> fillAnswer(@Valid @RequestBody ExerciseFillAnswerFrom exerciseFillAnswerFrom) {
         return iExerciseRecordService.fillAnswer(exerciseFillAnswerFrom);
     }
 
@@ -72,7 +61,7 @@ public class ExerciseController {
 
     /** GET 刷题场景下单题详情（不含标准答案暴露策略由 VO 决定）。 */
     @ApiOperation("获取单题详情，没有答案")
-    @GetMapping("/question/{id}")
+    @GetMapping("/question/{id:\\d+}")
     @PreAuthorize("hasAnyAuthority('role_student')")
     public Result<QuestionVO> getSingle(@PathVariable("id") Integer id) {
         return iExerciseRecordService.getSingle(id);
@@ -80,9 +69,21 @@ public class ExerciseController {
 
     /** GET 用户对某题库某题的作答摘要。 */
     @ApiOperation("获取用户回答详情")
-    @GetMapping("/answerInfo/{repoId}/{quId}")
+    @GetMapping("/answerInfo/{repoId:\\d+}/{quId:\\d+}")
     @PreAuthorize("hasAnyAuthority('role_student')")
     public Result<AnswerInfoVO> getAnswerInfo(@PathVariable("repoId") Integer repoId, @PathVariable("quId") Integer quId) {
         return iExerciseRecordService.getAnswerInfo(repoId, quId);
+    }
+
+    /** GET 某题库答题卡列表；{@code quType} 可选，取值 1–5。 */
+    @ApiOperation("获取试题Id列表")
+    @GetMapping("/{repoId:\\d+}")
+    @PreAuthorize("hasAnyAuthority('role_student')")
+    public Result<List<QuestionSheetVO>> getQuestion(@PathVariable("repoId") Integer repoId,
+                                                     @Min(value = 1, message = "试题类型最小值应为1")
+                                                     @Max(value = 5, message = "试题类型最大值应为5")
+                                                     @Nullable
+                                                     @RequestParam(value = "quType", required = false) Integer quType) {
+        return iExerciseRecordService.getQuestionSheet(repoId, quType);
     }
 }

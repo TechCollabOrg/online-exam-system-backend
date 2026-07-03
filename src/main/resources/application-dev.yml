@@ -31,7 +31,8 @@ spring:
         min-idle: 0
   servlet:
     multipart:
-      max-file-size: 5MB
+      max-file-size: 50MB
+      max-request-size: 50MB
 #MybatisPlus配置
 mybatis-plus:
   global-config:
@@ -41,7 +42,7 @@ mybatis-plus:
       logic-delete-value: 1
   configuration:
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
-    map-underscore-to-camel-case:
+    map-underscore-to-camel-case: true
   type-aliases-package: cn.org.alan.exam.model
 
 # jwt 配置（生产务必设置 JWT_SECRET，勿使用默认值）

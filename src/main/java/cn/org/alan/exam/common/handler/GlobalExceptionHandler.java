@@ -12,6 +12,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.multipart.support.MissingServletRequestPartException;
 
@@ -122,7 +123,17 @@ public class GlobalExceptionHandler {
 
 
     /**
-     * 上传文件超过 Spring 配置的单次/总大小限制，提示最大 5MB（需与 {@code multipart} 配置保持一致）。
+     * 路径变量或请求参数类型不匹配（如非数字 ID），返回简短提示而非 Spring 原始堆栈文案。
+     */
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public Result<String> handleMethodArgumentTypeMismatchException(MethodArgumentTypeMismatchException e) {
+        log.error(e.getMessage(), e.getClass());
+        String name = e.getName() != null ? e.getName() : "参数";
+        return Result.failed(name + "格式不正确，请检查请求参数");
+    }
+
+    /**
+     * 上传文件超过 Spring 配置的单次/总大小限制，提示最大 50MB（需与 {@code multipart} 配置保持一致）。
      *
      * @param e 超过最大上传大小异常
      * @return 失败响应
@@ -130,7 +141,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     public Result<String> handlerMaxUploadSizeExceededException(MaxUploadSizeExceededException e) {
         log.error(e.getMessage(), e.getClass());
-        return Result.failed("文件太大，最大上传5MB");
+        return Result.failed("文件太大，最大上传50MB");
     }
 
     /**

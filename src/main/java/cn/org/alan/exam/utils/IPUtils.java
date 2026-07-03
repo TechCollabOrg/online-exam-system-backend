@@ -125,6 +125,13 @@ public final class IPUtils {
         }
 
         if (isInternalIp(clientIp)) {
+            String outboundIp = resolveOutboundPublicIp();
+            if (StringUtils.isNotBlank(outboundIp)) {
+                String place = geolocateIp(outboundIp);
+                if (isUsefulLocation(place)) {
+                    return place;
+                }
+            }
             return "本机/内网（" + clientIp + "）";
         }
 
@@ -140,6 +147,34 @@ public final class IPUtils {
             return offline;
         }
         return geolocateOnline(ip);
+    }
+
+    /**
+     * 通过服务端出口查询当前公网 IPv4（浏览器无法直连外网 IP 接口时由前端兜底调用）。
+     */
+    public static String resolveOutboundPublicIp() {
+        JSONObject pconline = fetchPconlineJson(null);
+        if (pconline != null) {
+            String ip = pconline.getStr("ip");
+            if (isValidPublicIpv4(ip)) {
+                return normalizeIp(ip);
+            }
+        }
+        try {
+            String body = HttpRequest.get("https://api.ipify.org?format=json")
+                    .timeout(ONLINE_TIMEOUT_MS)
+                    .execute()
+                    .body();
+            if (JSONUtil.isTypeJSON(body)) {
+                String ip = JSONUtil.parseObj(body).getStr("ip");
+                if (isValidPublicIpv4(ip)) {
+                    return normalizeIp(ip);
+                }
+            }
+        } catch (Exception ex) {
+            log.debug("ipify 出口 IP 查询失败", ex);
+        }
+        return null;
     }
 
     private static String geolocateOnline(String ip) {

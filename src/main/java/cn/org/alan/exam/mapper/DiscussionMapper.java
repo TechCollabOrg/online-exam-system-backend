@@ -44,4 +44,14 @@ public interface DiscussionMapper extends BaseMapper<Discussion> {
      * @return 分页查询结果
      */
     Page<PageDiscussionVo> selectDiscussionByGradePage(Page<PageDiscussionVo> page, String title, Integer gradeId);
+
+    /**
+     * 管理员分页查看全站讨论
+     *
+     * @param page    分页信息
+     * @param title   讨论标题
+     * @param gradeId 班级id
+     * @return 分页查询结果
+     */
+    Page<PageDiscussionVo> selectAdminPage(Page<PageDiscussionVo> page, String title, Integer gradeId);
 }

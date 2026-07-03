@@ -22,7 +22,7 @@
         q.audio,
         q.analysis,
         q.qu_type,
-        q.repo_id,
+        q.repo_id as repoId,
         r.title as repoTitle
         from t_question as q
         join t_repo as r on q.repo_id = r.id
@@ -31,7 +31,7 @@
 
     <!-- 获取试题Id并判断用户是否做过该题 -->
     <select id="selectQuestionSheet" resultType="cn.org.alan.exam.model.vo.exercise.QuestionSheetVO">
-        select q.id as quId,q.qu_type,q.repo_id,IF(er.id IS NULL, 0, 1) AS exercised,
+        select q.id as quId, q.qu_type as quType, q.repo_id as repoId, IF(er.id IS NULL, 0, 1) AS exercised,
         er.is_right AS isRight from t_question as q left join
         t_exercise_record as er on er.repo_id = q.repo_id and er.question_id = q.id and er.user_id = #{userId}
         <trim prefix="where">
@@ -51,8 +51,8 @@
         q.content,
         q.image,
         q.audio,
-        q.repo_id,
-        q.qu_type,
+        q.repo_id as repoId,
+        q.qu_type as quType,
         r.title as repoTitle
         from t_question as q
         join t_repo as r on q.repo_id = r.id
@@ -65,6 +65,7 @@
         q.id,
         q.qu_type ,
         q.content,
+        q.repo_id as repoId,
         r.title as repoTitle,
         q.create_time
         from t_question q
@@ -74,7 +75,13 @@
             <if test='title != null and title != ""'>
                 and q.content like concat('%',#{title},'%')
             </if>
-            <if test='repoId != null and repoId != 0'>
+            <if test='repoIds != null and repoIds.size() > 0'>
+                and q.repo_id in
+                <foreach collection="repoIds" item="rid" open="(" separator="," close=")">
+                    #{rid}
+                </foreach>
+            </if>
+            <if test='(repoIds == null or repoIds.size() == 0) and repoId != null and repoId != 0'>
                 and q.repo_id = #{repoId}
             </if>
             <if test='type != null and type != 0'>

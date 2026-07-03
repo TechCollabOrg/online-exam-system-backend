@@ -44,7 +44,7 @@ public interface IQuestionService extends IService<Question> {
      * @return 响应
      */
     Result<IPage<QuestionVO>> pagingQuestion(Integer pageNum, Integer pageSize, String content, Integer type, Integer repoId,
-                                             String knowledgePointPath);
+                                             String repoIds, String knowledgePointPath);
 
     /**
      * 根据试题id获取单题详情

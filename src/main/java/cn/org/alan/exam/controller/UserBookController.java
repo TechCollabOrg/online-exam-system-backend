@@ -40,7 +40,7 @@ public class UserBookController {
 
     /** GET 某场考试下的错题 ID 列表摘要。 */
     @ApiOperation("查询错题本错题id列表")
-    @GetMapping("/question/list/{examId}")
+    @GetMapping("/question/list/{examId:\\d+}")
     @PreAuthorize("hasAnyAuthority('role_teacher','role_admin','role_student')")
     public Result<List<ReUserExamBookVO>> getReUserExamBook(@PathVariable("examId") Integer examId) {
         return userBookService.getReUserExamBook(examId);
@@ -48,7 +48,7 @@ public class UserBookController {
 
     /** GET 错题单题详情（题干选项等）。 */
     @ApiOperation("查询单题")
-    @GetMapping("/question/single/{quId}")
+    @GetMapping("/question/single/{quId:\\d+}")
     @PreAuthorize("hasAnyAuthority('role_teacher','role_admin','role_student')")
     public Result<BookOneQuVO> getBookOne(@PathVariable("quId") Integer quId) {
         return userBookService.getBookOne(quId);

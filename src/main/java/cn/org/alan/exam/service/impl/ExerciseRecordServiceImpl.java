@@ -12,6 +12,7 @@ import cn.org.alan.exam.model.vo.question.QuestionVO;
 import cn.org.alan.exam.model.vo.exercise.AnswerInfoVO;
 import cn.org.alan.exam.model.vo.exercise.QuestionSheetVO;
 import cn.org.alan.exam.model.vo.record.ExamRecordDetailVO;
+import cn.org.alan.exam.utils.ExamGradingUtil;
 import cn.org.alan.exam.utils.QuestionSubItemsUtil;
 import cn.org.alan.exam.model.vo.record.ExamRecordVO;
 import cn.org.alan.exam.model.vo.record.ExerciseRecordDetailVO;
@@ -547,7 +548,20 @@ public class ExerciseRecordServiceImpl extends ServiceImpl<ExerciseRecordMapper,
         exerciseRecord.setIsRight(1);
 
         //对客观题做题正确与否校验
-        if (exerciseFillAnswerFrom.getQuType() != 4) {
+        if (Integer.valueOf(5).equals(exerciseFillAnswerFrom.getQuType())) {
+            Question compoundQu = questionMapper.selectById(exerciseRecord.getQuestionId());
+            int grade = ExamGradingUtil.gradeCompoundAnswer(compoundQu, exerciseRecord.getAnswer());
+            if (grade == -1) {
+                flag = true;
+                exerciseRecord.setIsRight(1);
+            } else if (grade == 1) {
+                flag = true;
+                exerciseRecord.setIsRight(1);
+            } else {
+                flag = false;
+                exerciseRecord.setIsRight(0);
+            }
+        } else if (exerciseFillAnswerFrom.getQuType() != 4) {
             List<Integer> options = Arrays.stream(exerciseRecord.getAnswer().split(","))
                     .map(Integer::parseInt).collect(java.util.stream.Collectors.toList());
             List<Integer> rightOptions = new ArrayList<>();
@@ -602,7 +616,7 @@ public class ExerciseRecordServiceImpl extends ServiceImpl<ExerciseRecordMapper,
             } else {
                 //修改题库总数，避免后续新增试题
                 LambdaQueryWrapper<Question> wrapper = new LambdaQueryWrapper<Question>()
-                        .eq(Question::getId, exerciseRecord.getRepoId());
+                        .eq(Question::getRepoId, exerciseRecord.getRepoId());
 
                 //该题库非首次刷题，修改刷题数
                 UserExerciseRecord updateUserExerciseRecord = new UserExerciseRecord();
@@ -620,11 +634,20 @@ public class ExerciseRecordServiceImpl extends ServiceImpl<ExerciseRecordMapper,
         //获取试题信息，返回给用户
         QuestionVO questionVO = questionMapper.selectSingle(exerciseRecord.getQuestionId());
         fillCompoundStemOnQuestionVo(questionVO);
+        enrichCompoundSubItems(questionVO, exerciseRecord.getQuestionId());
 
         //针对不同题型做出不同响应
-        //主观题响应
+        //主观题、含简答子题的复合题响应
         if (exerciseRecord.getQuestionType() == 4) {
             return Result.success(null, questionVO);
+        }
+        if (Integer.valueOf(5).equals(exerciseRecord.getQuestionType())) {
+            Question compoundQu = questionMapper.selectById(exerciseRecord.getQuestionId());
+            int grade = ExamGradingUtil.gradeCompoundAnswer(compoundQu, exerciseRecord.getAnswer());
+            if (grade == -1) {
+                return Result.success("已提交（含简答小题，请对照解析）", questionVO);
+            }
+            return flag ? Result.success("回答正确", questionVO) : Result.success("回答错误", questionVO);
         }
 
         return flag ? Result.success("回答正确", questionVO) : Result.success("回答错误", questionVO);
@@ -635,6 +658,7 @@ public class ExerciseRecordServiceImpl extends ServiceImpl<ExerciseRecordMapper,
     public Result<QuestionVO> getSingle(Integer id) {
         QuestionVO questionVO = questionMapper.selectDetail(id);
         fillCompoundStemOnQuestionVo(questionVO);
+        enrichCompoundSubItems(questionVO, id);
         return Result.success("查询单题成功", questionVO);
     }
 
@@ -651,6 +675,9 @@ public class ExerciseRecordServiceImpl extends ServiceImpl<ExerciseRecordMapper,
                 .eq(ExerciseRecord::getQuestionId, quId)
                 .eq(ExerciseRecord::getUserId, SecurityUtil.getUserId());
         ExerciseRecord exerciseRecord = exerciseRecordMapper.selectOne(exerciseRecordLambdaQueryWrapper);
+        if (exerciseRecord == null) {
+            return Result.success("尚未作答", answerInfoVO);
+        }
         answerInfoVO.setAnswerContent(exerciseRecord.getAnswer());
         return exerciseRecord.getIsRight() == 1 ?
                 Result.success("回答正确", answerInfoVO) : Result.success("回答错误", answerInfoVO);
@@ -668,6 +695,16 @@ public class ExerciseRecordServiceImpl extends ServiceImpl<ExerciseRecordMapper,
         vo.setStemContent(stem.getContent());
         vo.setStemImage(stem.getImage());
         vo.setStemAudio(stem.getAudio());
+    }
+
+    private void enrichCompoundSubItems(QuestionVO vo, Integer questionId) {
+        if (vo == null || !Integer.valueOf(5).equals(vo.getQuType()) || questionId == null) {
+            return;
+        }
+        Question question = questionMapper.selectById(questionId);
+        if (question != null) {
+            vo.setSubItems(QuestionSubItemsUtil.parseForms(question.getSubItems()));
+        }
     }
 
     private void fillCompoundStemOnExerciseRecordDetail(Question child, ExerciseRecordDetailVO vo) {

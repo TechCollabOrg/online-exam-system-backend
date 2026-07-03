@@ -50,7 +50,7 @@ public class QuestionController {
         return iQuestionService.deleteBatchByIds(ids);
     }
 
-    /** GET 分页；{@code content} 为题干关键词，{@code type} 题型，{@code repoId} 题库。 */
+    /** GET 分页；{@code content} 为题干关键词，{@code type} 题型，{@code repoId}/{@code repoIds} 题库（多题库传逗号分隔）。 */
     @ApiOperation("分页查询试题")
     @GetMapping("/paging")
     @PreAuthorize("hasAnyAuthority('role_teacher','role_admin')")
@@ -58,9 +58,10 @@ public class QuestionController {
                                                     @RequestParam(value = "pageSize", required = false, defaultValue = "10") Integer pageSize,
                                                     @RequestParam(value = "content", required = false) String content,
                                                     @RequestParam(value = "repoId", required = false) Integer repoId,
+                                                    @RequestParam(value = "repoIds", required = false) String repoIds,
                                                     @RequestParam(value = "type", required = false) Integer type,
                                                     @RequestParam(value = "knowledgePointPath", required = false) String knowledgePointPath) {
-        return iQuestionService.pagingQuestion(pageNum, pageSize, content, type, repoId, knowledgePointPath);
+        return iQuestionService.pagingQuestion(pageNum, pageSize, content, type, repoId, repoIds, knowledgePointPath);
     }
 
     /** GET 单题详情。 */

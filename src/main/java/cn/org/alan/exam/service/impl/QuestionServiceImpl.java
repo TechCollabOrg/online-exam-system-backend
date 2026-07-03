@@ -110,16 +110,24 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
         return Result.success("批量删除试题成功");
     }
 
-    /** 试题分页：按当前用户角色过滤教师题库；支持标题、题型、所属题库、知识点筛选。 */
+    /** 试题分页：按当前用户角色过滤教师题库；支持标题、题型、所属题库（单个或多个）、知识点筛选。 */
     @Override
     public Result<IPage<QuestionVO>> pagingQuestion(Integer pageNum, Integer pageSize, String title, Integer type,
-                                                      Integer repoId, String knowledgePointPath) {
-        if (StringUtils.isNotBlank(knowledgePointPath) && repoId == null) {
+                                                      Integer repoId, String repoIdsCsv, String knowledgePointPath) {
+        if (StringUtils.isNotBlank(knowledgePointPath) && repoId == null
+                && StringUtils.isBlank(repoIdsCsv)) {
             return Result.failed("按知识点筛选须先选择题库");
         }
+        List<Integer> repoIds = parseRepoIds(repoIdsCsv);
+        Integer effectiveRepoId = (repoIds == null || repoIds.isEmpty()) ? repoId : null;
         List<Integer> questionIds = null;
         if (StringUtils.isNotBlank(knowledgePointPath)) {
-            questionIds = repoKnowledgeTreeService.resolveQuestionIds(repoId, knowledgePointPath);
+            Integer kpRepoId = effectiveRepoId != null ? effectiveRepoId
+                    : (repoIds != null && repoIds.size() == 1 ? repoIds.get(0) : null);
+            if (kpRepoId == null) {
+                return Result.failed("按知识点筛选须先选择题库");
+            }
+            questionIds = repoKnowledgeTreeService.resolveQuestionIds(kpRepoId, knowledgePointPath);
             if (questionIds.isEmpty()) {
                 IPage<QuestionVO> empty = new Page<>(pageNum, pageSize, 0);
                 empty.setRecords(Collections.emptyList());
@@ -129,8 +137,29 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
         IPage<QuestionVO> page = new Page<>(pageNum, pageSize);
         Integer userId = SecurityUtil.getUserId();
         Integer roleCode = SecurityUtil.getRoleCode();
-        page = questionMapper.selectQuestionPage(page, userId, roleCode, title, type, repoId, questionIds);
+        page = questionMapper.selectQuestionPage(page, userId, roleCode, title, type, effectiveRepoId, repoIds, questionIds);
         return Result.success("分页查询试题成功", page);
+    }
+
+    private List<Integer> parseRepoIds(String repoIdsCsv) {
+        if (StringUtils.isBlank(repoIdsCsv)) {
+            return null;
+        }
+        List<Integer> ids = new ArrayList<>();
+        for (String part : repoIdsCsv.split(",")) {
+            if (StringUtils.isBlank(part)) {
+                continue;
+            }
+            try {
+                int id = Integer.parseInt(part.trim());
+                if (id > 0) {
+                    ids.add(id);
+                }
+            } catch (NumberFormatException ignored) {
+                // skip invalid segment
+            }
+        }
+        return ids.isEmpty() ? null : ids;
     }
 
     /** 单题详情（含选项等由 Mapper 组装为 {@link QuestionVO}）。 */

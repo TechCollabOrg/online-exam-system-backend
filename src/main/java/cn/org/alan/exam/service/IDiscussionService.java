@@ -43,4 +43,15 @@ public interface IDiscussionService extends IService<Discussion> {
      */
     Page<PageDiscussionVo> pageDiscussionByGrade(String title, Integer currentPage, Integer size);
 
+    /**
+     * 管理员分页查看全站讨论
+     *
+     * @param title       标题
+     * @param gradeId     班级id
+     * @param currentPage 当前页
+     * @param size        每页记录数
+     * @return 分页查询结果
+     */
+    Page<PageDiscussionVo> getAdminDiscussions(String title, Integer gradeId, Integer currentPage, Integer size);
+
 }

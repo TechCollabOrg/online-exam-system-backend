@@ -28,10 +28,10 @@ public class DiscussionController {
     @Resource
     private IDiscussionService discussionService;
 
-    /** POST 教师创建讨论帖。 */
+    /** POST 教师/管理员创建讨论帖。 */
     @PostMapping("/add")
     @ApiOperation("创建讨论")
-    @PreAuthorize("hasAnyAuthority('role_teacher')")
+    @PreAuthorize("hasAnyAuthority('role_teacher','role_admin')")
     public Result<Discussion> addDiscussion(@RequestBody @Validated DiscussionForm discussionForm) {
         Discussion discussion = discussionService.createDiscussion(discussionForm);
         return Result.success("创建成功", discussion);
@@ -40,7 +40,7 @@ public class DiscussionController {
     /** DELETE 删除讨论（路径参数为主键）。 */
     @DeleteMapping("/delete/{id}")
     @ApiOperation("删除讨论讨论")
-    @PreAuthorize("hasAnyAuthority('role_teacher')")
+    @PreAuthorize("hasAnyAuthority('role_teacher','role_admin')")
     public Result<Integer> delDiscussion(@PathVariable("id") Integer id) {
         int delId = discussionService.deleteDiscussion(id);
         return Result.success("删除成功", delId);
@@ -60,10 +60,24 @@ public class DiscussionController {
         return Result.success("查询成功", ownerDiscussions);
     }
 
+    /** GET 管理员查看全站讨论分页。 */
+    @GetMapping("/query/page/admin")
+    @ApiOperation("管理员分页查询全站讨论")
+    @PreAuthorize("hasAnyAuthority('role_admin')")
+    public Result<Page<PageDiscussionVo>> pageAdminDiscussion(
+            @RequestParam(value = "title", required = false) String title,
+            @RequestParam(value = "gradeId", required = false) Integer gradeId,
+            @RequestParam(value = "currentPage", required = false, defaultValue = "1") Integer currentPage,
+            @RequestParam(value = "size", required = false, defaultValue = "10") Integer size
+    ) {
+        Page<PageDiscussionVo> adminDiscussions = discussionService.getAdminDiscussions(title, gradeId, currentPage, size);
+        return Result.success("查询成功", adminDiscussions);
+    }
+
     /** GET 讨论详情（师生可视，权限见注解）。 */
     @GetMapping("/query/detail/{id}")
     @ApiOperation("获取讨论详情")
-    @PreAuthorize("hasAnyAuthority('role_teacher','role_student')")
+    @PreAuthorize("hasAnyAuthority('role_teacher','role_student','role_admin')")
     public Result<DiscussionDetailVo> pageOwnerDiscussion(@PathVariable("id") Integer id) {
         DiscussionDetailVo discussionDetail = discussionService.getDiscussionDetail(id);
         return Result.success("查询成功", discussionDetail);

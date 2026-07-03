@@ -7,6 +7,9 @@ import cn.org.alan.exam.model.form.auth.VerifyCodeForm;
 import cn.org.alan.exam.model.form.user.UserForm;
 import cn.org.alan.exam.model.vo.auth.CaptchaVO;
 import cn.org.alan.exam.service.IAuthService;
+import cn.org.alan.exam.utils.IPUtils;
+
+import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
@@ -98,6 +101,19 @@ public class AuthController {
     @PostMapping("/track-presence")
     public Result<String> trackPresence(HttpServletRequest request) {
         return iAuthService.sendHeartbeat(request);
+    }
+
+    /**
+     * GET 查询当前出口公网 IP：浏览器直连外网 IP 接口失败时，由前端经本接口兜底（走服务端网络）。
+     */
+    @ApiOperation("查询出口公网 IP")
+    @GetMapping("/client-public-ip")
+    public Result<String> getClientPublicIp() {
+        String ip = IPUtils.resolveOutboundPublicIp();
+        if (StringUtils.isBlank(ip)) {
+            return Result.failed("无法获取公网 IP");
+        }
+        return Result.success("ok", ip);
     }
 
 }

@@ -89,5 +89,12 @@ public class DiscussionServiceImpl extends ServiceImpl<DiscussionMapper, Discuss
         return baseMapper.selectDiscussionByGradePage(page, title, SecurityUtil.getGradeId());
     }
 
+    /** 管理员查看全站讨论分页，可按标题、班级筛选。 */
+    @Override
+    public Page<PageDiscussionVo> getAdminDiscussions(String title, Integer gradeId, Integer currentPage, Integer size) {
+        Page<PageDiscussionVo> page = new Page<>(currentPage, size);
+        return baseMapper.selectAdminPage(page, title, gradeId);
+    }
+
 
 }
