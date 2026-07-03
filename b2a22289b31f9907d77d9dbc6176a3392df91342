@@ -1,0 +1,8 @@
+修复 Java 17+ 下 InaccessibleObjectException（题库分页等接口失败）。
+
+改动：
+- pom.xml：spring-boot-maven-plugin 增加 --add-opens（lang/reflect/io/util）
+- README.md：补充 JDK 17+ 启动说明与排错
+- druid-spring-boot-3-starter → druid-spring-boot-starter（Boot 2 兼容）
+
+说明：deploy-prod 脚本另有独立 --add-opens；IDEA 直接 Run 需自行配 VM options。
