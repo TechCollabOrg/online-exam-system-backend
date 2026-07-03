@@ -40,7 +40,7 @@ public class ExerciseController {
 
     /** GET 某题库答题卡列表；{@code quType} 可选，取值 1–4。 */
     @ApiOperation("获取试题Id列表")
-    @GetMapping("/{repoId}")
+    @GetMapping("/{repoId:\\d+}")
     @PreAuthorize("hasAnyAuthority('role_student')")
     public Result<List<QuestionSheetVO>> getQuestion(@PathVariable("repoId") Integer repoId,
                                                      @Min(value = 1, message = "试题类型最小值应为1")
