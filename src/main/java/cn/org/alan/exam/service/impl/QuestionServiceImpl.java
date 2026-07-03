@@ -301,7 +301,8 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
     /**
      * JSON 根为试题对象数组，或 {@code {"questions":[...]}}；单题字段见 {@link QuestionJsonImportRow}。
      */
-    private Result<String> importQuestionsFromJson(Integer id, byte[] fileBytes) {
+    @Override
+    public Result<String> importQuestionsFromJson(Integer id, byte[] fileBytes) {
         try {
             List<QuestionJsonImportRow> rows = parseJsonQuestionRows(fileBytes);
             if (rows.isEmpty()) {

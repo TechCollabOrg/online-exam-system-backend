@@ -114,6 +114,17 @@ public class AIChatRouter implements AIChat {
         return delegate().getChatResponse(systemPrompt, userMessage);
     }
 
+    /**
+     * AI 试题导入：docx/md 转 JSON。
+     */
+    public String getQuestionImportResponse(String systemPrompt, String userMessage) throws Exception {
+        LlmResolvedConfig db = aiPlatformConfigService.resolveForFeature(AiFeatureCode.QUESTION_IMPORT);
+        if (db != null) {
+            return llmChatExecutor.chat(db, systemPrompt, userMessage, Constants.questionImportTemperature);
+        }
+        return delegate().getChatResponse(systemPrompt, userMessage);
+    }
+
     private AIChat delegate() {
         if (llmUtil != null) {
             return llmUtil;

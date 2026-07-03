@@ -339,6 +339,8 @@ public class AiPlatformConfigServiceImpl extends ServiceImpl<AiPlatformConfigMap
                 return "教师成绩分析页的 AI 简报";
             case QUESTION_REVIEW:
                 return "学生考试记录详情「AI 解析本题」";
+            case QUESTION_IMPORT:
+                return "试题管理页「AI 智能导入」（docx/md 转 JSON 并入库）";
             default:
                 return "";
         }

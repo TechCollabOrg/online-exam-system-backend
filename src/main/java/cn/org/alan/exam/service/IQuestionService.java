@@ -71,4 +71,9 @@ public interface IQuestionService extends IService<Question> {
      */
     Result<String> importQuestion(Integer id, MultipartFile file);
 
+    /**
+     * 从 JSON 字节导入试题（供 AI 转换后复用）。
+     */
+    Result<String> importQuestionsFromJson(Integer repoId, byte[] jsonBytes);
+
 }

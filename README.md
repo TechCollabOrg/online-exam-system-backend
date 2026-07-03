@@ -149,6 +149,9 @@ online-exam-system-backend/
 | GET | `/api/repo/{id}/knowledge-points` | 教师/管理员：知识树下拉选项（按知识点筛题） |
 | GET | `/api/questions/paging` | 新增可选参数 `knowledgePointPath`（须同时传 `repoId`） |
 | POST | `/api/questions/uploadAudio` | 教师/管理员：上传试题听力音频（multipart `file`，单文件 ≤ 50MB，见 `spring.servlet.multipart`） |
+| POST | `/api/questions/ai-import/{repoId}` | 教师/管理员：AI 智能导入（上传 `.docx`/`.md`，AI 按 `sql/JSON_QUESTION_IMPORT_SPEC.md` 转 JSON 后入库；multipart `file`；超时建议 ≥ 300s） |
+
+AI 试题导入使用「AI 试题导入」功能配置（`question_import`）；首次部署执行 `sql/alter_t_ai_feature_config_question_import.sql`（或已合并进 `alter_t_ai_feature_config.sql`）。
 
 创建考试 `POST /api/exams`：随机模式（`addQuype=1`）若同时提交 `quIds` 与 `quScores`（与预览列表一致），则按确认后的题目与分值组卷，不再重新洗牌。  
 发布范围：`targetType=1`（默认）按班级，传 `gradeIds`；`targetType=2` 按指定学生，传 `userIds`（逗号分隔），`gradeIds` 可由所选学生班级自动推导。

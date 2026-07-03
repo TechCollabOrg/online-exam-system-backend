@@ -10,7 +10,8 @@ public enum AiFeatureCode {
     GRADING("grading", "AI 阅卷"),
     ASSISTANT("assistant", "AI 助手"),
     BRIEFING("briefing", "成绩简报"),
-    QUESTION_REVIEW("question_review", "考后单题解析");
+    QUESTION_REVIEW("question_review", "考后单题解析"),
+    QUESTION_IMPORT("question_import", "AI 试题导入");
 
     private final String code;
     private final String label;

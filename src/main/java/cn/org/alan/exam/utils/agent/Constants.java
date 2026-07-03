@@ -20,6 +20,9 @@ public class Constants {
     /** AI 主观题阅卷专用温度（更低以提高稳定性与准确度）。 */
     public static final Double gradingTemperature = 0.15;
 
+    /** AI 试题文档转 JSON 温度（偏低以保证结构稳定）。 */
+    public static final Double questionImportTemperature = 0.2;
+
     /** 本地知识库目录（启用文档加载时的路径，需按部署环境修改）。 */
     public static final String knowledgeBasePath = "Q:\\GitBench\\online-exam-system-backend\\knowledge-base";
 

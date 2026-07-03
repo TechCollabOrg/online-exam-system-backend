@@ -5,6 +5,7 @@ import cn.org.alan.exam.common.group.QuestionGroup;
 import cn.org.alan.exam.common.result.Result;
 import cn.org.alan.exam.model.form.question.QuestionFrom;
 import cn.org.alan.exam.model.vo.question.QuestionVO;
+import cn.org.alan.exam.service.IAiQuestionImportService;
 import cn.org.alan.exam.service.IFileService;
 import cn.org.alan.exam.service.IQuestionService;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -30,6 +31,9 @@ public class QuestionController {
 
     @Resource
     private IQuestionService iQuestionService;
+
+    @Resource
+    private IAiQuestionImportService aiQuestionImportService;
 
     @Resource
     private IFileService fileService;
@@ -87,6 +91,14 @@ public class QuestionController {
     @PreAuthorize("hasAnyAuthority('role_teacher','role_admin')")
     public Result<String> importQuestion(@PathVariable("id") Integer id, @RequestParam("file") MultipartFile file) {
         return iQuestionService.importQuestion(id, file);
+    }
+
+    /** POST 将 Word/Markdown 经 AI 转为 JSON 后导入至指定题库 {@code id}。 */
+    @ApiOperation("AI 智能导入试题（docx/md）")
+    @PostMapping("/ai-import/{id}")
+    @PreAuthorize("hasAnyAuthority('role_teacher','role_admin')")
+    public Result<String> aiImportQuestion(@PathVariable("id") Integer id, @RequestParam("file") MultipartFile file) {
+        return aiQuestionImportService.importFromDocument(id, file);
     }
 
     /** POST multipart 上传题干图片（委托 {@link IFileService#uploadImage}）。 */
