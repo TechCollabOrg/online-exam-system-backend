@@ -11,7 +11,7 @@
 
 | 软件 | 版本 |
 |------|------|
-| JDK | 8 或 11 |
+| JDK | **推荐 8 或 11**；若使用 17/21，见下方「Java 17+ 启动」 |
 | Maven | 3.x |
 | MySQL | 5.7+，库名 `db_exam` |
 | Redis | 任意稳定版（Windows 可用 Memurai） |
@@ -210,6 +210,21 @@ AI 试题导入使用「AI 试题导入」功能配置（`question_import`）；
 - 处理：请使用 **2026-07-03 之后** 的后端与前端；重启后端后重新进入刷题/错题本。复合题（题型 5）需在刷题页显示小题作答区，旧版前端仅显示题干无答题框。
 - 自查：浏览器开发者工具 → Network，确认请求形如 `GET /api/exercises/question/123`（末尾为数字 ID），而不是 `/api/exercises/question` 或 `/api/exercises/question/`。
 
+### 获取题库/刷题等接口报 `InaccessibleObjectException`（`ClassLoader.defineClass`）
+
+- **原因**：本机用了 **Java 17 或更高**（如 JDK 21），而项目基于 Spring Boot 2 + MyBatis-Plus Lambda 查询，在强封装模块下反射会失败，前端常显示「获取题库数据失败」。
+- **推荐**：安装 **JDK 8 或 11**，设置 `JAVA_HOME` 后重启后端。
+- **若必须用 JDK 17/21**：
+  1. 用 `mvn spring-boot:run` 启动（项目已配置 `.mvn/jvm.config` 与插件 `--add-opens`）。
+  2. 在 IDEA / Eclipse 运行主类时，VM 选项加入：
+     ```
+     --add-opens java.base/java.lang=ALL-UNNAMED
+     --add-opens java.base/java.lang.reflect=ALL-UNNAMED
+     --add-opens java.base/java.io=ALL-UNNAMED
+     --add-opens java.base/java.util=ALL-UNNAMED
+     ```
+  3. 修改配置后 **重新编译并重启**（`mvn compile` 或 IDE Rebuild）。
+
 ### Maven 依赖下载 SSL 失败
 
 配置阿里云镜像，见根 [README.md](../README.md)「问题 3」。
@@ -228,4 +243,4 @@ Spring Boot 2 · MyBatis-Plus · Spring Security + JWT · Redis · WebSocket · 
 
 ---
 
-*最后更新：2026-07-03*
+*最后更新：2026-07-03（Java 17+ 反射排错）*
