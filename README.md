@@ -186,11 +186,17 @@ online-exam-system-backend/
 
 ### 登录日志「登录地点」显示内网 IP、`Reserved` 或无法识别
 
-- 登录地点格式为 **国家 省 市**（如 `中国 广东省 深圳市`）；**每次登录实时查询，不做缓存**。
-- 本机 `127.0.0.1` 时，前端会在登录前通过浏览器查询当前公网 IP 并传给后端（`X-Client-Public-Ip`），可反映 **VPN 切换**；请同时重启前后端使改动生效。
-- 公网 IP 优先用离线库 `ip2region.xdb`；识别失败时再调在线接口。
+- 登录地点格式为 **国家 省 市**（如 `中国 广东省 深圳市`）；**每次登录/登出实时查询，不做缓存**。
+- 本机或局域网访问时，前端会在登录/登出前通过浏览器多源查询当前公网 IP 并传给后端（请求头 `X-Client-Public-Ip`），可反映 **VPN / 代理切换**；请同时重启前后端使改动生效。
+- 若浏览器无法访问公网 IP 查询接口，地点会显示为 `本机/内网（127.0.0.1）` 等，而不会再误显示为服务器固定出口地。
+- 公网 IP 优先用离线库 `ip2region.xdb`；识别失败时再调在线接口（pconline / ip-api）。
 - 若经 Nginx 反向代理部署，请转发 `X-Real-IP` / `X-Forwarded-For`，否则后端只能看到代理机 IP。
-- 开发时前端 `vue.config.js` 已配置代理转发真实客户端 IP；修改后需 **重启 `npm run dev`**。
+- 开发时前端 `vue.config.js` 已配置代理转发真实客户端 IP 与 `X-Client-Public-Ip`；修改后需 **重启 `npm run dev`**。
+
+### 登录日志「登录设备」显示 `Macintosh`、`Linux` 等不准确信息
+
+- 设备名由后端解析 `User-Agent`，格式示例：`Windows 10/11 / Chrome`、`iPhone / iOS / Safari`、`SM-G991B / Android 13 / Chrome`。
+- 学生 Electron 客户端会识别为 `Electron`；若仍显示「未知设备」，请确认客户端未屏蔽 `User-Agent` 请求头。
 
 ### Maven 依赖下载 SSL 失败
 
@@ -210,4 +216,4 @@ Spring Boot 2 · MyBatis-Plus · Spring Security + JWT · Redis · WebSocket · 
 
 ---
 
-*最后更新：2026-07-02*
+*最后更新：2026-07-03*

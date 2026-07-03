@@ -53,8 +53,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 
 /**
@@ -191,7 +189,7 @@ public class AuthServiceImpl implements IAuthService {
         String ipRegion = Optional.ofNullable(IPUtils.getIPRegion(request)).orElse("暂无信息");
         Log log = Log.builder()
                 .place(ipRegion)
-                .device(extractDeviceType(device))
+                .device(UserAgentUtils.extractDeviceType(device))
                 .behavior("设备登录")
                 .userId(user.getId()).build();
         logService.add(log);
@@ -205,22 +203,11 @@ public class AuthServiceImpl implements IAuthService {
 
 
     /**
-     * 从 HTTP {@code User-Agent} 头括号段截取简要设备/平台片段，用于日志展示。
+     * @deprecated 请使用 {@link UserAgentUtils#extractDeviceType(String)}
      */
+    @Deprecated
     public static String extractDeviceType(String userAgent) {
-        if (StringUtils.isBlank(userAgent)) {
-            return "未知设备";
-        }
-        // 定义正则表达式模式
-        String pattern = "\\((.*?);";
-        Pattern r = Pattern.compile(pattern);
-        Matcher m = r.matcher(userAgent);
-        if (m.find()) {
-            String device = m.group(1);
-            return StringUtils.isNotBlank(device) ? device.trim() : "未知设备";
-        }
-        // User-Agent 无括号段（部分脚本/代理客户端）时仍须写入非空 device，避免 t_log.device NOT NULL 导致登录 500
-        return userAgent.length() > 64 ? userAgent.substring(0, 64) : userAgent;
+        return UserAgentUtils.extractDeviceType(userAgent);
     }
 
     /**
@@ -238,7 +225,7 @@ public class AuthServiceImpl implements IAuthService {
             String ipRegion = Optional.ofNullable(IPUtils.getIPRegion(request)).orElse("暂无信息");
             Log logEntry = Log.builder()
                     .place(ipRegion)
-                    .device(extractDeviceType(device))
+                    .device(UserAgentUtils.extractDeviceType(device))
                     .behavior("设备登出")
                     .userId(userIdForLog).build();
             logService.add(logEntry);

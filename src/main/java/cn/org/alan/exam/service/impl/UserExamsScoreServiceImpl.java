@@ -95,13 +95,15 @@ public class UserExamsScoreServiceImpl extends ServiceImpl<UserExamsScoreMapper,
     public Result<IPage<GradeScoreVO>> getExamScoreInfo(Integer pageNum, Integer pageSize, String examTitle, Integer gradeId) {
         IPage<GradeScoreVO> page = new Page<>(pageNum, pageSize);
         Integer userId = SecurityUtil.getUserId();
-        // 根据用户id查询老师所加入的班级
-        List<Integer> gradeIdList = userGradeMapper.getGradeIdListByUserId(userId);
-        if (gradeIdList.isEmpty()) {
-            throw new ServiceRuntimeException("教师还没加入班级暂无数据");
+        Integer roleCode = SecurityUtil.getRoleCode();
+        List<Integer> gradeIdList = null;
+        if (roleCode == 2) {
+            gradeIdList = userGradeMapper.getGradeIdListByUserId(userId);
+            if (gradeIdList.isEmpty()) {
+                throw new ServiceRuntimeException("教师还没加入班级暂无数据");
+            }
         }
         repairObjectiveOnlyPendingMarks();
-        Integer roleCode = SecurityUtil.getRoleCode();
         page = userExamsScoreMapper.scoreStatistics(page, gradeId, examTitle, userId, roleCode, gradeIdList);
         if (page.getRecords() != null) {
             page.getRecords().forEach(ExamScoreUtil::applyDisplay);

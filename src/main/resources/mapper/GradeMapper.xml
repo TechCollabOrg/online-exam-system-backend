@@ -51,12 +51,16 @@
         code = #{code}
     </select>
 
-    <!-- 获得所有班级 -->
+    <!-- 获得所有班级（须显式列名，避免 join 后 id 被 t_user_grade.id 覆盖） -->
     <select id="getAllGrade" resultType="cn.org.alan.exam.model.vo.grade.GradeVO">
-        select *
+        select
+        g.id,
+        g.grade_name AS gradeName,
+        g.user_id AS userId,
+        g.code
         from t_grade g
         <if test="roleCode == 2">
-            right join t_user_grade ug on ug.g_id = g.id
+            inner join t_user_grade ug on ug.g_id = g.id and ug.u_id = #{userId} and ug.is_deleted = 0
         </if>
         <where>
             g.is_deleted = 0

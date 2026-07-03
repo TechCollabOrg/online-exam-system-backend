@@ -126,9 +126,15 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
                 throw new ServiceRuntimeException("所选题目未关联题库，无法创建考试");
             }
             repoIdsForInsert = new ArrayList<>(repoSet);
-            expandSize = 1;
         } else {
             repoIdsForInsert = parseCsvToIntList(examAddForm.getRepoId(), "题库ID");
+        }
+        // 随机预览后确认组卷时，前端仍按「每个题库一项」传题量/分值 CSV，须与 repoId 个数对齐
+        if (randomWithFixedQuestions && StringUtils.isNotBlank(examAddForm.getRepoId())) {
+            expandSize = parseCsvToIntList(examAddForm.getRepoId(), "题库ID").size();
+        } else if (fixedQuestionPick) {
+            expandSize = 1;
+        } else {
             expandSize = repoIdsForInsert.size();
         }
 

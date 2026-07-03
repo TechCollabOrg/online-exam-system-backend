@@ -65,7 +65,7 @@ public final class IPUtils {
         }
         String browserPublicIp = getBrowserPublicIp(request);
         String geoIp = selectGeoIp(clientIp, browserPublicIp);
-        return resolveLoginPlace(geoIp, clientIp);
+        return resolveLoginPlace(geoIp, clientIp, browserPublicIp);
     }
 
     /**
@@ -103,10 +103,20 @@ public final class IPUtils {
         if (!isInternalIp(clientIp)) {
             return clientIp;
         }
-        return resolvePublicIpEgress();
+        // 内网且无浏览器上报公网 IP 时，不再误用服务端出口 IP（否则 VPN 切换后地点仍不变）
+        return null;
     }
 
-    private static String resolveLoginPlace(String geoIp, String clientIp) {
+    private static String resolveLoginPlace(String geoIp, String clientIp, String browserPublicIp) {
+        // 前端已上报公网 IP 时，只按该 IP 定位，避免回退到服务端出口导致地点固定不变
+        if (StringUtils.isNotBlank(browserPublicIp)) {
+            String place = geolocateIp(browserPublicIp);
+            if (isUsefulLocation(place)) {
+                return place;
+            }
+            return "未知（" + browserPublicIp + "）";
+        }
+
         if (StringUtils.isNotBlank(geoIp)) {
             String place = geolocateIp(geoIp);
             if (isUsefulLocation(place)) {
@@ -114,12 +124,7 @@ public final class IPUtils {
             }
         }
 
-        // 与登出一致：本机/内网时走服务端出口定位（国内优先 pconline）
         if (isInternalIp(clientIp)) {
-            String serverPlace = resolveServerSideLocation();
-            if (isUsefulLocation(serverPlace)) {
-                return serverPlace;
-            }
             return "本机/内网（" + clientIp + "）";
         }
 
@@ -135,78 +140,6 @@ public final class IPUtils {
             return offline;
         }
         return geolocateOnline(ip);
-    }
-
-    /** 服务端查询当前公网出口归属地（登出路径同款，国内可用）。 */
-    private static String resolveServerSideLocation() {
-        String pconlinePlace = queryPconlineEgressLocation();
-        if (isUsefulLocation(pconlinePlace)) {
-            return pconlinePlace;
-        }
-
-        String egressIp = resolvePublicIpEgress();
-        if (StringUtils.isNotBlank(egressIp)) {
-            String place = geolocateIp(egressIp);
-            if (isUsefulLocation(place)) {
-                return place;
-            }
-        }
-        return null;
-    }
-
-    private static String queryPconlineEgressLocation() {
-        JSONObject json = fetchPconlineJson(null);
-        if (json == null) {
-            return null;
-        }
-        String pro = json.getStr("pro");
-        String city = json.getStr("city");
-        if (StringUtils.isNotBlank(pro) || StringUtils.isNotBlank(city)) {
-            return joinLocation("中国", pro, city);
-        }
-        String addr = json.getStr("addr");
-        return normalizeLocationText(addr);
-    }
-
-    private static String resolvePublicIpEgress() {
-        JSONObject pconline = fetchPconlineJson(null);
-        if (pconline != null) {
-            String ip = pconline.getStr("ip");
-            if (isValidPublicIpv4(ip)) {
-                return normalizeIp(ip);
-            }
-        }
-
-        try {
-            String body = HttpRequest.get("http://ip-api.com/json/?fields=status,query")
-                    .timeout(ONLINE_TIMEOUT_MS)
-                    .execute()
-                    .body();
-            if (JSONUtil.isTypeJSON(body)) {
-                JSONObject json = JSONUtil.parseObj(body);
-                if ("success".equalsIgnoreCase(json.getStr("status"))) {
-                    String query = json.getStr("query");
-                    if (isValidPublicIpv4(query)) {
-                        return normalizeIp(query);
-                    }
-                }
-            }
-        } catch (Exception ex) {
-            log.debug("ip-api 公网 IP 查询失败", ex);
-        }
-
-        try {
-            String ip = HttpRequest.get("https://api.ipify.org")
-                    .timeout(ONLINE_TIMEOUT_MS)
-                    .execute()
-                    .body();
-            if (isValidPublicIpv4(ip)) {
-                return normalizeIp(ip.trim());
-            }
-        } catch (Exception ex) {
-            log.debug("ipify 公网 IP 查询失败", ex);
-        }
-        return null;
     }
 
     private static String geolocateOnline(String ip) {

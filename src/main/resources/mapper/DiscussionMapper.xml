@@ -6,13 +6,12 @@
         select d.id,d.title,u.real_name as sender,d.create_time
         from t_discussion as d
         join t_user as u on d.user_id = u.id
-        join t_grade as g on d.grade_id = g.id
         <trim prefix="where" prefixOverrides="and">
             d.user_id = #{userId}
             <if test='title != null and title != ""'>
                 and d.title like concat('%',#{title},'%')
             </if>
-            <if test='gradeId != 0 and gradeId != null'  >
+            <if test='gradeId != null and gradeId > 0'>
                 and d.grade_id = #{gradeId}
             </if>
         </trim>
@@ -30,7 +29,6 @@
         select d.id,d.title,u.real_name as sender,d.create_time
         from t_discussion as d
         join t_user as u on d.user_id = u.id
-        join t_grade as g on d.grade_id = g.id
         <trim prefix="where" prefixOverrides="and">
             <if test='title != null and title != ""'>
                 and d.title like concat('%',#{title},'%')
