@@ -1,6 +1,7 @@
 package cn.org.alan.exam.model.vo.record;
 
 import cn.org.alan.exam.model.entity.Option;
+import cn.org.alan.exam.model.vo.question.QuestionSubItemVO;
 import lombok.Data;
 
 import java.util.List;
@@ -18,6 +19,9 @@ public class ExerciseRecordDetailVO {
 
     // 选项
     private List<Option> option;
+
+    /** 复合题小题列表（quType=5） */
+    private List<QuestionSubItemVO> subItemList;
 
     // 自己的答案
     private String myOption;

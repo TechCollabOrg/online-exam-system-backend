@@ -421,32 +421,34 @@ public class ExerciseRecordServiceImpl extends ServiceImpl<ExerciseRecordMapper,
             exerciseRecordDetailVO.setAudio(temp.getAudio());
             exerciseRecordDetailVO.setTitle(temp.getContent());
             exerciseRecordDetailVO.setAnalyse(temp.getAnalysis());
-            exerciseRecordDetailVO.setQuType(temp.getQuType());
+            Integer quType = temp.getQuType();
+            exerciseRecordDetailVO.setQuType(quType);
             fillCompoundStemOnExerciseRecordDetail(temp, exerciseRecordDetailVO);
-            // 查询试题选项
-            LambdaQueryWrapper<Option> optionWrapper = new LambdaQueryWrapper<>();
-            optionWrapper.eq(Option::getQuId, temp.getId());
-            List<Option> options = optionMapper.selectList(optionWrapper);
-            if (temp.getQuType() == 4) {
+            if (Integer.valueOf(5).equals(quType)) {
+                List<QuestionSubItemVO> subItems = QuestionSubItemsUtil.parseToVoList(temp.getSubItems());
+                exerciseRecordDetailVO.setSubItemList(subItems);
                 exerciseRecordDetailVO.setOption(null);
+                exerciseRecordDetailVO.setRightOption(null);
             } else {
-                exerciseRecordDetailVO.setOption(options);
-            }
-
-            if (temp.getQuType() == 4 && options.size() > 0) {
-                exerciseRecordDetailVO.setRightOption(options.get(0).getContent());
-            } else {
-                String current = "";
-                ArrayList<Integer> strings = new ArrayList<>();
-                for (Option temp1 : options) {
-                    if (temp1.getIsRight() == 1) {
-                        strings.add(temp1.getSort());
+                LambdaQueryWrapper<Option> optionWrapper = new LambdaQueryWrapper<>();
+                optionWrapper.eq(Option::getQuId, temp.getId()).orderByAsc(Option::getSort);
+                List<Option> options = optionMapper.selectList(optionWrapper);
+                if (Integer.valueOf(4).equals(quType)) {
+                    exerciseRecordDetailVO.setOption(options.isEmpty() ? null : options);
+                    if (!options.isEmpty()) {
+                        exerciseRecordDetailVO.setRightOption(options.get(0).getContent());
                     }
+                } else {
+                    exerciseRecordDetailVO.setOption(options);
+                    ArrayList<Integer> strings = new ArrayList<>();
+                    for (Option temp1 : options) {
+                        if (temp1.getIsRight() == 1) {
+                            strings.add(temp1.getSort());
+                        }
+                    }
+                    List<String> stringList = strings.stream().map(String::valueOf).collect(Collectors.toList());
+                    exerciseRecordDetailVO.setRightOption(String.join(",", stringList));
                 }
-                List<String> stringList = strings.stream().map(String::valueOf).collect(Collectors.toList());
-                String result = String.join(",", stringList);
-
-                exerciseRecordDetailVO.setRightOption(result);
             }
             LambdaQueryWrapper<ExerciseRecord> exerciseRecordLambdaQueryWrapper = new LambdaQueryWrapper<>();
             exerciseRecordLambdaQueryWrapper.eq(ExerciseRecord::getUserId, SecurityUtil.getUserId())
@@ -461,7 +463,7 @@ public class ExerciseRecordServiceImpl extends ServiceImpl<ExerciseRecordMapper,
                 exerciseRecordDetailVOS.add(exerciseRecordDetailVO);
                 continue;
             }
-            switch (temp.getQuType()) {
+            switch (quType) {
                 case 1:
                     // 设置自己的选项
                     LambdaQueryWrapper<Option> optionLambdaQueryWrapper1 = new LambdaQueryWrapper<>();
@@ -525,8 +527,14 @@ public class ExerciseRecordServiceImpl extends ServiceImpl<ExerciseRecordMapper,
                     }
                     break;
                 case 4:
-                    exerciseRecordDetailVO.setMyOption(null);
-                    exerciseRecordDetailVO.setIsRight(-1);
+                    exerciseRecordDetailVO.setMyOption(exerciseRecord.getAnswer());
+                    exerciseRecordDetailVO.setIsRight(exerciseRecord.getIsRight() != null ? exerciseRecord.getIsRight() : -1);
+                    break;
+                case 5:
+                    exerciseRecordDetailVO.setMyOption(exerciseRecord.getAnswer());
+                    QuestionSubItemsUtil.applyCompoundStudentAnswers(
+                            exerciseRecordDetailVO.getSubItemList(), exerciseRecord.getAnswer());
+                    exerciseRecordDetailVO.setIsRight(exerciseRecord.getIsRight() != null ? exerciseRecord.getIsRight() : -1);
                     break;
                 default:
                     break;
