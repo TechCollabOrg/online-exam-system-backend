@@ -1,6 +1,7 @@
 package cn.org.alan.exam.model.form.ai;
 
 import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
 import javax.validation.constraints.NotBlank;
@@ -13,4 +14,7 @@ public class AiConfigTestChatForm {
     @NotBlank(message = "请输入测试内容")
     @Size(max = 500, message = "测试内容不超过 500 字")
     private String message;
+
+    @ApiModelProperty("功能编码；留空表示测试默认连接")
+    private String featureCode;
 }

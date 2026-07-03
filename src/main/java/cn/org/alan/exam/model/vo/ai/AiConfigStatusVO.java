@@ -16,4 +16,7 @@ public class AiConfigStatusVO {
 
     @ApiModelProperty("当前模型 ID（未配置时为空）")
     private String modelName;
+
+    @ApiModelProperty("查询的功能编码（未传则为默认）")
+    private String featureCode;
 }

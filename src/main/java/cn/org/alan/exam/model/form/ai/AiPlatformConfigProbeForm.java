@@ -18,4 +18,7 @@ public class AiPlatformConfigProbeForm {
 
     @ApiModelProperty("留空则使用库中已保存的密钥")
     private String apiKey;
+
+    @ApiModelProperty("功能编码；留空表示探测默认连接或表单中的临时参数")
+    private String featureCode;
 }

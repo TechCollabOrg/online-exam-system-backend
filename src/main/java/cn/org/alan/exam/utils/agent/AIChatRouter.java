@@ -1,5 +1,6 @@
 package cn.org.alan.exam.utils.agent;
 
+import cn.org.alan.exam.common.enums.AiFeatureCode;
 import cn.org.alan.exam.common.exception.ServiceRuntimeException;
 import cn.org.alan.exam.model.dto.LlmResolvedConfig;
 import cn.org.alan.exam.model.form.ai.AiChatHistoryItemForm;
@@ -51,7 +52,7 @@ public class AIChatRouter implements AIChat {
     public String getAssistantChatResponse(String systemPrompt, String userMessage,
                                            List<AiChatHistoryItemForm> history) throws Exception {
         List<AiChatHistoryItemForm> safeHistory = history != null ? trimHistory(history) : Collections.emptyList();
-        LlmResolvedConfig db = aiPlatformConfigService.resolveActive();
+        LlmResolvedConfig db = aiPlatformConfigService.resolveForFeature(AiFeatureCode.ASSISTANT);
         if (db != null) {
             return llmChatExecutor.chatWithHistory(
                     db, systemPrompt, safeHistory, userMessage, Constants.assistantTemperature);
@@ -86,7 +87,7 @@ public class AIChatRouter implements AIChat {
 
     @Override
     public String getChatResponse(String systemPrompt, String userMessage) throws Exception {
-        LlmResolvedConfig db = aiPlatformConfigService.resolveActive();
+        LlmResolvedConfig db = aiPlatformConfigService.resolveForFeature(AiFeatureCode.ASSISTANT);
         if (db != null) {
             return llmChatExecutor.chat(db, systemPrompt, userMessage, Constants.temperature);
         }
@@ -95,11 +96,22 @@ public class AIChatRouter implements AIChat {
 
     @Override
     public String getGradingResponse(String systemPrompt, String userMessage) throws Exception {
-        LlmResolvedConfig db = aiPlatformConfigService.resolveActive();
+        LlmResolvedConfig db = aiPlatformConfigService.resolveForFeature(AiFeatureCode.GRADING);
         if (db != null) {
             return llmChatExecutor.chat(db, systemPrompt, userMessage, Constants.gradingTemperature);
         }
         return delegate().getGradingResponse(systemPrompt, userMessage);
+    }
+
+    /**
+     * 成绩简报等场景：使用「成绩简报」功能配置。
+     */
+    public String getBriefingResponse(String systemPrompt, String userMessage) throws Exception {
+        LlmResolvedConfig db = aiPlatformConfigService.resolveForFeature(AiFeatureCode.BRIEFING);
+        if (db != null) {
+            return llmChatExecutor.chat(db, systemPrompt, userMessage, Constants.temperature);
+        }
+        return delegate().getChatResponse(systemPrompt, userMessage);
     }
 
     private AIChat delegate() {

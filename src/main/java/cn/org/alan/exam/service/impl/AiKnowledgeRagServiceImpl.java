@@ -1,18 +1,15 @@
 package cn.org.alan.exam.service.impl;
 
+import cn.org.alan.exam.mapper.AiKnowledgeDocMapper;
+import cn.org.alan.exam.model.entity.AiKnowledgeDoc;
 import cn.org.alan.exam.service.AiKnowledgeRagService;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.PostConstruct;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
+import javax.annotation.Resource;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -21,7 +18,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * 基于 classpath 下 Markdown 文档的轻量 RAG（关键词匹配），不连接题库数据库。
+ * 基于管理员维护文档的轻量 RAG（关键词匹配），不连接题库数据库。
  */
 @Slf4j
 @Service
@@ -30,39 +27,37 @@ public class AiKnowledgeRagServiceImpl implements AiKnowledgeRagService {
     private static final int TOP_K = 4;
     private static final int MAX_CHUNK_CHARS = 500;
 
-    /** 含此类内容的片段不进入知识库（防止误导入题库/阅卷样本） */
     private static final String[] FORBIDDEN_SNIPPETS = {
             "待评分答案", "标准答案", "题目ID", "t_question", "t_option",
             "评分结果", "扣分原因", "ImportQuestionTemplate", "JSON 示例",
             "示例输入", "示例输出", "qu_type="
     };
 
+    @Resource
+    private AiKnowledgeDocMapper aiKnowledgeDocMapper;
+
     private final List<KnowledgeChunk> chunks = new ArrayList<>();
 
-    @PostConstruct
-    public void loadKnowledgeBase() {
+    @Override
+    public synchronized void reloadIndex() {
         chunks.clear();
-        try {
-            Resource[] resources = new PathMatchingResourcePatternResolver()
-                    .getResources("classpath:ai-knowledge/*.md");
-            for (Resource resource : resources) {
-                if (!resource.exists()) {
-                    continue;
-                }
-                String text = readResource(resource);
-                if (StringUtils.isBlank(text)) {
-                    continue;
-                }
-                splitIntoChunks(text, resource.getFilename()).forEach(chunk -> {
-                    if (!isForbidden(chunk.text)) {
-                        chunks.add(chunk);
-                    }
-                });
+        LambdaQueryWrapper<AiKnowledgeDoc> qw = new LambdaQueryWrapper<>();
+        qw.eq(AiKnowledgeDoc::getEnabled, 1)
+                .orderByAsc(AiKnowledgeDoc::getSortOrder)
+                .orderByDesc(AiKnowledgeDoc::getId);
+        List<AiKnowledgeDoc> docs = aiKnowledgeDocMapper.selectList(qw);
+        for (AiKnowledgeDoc doc : docs) {
+            if (doc == null || StringUtils.isBlank(doc.getContent())) {
+                continue;
             }
-            log.info("AI 助手知识库已加载 {} 个片段", chunks.size());
-        } catch (Exception e) {
-            log.warn("AI 助手知识库加载失败: {}", e.getMessage());
+            String source = StringUtils.isNotBlank(doc.getTitle()) ? doc.getTitle() : ("doc-" + doc.getId());
+            splitIntoChunks(doc.getContent(), source).forEach(chunk -> {
+                if (!isForbidden(chunk.text)) {
+                    chunks.add(chunk);
+                }
+            });
         }
+        log.info("AI 助手知识库已加载 {} 个片段（{} 篇文档）", chunks.size(), docs.size());
     }
 
     @Override
@@ -146,18 +141,6 @@ public class AiKnowledgeRagServiceImpl implements AiKnowledgeRagService {
             }
         }
         return result;
-    }
-
-    private String readResource(Resource resource) throws Exception {
-        StringBuilder sb = new StringBuilder();
-        try (BufferedReader reader = new BufferedReader(
-                new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                sb.append(line).append('\n');
-            }
-        }
-        return sb.toString();
     }
 
     private static class KnowledgeChunk {
