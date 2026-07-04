@@ -22,14 +22,32 @@
 CREATE DATABASE db_exam DEFAULT CHARACTER SET utf8mb4;
 ```
 
-在 MySQL 中执行 `sql/db_exam.sql`。若从旧库升级，按需执行 `sql/` 下以 `alter_` 开头的脚本（详见根 README「试题图片」「材料题」等章节）。  
-**注册邀请码**：对已有库执行一次 `sql/create_t_invite_code.sql`（教师/管理员自助注册须凭码）。  
-**进入考试报 `Unknown column 'score' in 'field list'`**：对已有库执行一次 `sql/alter_t_exam_qu_answer_score.sql`（为 `t_exam_qu_answer` 增加 `score` 列）。  
-**考试管理报 `Unknown column 'compound_count' in 'field list'`**：对已有库执行一次 `sql/alter_t_exam_compound_type.sql`（为 `t_exam` 增加 `compound_count`、`compound_score` 列），然后重启后端。  
-**组卷分值要支持小数（如 0.5、2.5 分）且旧库此前按「整分」直存**：对已有库执行一次 `sql/alter_score_storage_x100.sql`（或 `sql/upgrade_legacy_db.sql` 已包含该步骤），将历史分值统一为「库内整数 = 展示分 × 100」。新装库直接执行 `db_exam.sql` 即可；**勿重复执行**升级脚本。执行前请备份。
-**学生专业字段**：对已有库执行一次 `sql/alter_t_user_major.sql`（或 `upgrade_legacy_db.sql` 已包含），为 `t_user` 增加 `major` 列。  
-**按学生发布考试**：对已有库执行一次 `sql/alter_t_exam_user.sql`（或 `upgrade_legacy_db.sql` 已包含），为 `t_exam` 增加 `target_type` 并创建 `t_exam_user` 表。  
-**刷题/结束刷题后记录为空，或接口报 `Unknown column 'audio' in 'field list'`**：对已有库执行一次 `sql/alter_t_question_audio.sql`（为 `t_question` 增加 `audio` 列），然后重启后端。
+在 MySQL 中执行 `sql/db_exam.sql`（新装库）。若从旧库升级，按需执行 `sql/legacy/` 下以 `alter_` 开头的脚本，或一次性执行 `sql/legacy/upgrade_legacy_db.sql`（**执行前备份，勿重复执行**）。详见根 README「已有数据库升级（速查）」。
+
+**AI 相关表**（已有库、未跑过 upgrade 时）：
+- `sql/legacy/alter_t_ai_platform_config.sql`
+- `sql/legacy/alter_t_ai_feature_config.sql`（含 `question_import` 功能）
+- `sql/legacy/create_t_ai_knowledge_doc.sql`
+
+**其他常见增量**（路径均在 `sql/legacy/`）：
+- **注册邀请码**：`create_t_invite_code.sql`
+- **缺 `score` 列**：`alter_t_exam_qu_answer_score.sql`
+- **缺 `compound_count`**：`alter_t_exam_compound_type.sql`
+- **分值小数 ×100 存储**：`alter_score_storage_x100.sql`
+- **学生专业 / 按学生发考试**：`alter_t_user_major.sql`、`alter_t_exam_user.sql`
+- **试题音频列**：`alter_t_question_audio.sql`
+
+执行脚本后重启后端。
+
+### 拉取代码
+
+本目录为 Git 子模块，主分支为 **`main`**：
+
+```bash
+git checkout main && git pull origin main
+```
+
+外层仓库更新子模块指针后，在根目录执行 `git submodule update --init --recursive`。
 
 ### 启动
 
@@ -81,9 +99,10 @@ mvn spring-boot:run
 online-exam-system-backend/
 ├── pom.xml
 ├── env.example                 # 环境变量说明（不自动加载，供人工配置）
-├── sql/                        # 建库与增量脚本
-│   ├── db_exam.sql
-│   └── alter_*.sql
+├── sql/
+│   ├── db_exam.sql             # 新装库全量脚本
+│   ├── legacy/                 # 增量升级 alter_*.sql、upgrade_legacy_db.sql
+│   └── exports/                # 数据库导出备份（可选参考）
 └── src/main/
     ├── java/cn/org/alan/exam/
     │   ├── ExamApplication.java    # 启动类
@@ -126,6 +145,9 @@ online-exam-system-backend/
 | 证书 | `/api/certificate` | CertificateController |
 | 文件 | `/api/upload` | FileController |
 | 日志 | `/api/log` | LogController |
+| AI 配置 | `/api/ai/config` | AiConfigController（管理员：默认 + 分功能 API） |
+| AI 对话 | `/api/ai` | AiController（助手、考后单题解析） |
+| AI 知识库 | `/api/ai/knowledge` | AiKnowledgeController（管理员 CRUD） |
 
 完整参数与示例见 Knife4j：http://127.0.0.1:8080/doc.html
 
@@ -149,9 +171,21 @@ online-exam-system-backend/
 | GET | `/api/repo/{id}/knowledge-points` | 教师/管理员：知识树下拉选项（按知识点筛题） |
 | GET | `/api/questions/paging` | 新增可选参数 `knowledgePointPath`（须同时传 `repoId`） |
 | POST | `/api/questions/uploadAudio` | 教师/管理员：上传试题听力音频（multipart `file`，单文件 ≤ 50MB，见 `spring.servlet.multipart`） |
-| POST | `/api/questions/ai-import/{repoId}` | 教师/管理员：AI 智能导入（上传 `.docx`/`.md`，AI 按 `sql/JSON_QUESTION_IMPORT_SPEC.md` 转 JSON 后入库；multipart `file`；超时建议 ≥ 300s） |
+| POST | `/api/questions/ai-import/{repoId}` | 教师/管理员：AI 智能导入（`.docx`/`.md` → JSON 入库；multipart `file`；≤10MB；使用 `question_import` 配置） |
 
-AI 试题导入使用「AI 试题导入」功能配置（`question_import`）；首次部署执行 `sql/alter_t_ai_feature_config_question_import.sql`（或已合并进 `alter_t_ai_feature_config.sql`）。
+**AI 配置接口（管理员）**
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | `/api/ai/config/overview` | 默认 + 各功能配置总览 |
+| PUT | `/api/ai/config` | 保存默认连接 |
+| PUT | `/api/ai/config/features/{featureCode}` | 保存单功能配置（`grading`/`assistant`/`briefing`/`question_review`/`question_import`） |
+| POST | `/api/ai/config/test-connection` | 测试连接并拉取模型列表 |
+| GET | `/api/ai/config/status` | 各角色可读：某功能是否已配置 |
+
+**AI 知识库（管理员）**：`GET/POST/PUT/DELETE /api/ai/knowledge`；`POST /api/ai/knowledge/import-builtin` 在库为空时导入内置 Markdown。
+
+AI 调用统一经 `AIChatRouter` → `LlmChatExecutor`（OpenAI 兼容 HTTP）；库中未启用时回退 yml 中的 LLM/Coze/Dify。
 
 创建考试 `POST /api/exams`：随机模式（`addQuype=1`）若同时提交 `quIds` 与 `quScores`（与预览列表一致），则按确认后的题目与分值组卷，不再重新洗牌。  
 发布范围：`targetType=1`（默认）按班级，传 `gradeIds`；`targetType=2` 按指定学生，传 `userIds`（逗号分隔），`gradeIds` 可由所选学生班级自动推导。
@@ -164,8 +198,9 @@ AI 试题导入使用「AI 试题导入」功能配置（`question_import`）；
 2. `config/SecurityConfig.java` + `filter/VerifyTokenFilter.java` — JWT
 3. `controller/AuthController.java` + `service/impl/AuthServiceImpl.java` — 登录
 4. `service/impl/ExamServiceImpl.java` — 考试全流程
-5. `service/impl/AutoScoringServiceImpl.java` / `ManualScoreServiceImpl.java` — 判分
-6. `mapper/` + `model/entity/` — 表结构
+5. `service/impl/AutoScoringServiceImpl.java` / `AiPlatformConfigServiceImpl.java` — AI 阅卷与分功能 API 配置
+6. `service/impl/AiKnowledgeRagServiceImpl.java` — 助手 RAG（DB 关键词检索）
+7. `mapper/` + `model/entity/` — 表结构
 
 ---
 
@@ -235,12 +270,18 @@ AI 试题导入使用「AI 试题导入」功能配置（`question_import`）；
 2. 学生端登录后由前端每约 5 分钟调用 `POST /api/auths/track-presence`；库表按**秒**累计，图表按**分钟**展示。
 3. 若当日数据已被旧版写满，重新登录学生账号会自动把当日记录归零后按心跳重算；仍异常可手动改 `t_user_daily_login_duration` 当日 `total_seconds`。
 
+### AI 接口报「未配置」或 500（缺表）
+
+1. 确认已执行 `sql/legacy/` 下 AI 三表脚本或 `upgrade_legacy_db.sql`。
+2. 管理员在 Web **API 连接配置** 保存并启用默认连接。
+3. 各功能 Tab 可「沿用默认」或单独填写 API Key / 模型。
+
 ---
 
 ## 技术栈
 
-Spring Boot 2 · MyBatis-Plus · Spring Security + JWT · Redis · WebSocket · MySQL · Knife4j
+Spring Boot 2 · MyBatis-Plus · Spring Security + JWT · Redis · WebSocket · MySQL · Knife4j · LangChain4j（OpenAI 兼容调用）
 
 ---
 
-*最后更新：2026-07-03（Java 17+ 反射排错）*
+*最后更新：2026-07-04（mod 合并 main；AI 分功能配置 / 知识库 / 智能导题）*
